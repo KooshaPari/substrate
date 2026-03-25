@@ -1,0 +1,28 @@
+# Sharecli Integration for Process Compose
+# Place this in your project's .sharecli/process-compose.yml
+
+version: "0.5"
+
+env:
+  - SHAREWEI_PORT=3100
+  - SHAREWEI_API_URL=http://localhost:3100
+
+services:
+  sharewei-agent:
+    command: sharecli run --harness sharewei --project my-project
+    depends_on: {}
+    log_location: .sharecli/logs/sharewei.log
+    readiness_probe:
+      exec:
+        command: sharecli health --harness sharewei
+      initial_delay_seconds: 5
+      period_seconds: 10
+      failure_threshold: 3
+
+  # Add more services per project:
+  # <project-name>:
+  #   command: sharecli run --harness <harness> --project <project-name>
+  #   depends_on:
+  #     sharewei-agent:
+  #       condition: process_healthy
+  #   log_location: .sharecli/logs/<project-name>.log

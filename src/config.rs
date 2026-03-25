@@ -138,5 +138,8 @@ pub enum ProjectCmd {
     /// Show project details
     Show { name: String },
     /// Discover projects in a directory
+    /// Discover projects in a directory
     Discover { path: Option<String> },
+    /// Generate process-compose.yml from registered projects
+    Generate { output: Option<String> },
 }
