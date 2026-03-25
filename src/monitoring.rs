@@ -1,6 +1,5 @@
 //! Monitoring and health check functionality
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -73,13 +72,13 @@ pub struct MonitoringReport {
 }
 
 impl MonitoringReport {
-    pub fn generate(processes: Vec<ProcessStats>) -> Self {
-        let mut by_project: HashMap<String, usize> = HashMap::new();
-        let mut by_harness: HashMap<String, usize> = HashMap::new();
+    pub fn generate(processes: &[ProcessStats]) -> Self {
+        let by_project: HashMap<String, usize> = HashMap::new();
+        let by_harness: HashMap<String, usize> = HashMap::new();
         let mut total_memory = 0u64;
         let mut idle = 0usize;
 
-        for proc in &processes {
+        for proc in processes {
             total_memory += proc.memory_mb;
 
             // Track idle processes

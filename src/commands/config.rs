@@ -5,6 +5,7 @@ use anyhow::Result;
 use clap::Parser;
 
 #[derive(Parser, Debug)]
+#[command(name = "cfg")]
 pub enum ConfigCmd {
     /// Initialize default configuration
     Init,

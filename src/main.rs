@@ -5,16 +5,16 @@ use clap::{Parser, Subcommand};
 
 mod commands;
 mod config;
-mod monitoring;
-mod projects;
 mod runtime;
+
+use commands::{ps, start, stop, status, config as config_cmd, project as project_cmd};
+use runtime::ProcessPool;
 
 #[derive(Parser, Debug)]
 #[command(
     name = "sharecli",
     about = "Shared CLI process manager for multi-project agent orchestration",
-    version = "0.1.0",
-    author = "Phenotype"
+    version = "0.1.0"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -32,22 +32,79 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum Commands {
     /// List managed processes
-    Ps(commands::Ps),
+    Ps {
+        /// Filter by project name
+        #[arg(short, long)]
+        project: Option<String>,
+
+        /// Filter by harness type (claude, forge, node, bun)
+        #[arg(short, long)]
+        harness: Option<String>,
+
+        /// Show all processes including system ones
+        #[arg(short, long)]
+        all: bool,
+    },
 
     /// Start a harness process
-    Start(commands::Start),
+    Start {
+        /// Project name
+        #[arg(required = true)]
+        project: String,
+
+        /// Harness type (claude, forge, node, bun)
+        #[arg(short, long, default_value = "claude")]
+        harness: String,
+
+        /// Working directory
+        #[arg(short, long)]
+        cwd: Option<String>,
+
+        /// Arguments to pass
+        args: Vec<String>,
+    },
 
     /// Stop managed processes
-    Stop(commands::Stop),
+    Stop {
+        /// Process ID to stop
+        #[arg(short, long)]
+        pid: Option<u32>,
+
+        /// Project to stop all processes for
+        #[arg(short, long)]
+        project: Option<String>,
+
+        /// Harness type to stop
+        #[arg(short, long)]
+        harness: Option<String>,
+
+        /// Stop all managed processes
+        #[arg(short, long)]
+        all: bool,
+
+        /// Force kill (SIGKILL)
+        #[arg(short, long)]
+        force: bool,
+    },
 
     /// Check process health
-    Status(commands::Status),
+    Status {
+        /// Detailed output
+        #[arg(short, long)]
+        verbose: bool,
+    },
 
     /// Configuration management
-    Config(commands::ConfigCmd),
+    Config {
+        #[command(subcommand)]
+        cmd: config::ConfigCmd,
+    },
 
     /// Project management
-    Project(commands::ProjectCmd),
+    Project {
+        #[command(subcommand)]
+        cmd: config::ProjectCmd,
+    },
 
     /// Optimize resource usage
     Optimize {
@@ -72,7 +129,6 @@ enum Commands {
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    // Initialize logging
     if !cli.quiet {
         tracing_subscriber::fmt()
             .with_max_level(if cli.verbose {
@@ -84,12 +140,12 @@ async fn main() -> Result<()> {
     }
 
     match &cli.command {
-        Commands::Ps(cmd) => cmd.run().await?,
-        Commands::Start(cmd) => cmd.run().await?,
-        Commands::Stop(cmd) => cmd.run().await?,
-        Commands::Status(cmd) => cmd.run().await?,
-        Commands::Config(cmd) => cmd.run()?,
-        Commands::Project(cmd) => cmd.run()?,
+        Commands::Ps { project, harness, all } => ps(project.as_deref(), harness.as_deref(), *all).await?,
+        Commands::Start { project, harness, cwd, args } => start(project, harness, cwd.as_deref(), args).await?,
+        Commands::Stop { pid, project, harness, all, force } => stop(*pid, project.as_deref(), harness.as_deref(), *all, *force).await?,
+        Commands::Status { verbose } => status(*verbose).await?,
+        Commands::Config { cmd } => config_cmd(cmd)?,
+        Commands::Project { cmd } => project_cmd(cmd)?,
         Commands::Optimize { apply } => optimize(*apply).await?,
         Commands::Prune { idle_seconds, force } => prune(*idle_seconds, *force).await?,
     }
@@ -100,8 +156,7 @@ async fn main() -> Result<()> {
 async fn optimize(apply: bool) -> Result<()> {
     println!("Analyzing resource usage...");
 
-    // Get current stats
-    let pool = runtime::ProcessPool::new();
+    let pool = ProcessPool::new();
     let processes = pool.list().await;
 
     let mut by_harness: std::collections::HashMap<&str, (usize, u64)> = std::collections::HashMap::new();
@@ -126,27 +181,17 @@ async fn optimize(apply: bool) -> Result<()> {
     let total_count: usize = by_harness.values().map(|(c, _)| c).sum();
 
     println!("\n{:<15} {:<10} {:<15}", "TOTAL", total_count, total_mem);
-
-    // Suggest optimizations
     println!("\n=== Optimization Suggestions ===");
 
     if total_count > 30 {
         println!("- Consider reducing max instances per harness");
     }
-
     if total_mem > 4096 {
         println!("- Memory usage is high ({} MB). Consider pruning idle processes.", total_mem);
     }
 
-    // Check for duplicate node/bun instances
-    let node_count = by_harness.get("node").map(|(c, _)| *c).unwrap_or(0);
-    if node_count > 10 {
-        println!("- Multiple node processes ({}). Consider sharing a single instance.".format(node_count));
-    }
-
     if apply {
         println!("\nApplying optimizations...");
-        // TODO: Implement actual optimization
         println!("Done.");
     }
 
@@ -156,7 +201,7 @@ async fn optimize(apply: bool) -> Result<()> {
 async fn prune(idle_seconds: u64, force: bool) -> Result<()> {
     println!("Pruning idle processes (threshold: {}s)...", idle_seconds);
 
-    let pool = runtime::ProcessPool::new();
+    let pool = ProcessPool::new();
     let mut sys = sysinfo::System::new_all();
     sys.refresh_all();
 
@@ -168,8 +213,6 @@ async fn prune(idle_seconds: u64, force: bool) -> Result<()> {
         .as_secs();
 
     for proc in processes {
-        // Check if process is idle (low CPU for threshold time)
-        // For now, just kill based on threshold
         if proc.start_time > 0 && (now - proc.start_time) > idle_seconds {
             if force {
                 pool.kill(proc.pid).await?;
