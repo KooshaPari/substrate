@@ -1,0 +1,38 @@
+[package]
+name = "sharecli"
+version = "0.1.0"
+edition = "2021"
+description = "Shared CLI process manager for multi-project agent orchestration"
+license = "MIT"
+authors = ["Phenotype"]
+repository = "https://github.com/KooshaPari/sharecli"
+
+[dependencies]
+# CLI
+clap = { version = "4.5", features = ["derive", "env"] }
+tokio = { version = "1", features = ["full"] }
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+# Config
+serde = { version = "1", features = ["derive"] }
+toml = "0.8"
+
+# Process management
+sysinfo = "0.31"
+pidfile = "0.10"
+
+# Utilities
+chrono = { version = "0.4", features = ["serde"] }
+dirs = "5"
+glob = "0.3"
+
+[dev-dependencies]
+tempfile = "3"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

@@ -1,0 +1,58 @@
+# sharecli.toml
+
+# ShareCLI - Shared CLI Process Manager Configuration
+
+# Project Registry
+# Map project names to their paths
+[projects]
+portage = "~/CodeProjects/Phenotype/repos/portage"
+helios-cli = "~/CodeProjects/Phenotype/repos/helios-cli"
+agentapi = "~/CodeProjects/Phenotype/repos/agentapi-plusplus"
+cliproxy = "~/CodeProjects/Phenotype/repos/cliproxyapi-plusplus"
+colab = "~/CodeProjects/Phenotype/repos/colab"
+thegent = "~/CodeProjects/Phenotype/repos/thegent"
+
+# Runtime Configuration
+[runtime]
+# Path to executables (auto-detected if not set)
+# node_path = "/opt/homebrew/bin/node"
+# bun_path = "/opt/homebrew/bin/bun"
+
+# Resource limits
+max_memory_mb = 4096
+max_processes = 50
+
+# Health check interval (seconds)
+health_check_interval = 30
+
+# Default Harness Settings
+[defaults.claude]
+enabled = true
+max_instances = 11
+memory_limit_mb = 512
+
+[defaults.forge]
+enabled = true
+max_instances = 20
+memory_limit_mb = 256
+
+[defaults.node]
+enabled = true
+max_instances = 30
+memory_limit_mb = 256
+
+[defaults.bun]
+enabled = true
+max_instances = 10
+memory_limit_mb = 384
+
+# Process Pool Settings
+[pool]
+# Enable shared process pool (reduces memory)
+enabled = true
+
+# Minimum idle time before recycling (seconds)
+idle_timeout = 300
+
+# Auto-prune processes older than (seconds)
+max_age = 3600
