@@ -2,9 +2,11 @@
 
 pub mod config;
 
-use anyhow::Result;
 use crate::config::{Config, ConfigCmd, ProjectCmd};
-use crate::runtime::{ProcessFilter, ProcessPool, ProcessInfo, SharedRuntime, ProjectResources, ProjectLimits};
+use crate::runtime::{
+    ProcessFilter, ProcessInfo, ProcessPool, ProjectLimits, ProjectResources, SharedRuntime,
+};
+use anyhow::Result;
 use std::path::PathBuf;
 
 /// Shared runtime instance
@@ -18,7 +20,7 @@ fn get_shared_runtime() -> &'static SharedRuntime {
 static PROJECT_RESOURCES: std::sync::OnceLock<ProjectResources> = std::sync::OnceLock::new();
 
 fn get_project_resources() -> &'static ProjectResources {
-    PROJECT_RESOURCES.get_or_init(|| ProjectResources::new())
+    PROJECT_RESOURCES.get_or_init(ProjectResources::new)
 }
 
 /// List processes
@@ -28,15 +30,17 @@ pub async fn ps(project: Option<&str>, harness: Option<&str>, all: bool) -> Resu
         ProcessFilter::ByProject(p.to_string())
     } else if let Some(h) = harness {
         ProcessFilter::ByHarness(h.to_string())
-    } else if all {
-        ProcessFilter::All
     } else {
         ProcessFilter::All
     };
+    let _ = all;
 
     let processes: Vec<ProcessInfo> = pool.find(filter).await;
 
-    println!("{:<8} {:<20} {:<12} {:<15} {}", "PID", "NAME", "MEM(MB)", "PROJECT", "HARNESS");
+    println!(
+        "{:<8} {:<20} {:<12} {:<15} HARNESS",
+        "PID", "NAME", "MEM(MB)", "PROJECT"
+    );
     println!("{}", "-".repeat(70));
 
     for proc in &processes {
@@ -49,13 +53,22 @@ pub async fn ps(project: Option<&str>, harness: Option<&str>, all: bool) -> Resu
     }
 
     let total_mem: u64 = processes.iter().map(|p| p.memory_mb).sum();
-    println!("\nTotal: {} processes, {} MB memory", processes.len(), total_mem);
+    println!(
+        "\nTotal: {} processes, {} MB memory",
+        processes.len(),
+        total_mem
+    );
 
     Ok(())
 }
 
 /// Start a harness process
-pub async fn start(project: &str, harness: &str, cwd: Option<&str>, _args: &[String]) -> Result<()> {
+pub async fn start(
+    project: &str,
+    harness: &str,
+    cwd: Option<&str>,
+    _args: &[String],
+) -> Result<()> {
     let cfg = Config::load()?;
 
     let project_path = if let Some(c) = cwd {
@@ -63,7 +76,10 @@ pub async fn start(project: &str, harness: &str, cwd: Option<&str>, _args: &[Str
     } else if let Some(path) = cfg.projects.get(project) {
         PathBuf::from(expand_path(path))
     } else {
-        anyhow::bail!("Unknown project: {}. Add with 'sharecli project add <name> <path>'", project);
+        anyhow::bail!(
+            "Unknown project: {}. Add with 'sharecli project add <name> <path>'",
+            project
+        );
     };
 
     if !project_path.exists() {
@@ -73,7 +89,15 @@ pub async fn start(project: &str, harness: &str, cwd: Option<&str>, _args: &[Str
     let pool = ProcessPool::new();
     println!("Starting {} harness for project '{}'...", harness, project);
 
-    let info = pool.spawn(harness, &[], Some(project_path.clone()), Some(project.to_string()), Some(harness.to_string())).await?;
+    let info = pool
+        .spawn(
+            harness,
+            &[],
+            Some(project_path.clone()),
+            Some(project.to_string()),
+            Some(harness.to_string()),
+        )
+        .await?;
 
     println!("Started process {} ({})", info.pid, info.name);
     println!("Working directory: {:?}", project_path);
@@ -82,7 +106,13 @@ pub async fn start(project: &str, harness: &str, cwd: Option<&str>, _args: &[Str
 }
 
 /// Stop processes
-pub async fn stop(pid: Option<u32>, project: Option<&str>, harness: Option<&str>, all: bool, _force: bool) -> Result<()> {
+pub async fn stop(
+    pid: Option<u32>,
+    project: Option<&str>,
+    harness: Option<&str>,
+    all: bool,
+    _force: bool,
+) -> Result<()> {
     let pool = ProcessPool::new();
 
     if all {
@@ -121,7 +151,8 @@ pub async fn status(verbose: bool) -> Result<()> {
     let pool = ProcessPool::new();
     let processes: Vec<ProcessInfo> = pool.list().await;
 
-    let mut by_harness: std::collections::HashMap<&str, (usize, u64)> = std::collections::HashMap::new();
+    let mut by_harness: std::collections::HashMap<&str, (usize, u64)> =
+        std::collections::HashMap::new();
 
     for proc in &processes {
         let h = proc.harness.as_deref().unwrap_or("unknown");
@@ -146,19 +177,36 @@ pub async fn status(verbose: bool) -> Result<()> {
     println!("\n=== Shared Runtime Pool ===\n");
     println!("{:<10} {:<10} {:<10}", "TYPE", "TOTAL", "IDLE");
     println!("{}", "-".repeat(30));
-    println!("{:<10} {:<10} {:<10}", "node", pool_status.node_total, pool_status.node_idle);
-    println!("{:<10} {:<10} {:<10}", "bun", pool_status.bun_total, pool_status.bun_idle);
+    println!(
+        "{:<10} {:<10} {:<10}",
+        "node", pool_status.node_total, pool_status.node_idle
+    );
+    println!(
+        "{:<10} {:<10} {:<10}",
+        "bun", pool_status.bun_total, pool_status.bun_idle
+    );
     println!("\nMax per type: {}", pool_status.max_per_type);
 
     // Show system memory
     let (used, total) = pool.system_memory_usage().await;
     println!("\n=== System Memory ===\n");
-    println!("Used: {} MB / {} MB ({}%)", used, total, (used * 100) / total);
+    println!(
+        "Used: {} MB / {} MB ({}%)",
+        used,
+        total,
+        (used * 100) / total
+    );
 
     if verbose {
         println!("\n=== Detailed Process List ===\n");
         for proc in &processes {
-            println!("PID: {}, Name: {}, Memory: {} MB", proc.pid, proc.name, proc.memory_mb);
+            println!(
+                "PID: {}, Name: {}, Memory: {} MB",
+                proc.pid, proc.name, proc.memory_mb
+            );
+            if !proc.cmd.is_empty() {
+                println!("  Cmd: {}", proc.cmd.join(" "));
+            }
         }
     }
 
@@ -232,7 +280,9 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
             }
         }
         ProjectCmd::Discover { path } => {
-            let base = PathBuf::from(expand_path(path.as_deref().unwrap_or("~/CodeProjects/Phenotype/repos")));
+            let base = PathBuf::from(expand_path(
+                path.as_deref().unwrap_or("~/CodeProjects/Phenotype/repos"),
+            ));
             println!("Scanning {:?} for projects...", base);
 
             let mut found = Vec::new();
@@ -240,7 +290,11 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
                 for entry in entries.flatten() {
                     let p = entry.path();
                     if p.is_dir() && p.join(".git").exists() {
-                        let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
+                        let name = p
+                            .file_name()
+                            .and_then(|n| n.to_str())
+                            .unwrap_or("unknown")
+                            .to_string();
                         found.push((name, p.to_string_lossy().to_string()));
                     }
                 }
@@ -253,12 +307,15 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
         }
         ProjectCmd::Generate { output } => {
             let cfg = Config::load()?;
-            let out_path = PathBuf::from(expand_path(output.as_deref().unwrap_or("process-compose.yml")));
-            
+            let out_path = PathBuf::from(expand_path(
+                output.as_deref().unwrap_or("process-compose.yml"),
+            ));
+
             let mut yaml = String::from("# Generated by sharecli\nversion: \"0.5\"\n\nenv:\n  - SHAREWEI_PORT=3100\n\nservices:\n");
-            
-            for (name, _path) in &cfg.projects {
-                yaml.push_str(&format!(r#"  {}-agent:
+
+            for name in cfg.projects.keys() {
+                yaml.push_str(&format!(
+                    r#"  {}-agent:
     command: sharecli run --harness {} --project {}
     depends_on: {{}}
     log_location: .sharecli/logs/{}.log
@@ -269,11 +326,16 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
       period_seconds: 10
       failure_threshold: 3
 
-"#, name, name, name, name, name));
+"#,
+                    name, name, name, name, name
+                ));
             }
-            
+
             std::fs::write(&out_path, &yaml)?;
-            println!("Generated process-compose.yml with {} services", cfg.projects.len());
+            println!(
+                "Generated process-compose.yml with {} services",
+                cfg.projects.len()
+            );
             println!("Written to: {:?}", out_path);
         }
     }
@@ -284,7 +346,10 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
 pub async fn run_pool(harness_type: &str, project: &str) -> Result<()> {
     let runtime = get_shared_runtime();
     let result = runtime.run_with_pool(harness_type, project, "").await?;
-    println!("Pooled {} process {} for project {}", harness_type, result.0, project);
+    println!(
+        "Pooled {} process {} for project {}",
+        harness_type, result.0, project
+    );
     println!("Output: {}", result.1);
     Ok(())
 }
@@ -295,10 +360,19 @@ pub async fn pool_status() -> Result<()> {
     let status = runtime.status().await;
 
     println!("=== Shared Runtime Pool Status ===\n");
-    println!("{:<10} {:<10} {:<10} {:<10}", "TYPE", "TOTAL", "IDLE", "MAX");
+    println!(
+        "{:<10} {:<10} {:<10} {:<10}",
+        "TYPE", "TOTAL", "IDLE", "MAX"
+    );
     println!("{}", "-".repeat(40));
-    println!("{:<10} {:<10} {:<10} {:<10}", "node", status.node_total, status.node_idle, status.max_per_type);
-    println!("{:<10} {:<10} {:<10} {:<10}", "bun", status.bun_total, status.bun_idle, status.max_per_type);
+    println!(
+        "{:<10} {:<10} {:<10} {:<10}",
+        "node", status.node_total, status.node_idle, status.max_per_type
+    );
+    println!(
+        "{:<10} {:<10} {:<10} {:<10}",
+        "bun", status.bun_total, status.bun_idle, status.max_per_type
+    );
     println!("\nMax per type: {}", status.max_per_type);
 
     // Health check
@@ -319,8 +393,57 @@ pub async fn pool_status() -> Result<()> {
     Ok(())
 }
 
+/// Run health probe for shared runtime
+pub async fn health(harness: Option<&str>) -> Result<()> {
+    if let Some(h) = harness {
+        println!("Health probe requested for harness '{}'.", h);
+        if h != "node" && h != "bun" {
+            println!("Note: only the pooled node/bun runtimes are tracked currently.");
+        }
+    }
+
+    let runtime = get_shared_runtime();
+    let pool_status = runtime.status().await;
+    let health = runtime.health_check().await;
+
+    println!(
+        "\nShared runtime health: {}",
+        if health.healthy {
+            "HEALTHY"
+        } else {
+            "DEGRADED"
+        }
+    );
+
+    if !health.issues.is_empty() {
+        println!("\nIssues detected:");
+        for issue in &health.issues {
+            println!("  - {}", issue);
+        }
+    } else {
+        println!("No runtime issues detected.");
+    }
+
+    println!("\nPool summary:");
+    println!(
+        "  node: {} total, {} idle, {} in use",
+        pool_status.node_total, pool_status.node_idle, health.node_in_use
+    );
+    println!(
+        "  bun:  {} total, {} idle, {} in use",
+        pool_status.bun_total, pool_status.bun_idle, health.bun_in_use
+    );
+    println!("\nMax per harness type: {}", pool_status.max_per_type);
+
+    Ok(())
+}
+
 /// Set project limits
-pub async fn set_limits(project: &str, memory_mb: Option<u64>, max_procs: Option<usize>) -> Result<()> {
+pub async fn set_limits(
+    project: &str,
+    memory_mb: Option<u64>,
+    max_procs: Option<usize>,
+) -> Result<()> {
     let resources = get_project_resources();
     let current = resources.get_limits(project).await;
 
@@ -328,7 +451,6 @@ pub async fn set_limits(project: &str, memory_mb: Option<u64>, max_procs: Option
     let max_processes = max_procs.unwrap_or(current.max_processes);
 
     let limits = ProjectLimits {
-        name: project.to_string(),
         memory_limit_mb: memory_limit,
         max_processes,
         cpu_affinity: current.cpu_affinity,
@@ -348,21 +470,40 @@ pub async fn check_limits(project: &str) -> Result<()> {
 
     println!("=== Resource Limits for '{}' ===\n", project);
 
-    println!("Memory: {} MB / {} MB", check.memory_mb, check.memory_limit_mb);
+    println!(
+        "Memory: {} MB / {} MB",
+        check.memory_mb, check.memory_limit_mb
+    );
     if check.memory_ok {
         println!("  Status: OK");
     } else {
-        println!("  Status: EXCEEDED (over by {} MB)", check.memory_mb - check.memory_limit_mb);
+        println!(
+            "  Status: EXCEEDED (over by {} MB)",
+            check.memory_mb - check.memory_limit_mb
+        );
     }
 
-    println!("\nProcesses: {} / {}", check.process_count, check.max_processes);
+    println!(
+        "\nProcesses: {} / {}",
+        check.process_count, check.max_processes
+    );
     if check.processes_ok {
         println!("  Status: OK");
     } else {
-        println!("  Status: EXCEEDED (over by {})", check.process_count - check.max_processes);
+        println!(
+            "  Status: EXCEEDED (over by {})",
+            check.process_count - check.max_processes
+        );
     }
 
-    println!("\nOverall: {}", if check.overall_ok { "OK" } else { "LIMIT EXCEEDED" });
+    println!(
+        "\nOverall: {}",
+        if check.overall_ok {
+            "OK"
+        } else {
+            "LIMIT EXCEEDED"
+        }
+    );
 
     Ok(())
 }

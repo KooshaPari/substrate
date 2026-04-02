@@ -72,6 +72,7 @@ sharecli prune --idle 30m --dry-run
 | `sharecli project` | Add, remove, list, show, discover, generate projects |
 | `sharecli run` | Run with pooled runtime (node/bun) |
 | `sharecli pool` | Show shared runtime pool status |
+| `sharecli health` | Probe shared runtime health (supports `--harness` hints) |
 | `sharecli limits` | Set/get project resource limits |
 | `sharecli check` | Check project resource limits |
 | `sharecli optimize` | Analyze and suggest resource optimizations |

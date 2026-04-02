@@ -7,7 +7,10 @@ mod commands;
 mod config;
 mod runtime;
 
-use commands::{ps, start, stop, status, config as config_cmd, project as project_cmd, pool_status, run_pool, set_limits, check_limits};
+use commands::{
+    check_limits, config as config_cmd, health, pool_status, project as project_cmd, ps, run_pool,
+    set_limits, start, status, stop,
+};
 use runtime::ProcessPool;
 
 #[derive(Parser, Debug)]
@@ -92,6 +95,13 @@ enum Commands {
         /// Detailed output
         #[arg(short, long)]
         verbose: bool,
+    },
+
+    /// Run a runtime health probe
+    Health {
+        /// Optional harness type hint (node, bun, etc.)
+        #[arg(long)]
+        harness: Option<String>,
     },
 
     /// Configuration management
@@ -180,17 +190,40 @@ async fn main() -> Result<()> {
     }
 
     match &cli.command {
-        Commands::Ps { project, harness, all } => ps(project.as_deref(), harness.as_deref(), *all).await?,
-        Commands::Start { project, harness, cwd, args } => start(project, harness, cwd.as_deref(), args).await?,
-        Commands::Stop { pid, project, harness, all, force } => stop(*pid, project.as_deref(), harness.as_deref(), *all, *force).await?,
+        Commands::Ps {
+            project,
+            harness,
+            all,
+        } => ps(project.as_deref(), harness.as_deref(), *all).await?,
+        Commands::Start {
+            project,
+            harness,
+            cwd,
+            args,
+        } => start(project, harness, cwd.as_deref(), args).await?,
+        Commands::Stop {
+            pid,
+            project,
+            harness,
+            all,
+            force,
+        } => stop(*pid, project.as_deref(), harness.as_deref(), *all, *force).await?,
         Commands::Status { verbose } => status(*verbose).await?,
         Commands::Config { cmd } => config_cmd(cmd)?,
         Commands::Project { cmd } => project_cmd(cmd)?,
         Commands::Optimize { apply } => optimize(*apply).await?,
-        Commands::Prune { idle_seconds, force } => prune(*idle_seconds, *force).await?,
+        Commands::Prune {
+            idle_seconds,
+            force,
+        } => prune(*idle_seconds, *force).await?,
         Commands::Pool { harness: _ } => pool_status().await?,
+        Commands::Health { harness } => health(harness.as_deref()).await?,
         Commands::Run { harness, project } => run_pool(harness, project).await?,
-        Commands::Limits { project, memory, processes } => set_limits(project, *memory, *processes).await?,
+        Commands::Limits {
+            project,
+            memory,
+            processes,
+        } => set_limits(project, *memory, *processes).await?,
         Commands::Check { project } => check_limits(project).await?,
     }
 
@@ -203,7 +236,8 @@ async fn optimize(apply: bool) -> Result<()> {
     let pool = ProcessPool::new();
     let processes = pool.list().await;
 
-    let mut by_harness: std::collections::HashMap<&str, (usize, u64)> = std::collections::HashMap::new();
+    let mut by_harness: std::collections::HashMap<&str, (usize, u64)> =
+        std::collections::HashMap::new();
 
     for proc in &processes {
         if let Some(ref harness) = proc.harness {
@@ -231,7 +265,10 @@ async fn optimize(apply: bool) -> Result<()> {
         println!("- Consider reducing max instances per harness");
     }
     if total_mem > 4096 {
-        println!("- Memory usage is high ({} MB). Consider pruning idle processes.", total_mem);
+        println!(
+            "- Memory usage is high ({} MB). Consider pruning idle processes.",
+            total_mem
+        );
     }
 
     if apply {

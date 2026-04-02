@@ -16,7 +16,6 @@ pub struct ProcessInfo {
     pub name: String,
     pub cmd: Vec<String>,
     pub memory_mb: u64,
-    pub cpu_percent: f32,
     pub start_time: u64,
     pub project: Option<String>,
     pub harness: Option<String>,
@@ -24,17 +23,18 @@ pub struct ProcessInfo {
 
 impl ProcessInfo {
     pub fn from_sysinfo(pid: Pid, name: String, sys: &System) -> Option<Self> {
-        sys.process(pid).map(|p| {
-            ProcessInfo {
-                pid: pid.as_u32(),
-                name,
-                cmd: p.cmd().iter().filter_map(|s| s.to_str().map(String::from)).collect(),
-                memory_mb: p.memory() / 1024 / 1024,
-                cpu_percent: p.cpu_usage(),
-                start_time: p.start_time(),
-                project: None,
-                harness: None,
-            }
+        sys.process(pid).map(|p| ProcessInfo {
+            pid: pid.as_u32(),
+            name,
+            cmd: p
+                .cmd()
+                .iter()
+                .filter_map(|s| s.to_str().map(String::from))
+                .collect(),
+            memory_mb: p.memory() / 1024 / 1024,
+            start_time: p.start_time(),
+            project: None,
+            harness: None,
         })
     }
 }
@@ -77,7 +77,11 @@ impl ProcessPool {
 
         let mut result = Vec::new();
         for pid in procs.keys() {
-            if let Some(info) = ProcessInfo::from_sysinfo(Pid::from_u32(*pid), procs.get(pid).unwrap().info.name.clone(), &sys) {
+            if let Some(info) = ProcessInfo::from_sysinfo(
+                Pid::from_u32(*pid),
+                procs.get(pid).unwrap().info.name.clone(),
+                &sys,
+            ) {
                 result.push(info);
             }
         }
@@ -114,9 +118,11 @@ impl ProcessPool {
         let info = ProcessInfo {
             pid,
             name: cmd.to_string(),
-            cmd: vec![cmd.to_string()].into_iter().chain(args.iter().cloned()).collect(),
+            cmd: vec![cmd.to_string()]
+                .into_iter()
+                .chain(args.iter().cloned())
+                .collect(),
             memory_mb: 0,
-            cpu_percent: 0.0,
             start_time: 0,
             project,
             harness,
@@ -155,28 +161,13 @@ impl ProcessPool {
         Ok(())
     }
 
-    /// Get process by PID
-    pub async fn get(&self, pid: u32) -> Option<ProcessInfo> {
-        let procs = self.processes.read().await;
-        procs.get(&pid).map(|m| m.info.clone())
-    }
-
-    /// Check if process is still running
-    pub async fn is_running(&self, _pid: u32) -> bool {
-        let procs = self.processes.read().await;
-        !procs.is_empty()
-    }
-
     /// Get system memory usage
     pub async fn system_memory_usage(&self) -> (u64, u64) {
         let sys = self.system.read().await;
-        (sys.used_memory() / 1024 / 1024, sys.total_memory() / 1024 / 1024)
-    }
-
-    /// Get total managed memory
-    pub async fn total_managed_memory(&self) -> u64 {
-        let procs = self.processes.read().await;
-        procs.values().map(|m| m.info.memory_mb).sum()
+        (
+            sys.used_memory() / 1024 / 1024,
+            sys.total_memory() / 1024 / 1024,
+        )
     }
 }
 
@@ -190,20 +181,14 @@ pub struct SharedRuntime {
     max_per_type: usize,
     /// System reference
     system: Arc<RwLock<System>>,
-    /// Last health check
-    last_health_check: RwLock<Instant>,
 }
 
 #[derive(Debug, Clone)]
 pub struct PooledProcess {
     pub pid: u32,
     pub name: String,
-    pub memory_mb: u64,
-    pub cpu_percent: f32,
-    pub start_time: u64,
     pub in_use: bool,
     pub last_used: Instant,
-    pub project: Option<String>,
 }
 
 impl SharedRuntime {
@@ -213,7 +198,6 @@ impl SharedRuntime {
             bun_pool: RwLock::new(Vec::new()),
             max_per_type,
             system: Arc::new(RwLock::new(System::new_all())),
-            last_health_check: RwLock::new(Instant::now()),
         }
     }
 
@@ -228,7 +212,10 @@ impl SharedRuntime {
         let pool = match harness_type {
             "node" => &self.node_pool,
             "bun" => &self.bun_pool,
-            _ => bail!("Unsupported harness type: {}. Use 'node' or 'bun'", harness_type),
+            _ => bail!(
+                "Unsupported harness type: {}. Use 'node' or 'bun'",
+                harness_type
+            ),
         };
 
         let mut pool_guard = pool.write().await;
@@ -263,16 +250,12 @@ impl SharedRuntime {
             self.refresh().await;
 
             let sys = self.system.read().await;
-            let pooled = if let Some(p) = sys.process(Pid::from_u32(pid)) {
+            let pooled = if let Some(_p) = sys.process(Pid::from_u32(pid)) {
                 PooledProcess {
                     pid,
                     name: name.to_string(),
-                    memory_mb: p.memory() / 1024 / 1024,
-                    cpu_percent: p.cpu_usage(),
-                    start_time: p.start_time(),
                     in_use: true,
                     last_used: Instant::now(),
-                    project: None,
                 }
             } else {
                 bail!("Failed to spawn pooled process");
@@ -281,7 +264,11 @@ impl SharedRuntime {
             pool_guard.push(pooled.clone());
             Ok(pooled)
         } else {
-            bail!("Pool exhausted: max {} instances of {} allowed", self.max_per_type, harness_type);
+            bail!(
+                "Pool exhausted: max {} instances of {} allowed",
+                self.max_per_type,
+                harness_type
+            );
         }
     }
 
@@ -302,12 +289,20 @@ impl SharedRuntime {
     }
 
     /// Run a command using a pooled process
-    pub async fn run_with_pool(&self, harness_type: &str, project: &str, script: &str) -> Result<(u32, String)> {
+    pub async fn run_with_pool(
+        &self,
+        harness_type: &str,
+        project: &str,
+        _script: &str,
+    ) -> Result<(u32, String)> {
         let pooled = self.acquire(harness_type).await?;
 
         // In a real implementation, this would run the script via IPC
         // For now, we just return the pooled process info
-        let output = format!("Using pooled {} process {} for project {}", harness_type, pooled.pid, project);
+        let output = format!(
+            "Using pooled {} process {} for project {}",
+            harness_type, pooled.pid, project
+        );
 
         self.release(harness_type, pooled.pid).await?;
 
@@ -325,74 +320,31 @@ impl SharedRuntime {
         let mut healthy = true;
         let mut issues = Vec::new();
 
-        // Check each pooled process
         for p in node_pool.iter().chain(bun_pool.iter()) {
             if let Some(proc) = sys.process(Pid::from_u32(p.pid)) {
                 if proc.memory() > 1024 * 1024 * 1024 {
-                    // Over 1GB memory
-                    issues.push(format!("{} (PID {}) using {} MB - high memory",
-                        p.name, p.pid, proc.memory() / 1024 / 1024));
+                    issues.push(format!(
+                        "{} (PID {}) using {} MB - high memory",
+                        p.name,
+                        p.pid,
+                        proc.memory() / 1024 / 1024
+                    ));
                 }
             } else {
                 healthy = false;
-                issues.push(format!("{} (PID {}) not found - may have crashed", p.name, p.pid));
+                issues.push(format!(
+                    "{} (PID {}) not found - may have crashed",
+                    p.name, p.pid
+                ));
             }
         }
 
         RuntimeHealth {
             healthy,
             issues,
-            node_count: node_pool.len(),
-            bun_count: bun_pool.len(),
             node_in_use: node_pool.iter().filter(|p| p.in_use).count(),
             bun_in_use: bun_pool.iter().filter(|p| p.in_use).count(),
         }
-    }
-
-    /// Prune stale pooled processes
-    pub async fn prune(&self, idle_threshold: Duration) -> usize {
-        let mut pruned = 0;
-
-        // Prune node pool
-        {
-            let mut pool = self.node_pool.write().await;
-            pool.retain(|p| {
-                if !p.in_use && p.last_used.elapsed() > idle_threshold {
-                    // Kill the process
-                    if let Ok(pid) = Pid::from_u32(p.pid).as_u32().try_into() {
-                        let _ = nix::sys::signal::kill(
-                            nix::unistd::Pid::from_raw(pid),
-                            nix::sys::signal::SIGTERM,
-                        );
-                    }
-                    pruned += 1;
-                    false
-                } else {
-                    true
-                }
-            });
-        }
-
-        // Prune bun pool
-        {
-            let mut pool = self.bun_pool.write().await;
-            pool.retain(|p| {
-                if !p.in_use && p.last_used.elapsed() > idle_threshold {
-                    if let Ok(pid) = Pid::from_u32(p.pid).as_u32().try_into() {
-                        let _ = nix::sys::signal::kill(
-                            nix::unistd::Pid::from_raw(pid),
-                            nix::sys::signal::SIGTERM,
-                        );
-                    }
-                    pruned += 1;
-                    false
-                } else {
-                    true
-                }
-            });
-        }
-
-        pruned
     }
 
     /// Get pool status
@@ -414,8 +366,6 @@ impl SharedRuntime {
 pub struct RuntimeHealth {
     pub healthy: bool,
     pub issues: Vec<String>,
-    pub node_count: usize,
-    pub bun_count: usize,
     pub node_in_use: usize,
     pub bun_in_use: usize,
 }
@@ -432,7 +382,6 @@ pub struct PoolStatus {
 /// Project resource limits
 #[derive(Debug, Clone)]
 pub struct ProjectLimits {
-    pub name: String,
     pub memory_limit_mb: u64,
     pub max_processes: usize,
     pub cpu_affinity: Option<Vec<usize>>,
@@ -441,7 +390,6 @@ pub struct ProjectLimits {
 impl Default for ProjectLimits {
     fn default() -> Self {
         Self {
-            name: "default".to_string(),
             memory_limit_mb: 1024,
             max_processes: 10,
             cpu_affinity: None,
@@ -491,8 +439,12 @@ impl ProjectResources {
         let mut process_count = 0usize;
 
         // Count processes for this project
-        for (pid, proc) in sys.processes() {
-            let cmd: Vec<String> = proc.cmd().iter().filter_map(|s| s.to_str().map(String::from)).collect();
+        for proc in sys.processes().values() {
+            let cmd: Vec<String> = proc
+                .cmd()
+                .iter()
+                .filter_map(|s| s.to_str().map(String::from))
+                .collect();
             if cmd.iter().any(|c| c.contains(project)) {
                 total_memory += proc.memory() / 1024 / 1024;
                 process_count += 1;
@@ -503,7 +455,6 @@ impl ProjectResources {
         let processes_ok = process_count <= limits.max_processes;
 
         Ok(ResourceCheck {
-            project: project.to_string(),
             memory_mb: total_memory,
             memory_limit_mb: limits.memory_limit_mb,
             memory_ok,
@@ -526,7 +477,6 @@ impl ProjectResources {
 
 #[derive(Debug, Clone)]
 pub struct ResourceCheck {
-    pub project: String,
     pub memory_mb: u64,
     pub memory_limit_mb: u64,
     pub memory_ok: bool,
@@ -540,10 +490,8 @@ pub struct ResourceCheck {
 #[derive(Debug, Clone)]
 pub enum ProcessFilter {
     All,
-    ByName(String),
     ByProject(String),
     ByHarness(String),
-    ByPattern(String),
 }
 
 impl ProcessPool {
@@ -556,19 +504,14 @@ impl ProcessPool {
         let mut result = Vec::new();
 
         for (pid, managed) in procs.iter() {
-            let info = ProcessInfo::from_sysinfo(
-                Pid::from_u32(*pid),
-                managed.info.name.clone(),
-                &sys,
-            );
+            let info =
+                ProcessInfo::from_sysinfo(Pid::from_u32(*pid), managed.info.name.clone(), &sys);
 
             if let Some(info) = info {
                 let matches = match filter {
                     ProcessFilter::All => true,
-                    ProcessFilter::ByName(ref name) => info.name.contains(name),
                     ProcessFilter::ByProject(ref proj) => info.project.as_ref() == Some(proj),
                     ProcessFilter::ByHarness(ref harness) => info.harness.as_ref() == Some(harness),
-                    ProcessFilter::ByPattern(ref pat) => info.cmd.iter().any(|c| c.contains(pat)),
                 };
 
                 if matches {
@@ -589,8 +532,22 @@ mod tests {
     async fn test_process_pool() {
         let pool = ProcessPool::new();
 
-        // Spawn a simple process
-        let info = pool.spawn("echo", &["hello".to_string()], None, None, None).await;
+        #[cfg(unix)]
+        let (cmd, args) = ("sleep", vec!["1".to_string()]);
+        #[cfg(windows)]
+        let (cmd, args) = (
+            "cmd",
+            vec![
+                "/C".to_string(),
+                "ping".to_string(),
+                "127.0.0.1".to_string(),
+                "-n".to_string(),
+                "2".to_string(),
+            ],
+        );
+
+        // Spawn a process that lives long enough to be observed by sysinfo.
+        let info = pool.spawn(cmd, &args, None, None, None).await;
         assert!(info.is_ok());
 
         // List processes

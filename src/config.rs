@@ -9,10 +9,10 @@ use std::path::PathBuf;
 pub struct Config {
     /// Registered projects (name -> path)
     pub projects: HashMap<String, String>,
-    
+
     /// Runtime settings
     pub runtime: RuntimeConfig,
-    
+
     /// Default settings
     pub defaults: HashMap<String, String>,
 }
@@ -52,11 +52,26 @@ impl Default for Config {
 
 fn default_projects() -> HashMap<String, String> {
     let mut projects = HashMap::new();
-    projects.insert("helios-cli".to_string(), "~/CodeProjects/Phenotype/repos/helios-cli".to_string());
-    projects.insert("portage".to_string(), "~/CodeProjects/Phenotype/repos/portage".to_string());
-    projects.insert("agentapi".to_string(), "~/CodeProjects/Phenotype/repos/agentapi-plusplus".to_string());
-    projects.insert("cliproxy".to_string(), "~/CodeProjects/Phenotype/repos/cliproxyapi-plusplus".to_string());
-    projects.insert("colab".to_string(), "~/CodeProjects/Phenotype/repos/colab".to_string());
+    projects.insert(
+        "helios-cli".to_string(),
+        "~/CodeProjects/Phenotype/repos/helios-cli".to_string(),
+    );
+    projects.insert(
+        "portage".to_string(),
+        "~/CodeProjects/Phenotype/repos/portage".to_string(),
+    );
+    projects.insert(
+        "agentapi".to_string(),
+        "~/CodeProjects/Phenotype/repos/agentapi-plusplus".to_string(),
+    );
+    projects.insert(
+        "cliproxy".to_string(),
+        "~/CodeProjects/Phenotype/repos/cliproxyapi-plusplus".to_string(),
+    );
+    projects.insert(
+        "colab".to_string(),
+        "~/CodeProjects/Phenotype/repos/colab".to_string(),
+    );
     projects
 }
 
@@ -64,7 +79,7 @@ impl Config {
     /// Load configuration from ~/.config/sharecli/config.toml
     pub fn load() -> Result<Self> {
         let config_path = Self::config_path()?;
-        
+
         if config_path.exists() {
             let contents = std::fs::read_to_string(&config_path)?;
             let config: Config = toml::from_str(&contents)?;
@@ -73,40 +88,40 @@ impl Config {
             Ok(Config::default())
         }
     }
-    
+
     /// Initialize default configuration
     pub fn init() -> Result<()> {
         let config_path = Self::config_path()?;
-        
+
         if let Some(parent) = config_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        
+
         let config = Config::default();
         let contents = toml::to_string_pretty(&config)?;
         std::fs::write(&config_path, contents)?;
-        
+
         Ok(())
     }
-    
+
     /// Save configuration
     pub fn save(&self) -> Result<()> {
         let config_path = Self::config_path()?;
-        
+
         if let Some(parent) = config_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
-        
+
         let contents = toml::to_string_pretty(self)?;
         std::fs::write(&config_path, contents)?;
-        
+
         Ok(())
     }
-    
+
     /// Get config file path
     fn config_path() -> Result<PathBuf> {
-        let base = dirs::config_dir()
-            .ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?;
+        let base =
+            dirs::config_dir().ok_or_else(|| anyhow::anyhow!("Could not find config directory"))?;
         Ok(base.join("sharecli").join("config.toml"))
     }
 }
