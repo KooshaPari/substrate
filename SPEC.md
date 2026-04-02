@@ -1,0 +1,123 @@
+# sharecli — Technical Specification
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  CLI (clap derive)                    │
+│  ps | start | stop | status | config | project | run │
+├──────────┬──────────┬───────────┬───────────────────┤
+│ Process  │ Project  │ Runtime   │ Monitoring        │
+│ Manager  │ Registry │ Pool      │ Health checks     │
+├──────────┴──────────┴───────────┴───────────────────┤
+│              Configuration (TOML)                     │
+│           ~/.config/sharecli/config.toml              │
+├──────────┬──────────────────────────────────────────┤
+│ OS       │  Process-Compose                         │
+│ Process  │  YAML generation                         │
+│ APIs     │  for multi-project orchestration          │
+└──────────┴──────────────────────────────────────────┘
+```
+
+## Components
+
+| Component | Location | Responsibility |
+|-----------|----------|---------------|
+| CLI Entry | `src/main.rs` | Command dispatch |
+| Library | `src/lib.rs` | Public API exports |
+| Config | `src/config.rs` | TOML config + CLI enums |
+| Runtime | `src/runtime.rs` | ProcessPool + SharedRuntime |
+| Monitoring | `src/monitoring.rs` | HealthStatus, ProcessStats |
+| Commands | `src/commands/mod.rs` | All CLI implementations |
+
+## Data Models
+
+```rust
+struct ProjectConfig {
+    name: String,
+    path: PathBuf,
+    limits: ResourceLimits,
+}
+
+struct ResourceLimits {
+    max_memory_mb: u64,
+    max_procs: u32,
+}
+
+struct ProcessInfo {
+    pid: u32,
+    project: String,
+    harness: String,
+    status: ProcessStatus,
+    memory_mb: u64,
+    started_at: DateTime,
+}
+
+enum ProcessStatus { Running, Idle, Stopped, Error }
+
+struct HealthStatus {
+    healthy: bool,
+    runtime_available: bool,
+    pool_usage: PoolUsage,
+}
+```
+
+## CLI Commands
+
+| Command | Flags | Purpose |
+|---------|-------|---------|
+| `ps` | `--project`, `--harness` | List managed processes |
+| `start` | `<project> --harness <type>` | Start harness process |
+| `stop` | `--project`, `--all`, `--pid` | Stop processes |
+| `status` | | Health + resource summary |
+| `config` | `init|validate|show|get|set` | Config management |
+| `project` | `add|remove|list|discover|generate` | Project management |
+| `run` | `<runtime> --project` | Pooled runtime execution |
+| `pool` | | Shared runtime pool status |
+| `health` | `--harness` | Probe runtime health |
+| `limits` | `set|get` | Resource limits |
+| `check` | `<project>` | Verify resource limits |
+| `optimize` | | Analyze and suggest improvements |
+| `prune` | `--idle <duration> --dry-run` | Kill idle processes |
+
+## Configuration
+
+```toml
+[projects]
+helios-cli = "~/CodeProjects/Phenotype/repos/helios-cli"
+portage = "~/CodeProjects/Phenotype/repos/portage"
+
+[runtime]
+max_memory_mb = 4096
+max_processes = 100
+
+[monitoring]
+health_check_interval_s = 30
+idle_threshold = "30m"
+```
+
+## Process-Compose Output
+
+```yaml
+# Generated process-compose.yml
+processes:
+  helios-cli:
+    command: "sharecli start helios-cli --harness claude"
+    readiness_probe:
+      http_get:
+        path: /health
+        port: ${PORT}
+    log_location: "./logs/helios-cli.log"
+```
+
+## Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| Process list | <100ms |
+| Health check | <500ms |
+| Project discovery | <2s for 50 repos |
+| Config load | <50ms |
+| Process start | <2s |
+| Memory overhead | <32MB (sharecli itself) |
+| Idle prune scan | <1s |
