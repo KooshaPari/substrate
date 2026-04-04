@@ -52,14 +52,9 @@ impl Default for Config {
 
 fn default_projects() -> HashMap<String, String> {
     let mut projects = HashMap::new();
-    projects.insert(
-        "helios-cli".to_string(),
-        "~/CodeProjects/Phenotype/repos/helios-cli".to_string(),
-    );
-    projects.insert(
-        "portage".to_string(),
-        "~/CodeProjects/Phenotype/repos/portage".to_string(),
-    );
+    projects
+        .insert("helios-cli".to_string(), "~/CodeProjects/Phenotype/repos/helios-cli".to_string());
+    projects.insert("portage".to_string(), "~/CodeProjects/Phenotype/repos/portage".to_string());
     projects.insert(
         "agentapi".to_string(),
         "~/CodeProjects/Phenotype/repos/agentapi-plusplus".to_string(),
@@ -68,10 +63,7 @@ fn default_projects() -> HashMap<String, String> {
         "cliproxy".to_string(),
         "~/CodeProjects/Phenotype/repos/cliproxyapi-plusplus".to_string(),
     );
-    projects.insert(
-        "colab".to_string(),
-        "~/CodeProjects/Phenotype/repos/colab".to_string(),
-    );
+    projects.insert("colab".to_string(), "~/CodeProjects/Phenotype/repos/colab".to_string());
     projects
 }
 
