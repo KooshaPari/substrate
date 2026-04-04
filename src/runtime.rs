@@ -26,11 +26,7 @@ impl ProcessInfo {
         sys.process(pid).map(|p| ProcessInfo {
             pid: pid.as_u32(),
             name,
-            cmd: p
-                .cmd()
-                .iter()
-                .filter_map(|s| s.to_str().map(String::from))
-                .collect(),
+            cmd: p.cmd().iter().filter_map(|s| s.to_str().map(String::from)).collect(),
             memory_mb: p.memory() / 1024 / 1024,
             start_time: p.start_time(),
             project: None,
@@ -58,10 +54,7 @@ impl Default for ProcessPool {
 
 impl ProcessPool {
     pub fn new() -> Self {
-        Self {
-            processes: RwLock::new(HashMap::new()),
-            system: RwLock::new(System::new_all()),
-        }
+        Self { processes: RwLock::new(HashMap::new()), system: RwLock::new(System::new_all()) }
     }
 
     /// Refresh system process information
@@ -118,20 +111,14 @@ impl ProcessPool {
         let info = ProcessInfo {
             pid,
             name: cmd.to_string(),
-            cmd: vec![cmd.to_string()]
-                .into_iter()
-                .chain(args.iter().cloned())
-                .collect(),
+            cmd: vec![cmd.to_string()].into_iter().chain(args.iter().cloned()).collect(),
             memory_mb: 0,
             start_time: 0,
             project,
             harness,
         };
 
-        let managed = ManagedProcess {
-            info: info.clone(),
-            child: Some(child),
-        };
+        let managed = ManagedProcess { info: info.clone(), child: Some(child) };
 
         let mut procs = self.processes.write().await;
         procs.insert(pid, managed);
@@ -164,10 +151,7 @@ impl ProcessPool {
     /// Get system memory usage
     pub async fn system_memory_usage(&self) -> (u64, u64) {
         let sys = self.system.read().await;
-        (
-            sys.used_memory() / 1024 / 1024,
-            sys.total_memory() / 1024 / 1024,
-        )
+        (sys.used_memory() / 1024 / 1024, sys.total_memory() / 1024 / 1024)
     }
 }
 
@@ -212,10 +196,7 @@ impl SharedRuntime {
         let pool = match harness_type {
             "node" => &self.node_pool,
             "bun" => &self.bun_pool,
-            _ => bail!(
-                "Unsupported harness type: {}. Use 'node' or 'bun'",
-                harness_type
-            ),
+            _ => bail!("Unsupported harness type: {}. Use 'node' or 'bun'", harness_type),
         };
 
         let mut pool_guard = pool.write().await;
@@ -299,10 +280,8 @@ impl SharedRuntime {
 
         // In a real implementation, this would run the script via IPC
         // For now, we just return the pooled process info
-        let output = format!(
-            "Using pooled {} process {} for project {}",
-            harness_type, pooled.pid, project
-        );
+        let output =
+            format!("Using pooled {} process {} for project {}", harness_type, pooled.pid, project);
 
         self.release(harness_type, pooled.pid).await?;
 
@@ -332,10 +311,7 @@ impl SharedRuntime {
                 }
             } else {
                 healthy = false;
-                issues.push(format!(
-                    "{} (PID {}) not found - may have crashed",
-                    p.name, p.pid
-                ));
+                issues.push(format!("{} (PID {}) not found - may have crashed", p.name, p.pid));
             }
         }
 
@@ -389,11 +365,7 @@ pub struct ProjectLimits {
 
 impl Default for ProjectLimits {
     fn default() -> Self {
-        Self {
-            memory_limit_mb: 1024,
-            max_processes: 10,
-            cpu_affinity: None,
-        }
+        Self { memory_limit_mb: 1024, max_processes: 10, cpu_affinity: None }
     }
 }
 
@@ -440,11 +412,8 @@ impl ProjectResources {
 
         // Count processes for this project
         for proc in sys.processes().values() {
-            let cmd: Vec<String> = proc
-                .cmd()
-                .iter()
-                .filter_map(|s| s.to_str().map(String::from))
-                .collect();
+            let cmd: Vec<String> =
+                proc.cmd().iter().filter_map(|s| s.to_str().map(String::from)).collect();
             if cmd.iter().any(|c| c.contains(project)) {
                 total_memory += proc.memory() / 1024 / 1024;
                 process_count += 1;
