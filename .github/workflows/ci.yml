@@ -2,37 +2,32 @@ name: CI
 
 on:
   push:
-    branches: [main, feature/*, bugfix/*, docs/*, release/*, hotfix/*]
+    branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        rust-version: ['1.70', 'stable']
-    
-    steps:
-      - uses: actions/checkout@v4
+  ci:
+    name: Rust CI
+    uses: KooshaPari/template-commons/.github/workflows/reusable-rust-ci.yml@main
+    with:
+      rust-version: stable
+      enable-coverage: true
 
-      
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: $123matrix.rust-version125
-
-      - name: Build
-        run: cargo build --verbose
-
-      - name: Run tests
-        run: cargo test --verbose
-
-      - name: Run clippy
-        run: cargo clippy -- -D warnings
-      
+  security:
+    name: Security Audit
+    uses: KooshaPari/template-commons/.github/workflows/reusable-security-scan.yml@main
+    with:
+      language: rust
+    secrets:
+      SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
 
   phenotype-validate:
-    runs-on: ubuntu-latest
+    name: Governance Validation
     uses: KooshaPari/phenotypeActions/.github/workflows/validate-governance.yml@main
+
