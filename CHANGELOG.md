@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
 ## ✨ Features
 - Feat(thegent-dispatch): v0.1 — unified CLI dispatcher for coding-agent providers
 
