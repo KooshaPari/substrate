@@ -42,9 +42,27 @@ See `cheap-llm-mcp/claude/thegent-unified-design.md` for the absorption rational
 - [ ] MCP server version (expose dispatch as a tool)
 - [ ] Model enumeration via provider (forge list model, etc.)
 
-## Build
+## Installation
+
+Install the `thegent-dispatch` binary straight from Git with Cargo:
 
 ```bash
+cargo install --git https://github.com/KooshaPari/thegent-dispatch
+```
+
+Or, with [`cargo-binstall`](https://github.com/cargo-bins/cargo-binstall):
+
+```bash
+cargo binstall --git https://github.com/KooshaPari/thegent-dispatch thegent-dispatch
+```
+
+## Build
+
+For local development:
+
+```bash
+git clone https://github.com/KooshaPari/thegent-dispatch
+cd thegent-dispatch
 cargo build --release
 cargo test
 ```
