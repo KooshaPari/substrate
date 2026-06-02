@@ -1,3 +1,6 @@
+> **Work state:** SCAFFOLD · **Progress:** `███▌░░░░░░ 35%`
+> Unified dispatcher: provider-agnostic schema → native argv for 8 agent CLIs. argv-building + --dry-run + rck panel work; real `thegent bg` integration + MCP surface pending. · updated 2026-06-02
+
 > **Pinned references (Phenotype-org)**
 > - MSRV: see rust-toolchain.toml
 > - cargo-deny config: see deny.toml
