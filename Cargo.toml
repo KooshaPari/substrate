@@ -19,3 +19,6 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+# Phenotype-org shared terminal-UX toolkit. Used for human-facing dry-run
+# output; degrades to plain ASCII on non-kitty terminals / non-TTY / CI.
+rck-core = { git = "https://github.com/KooshaPari/rich-cli-kit", rev = "4db13bcd7ab1ed1c8113cf755178da418ae6a519" }
