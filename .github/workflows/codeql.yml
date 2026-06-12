@@ -1,6 +1,9 @@
 name: CodeQL
 
 on:
+
+
+timeout-minutes: 20
   push:
     branches: ["main"]
   pull_request:

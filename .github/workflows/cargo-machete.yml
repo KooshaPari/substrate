@@ -1,6 +1,9 @@
 name: cargo-machete
 
 on:
+
+
+timeout-minutes: 10
   push:
     branches: [main]
     paths: ['Cargo.toml', '**/Cargo.toml']

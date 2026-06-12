@@ -1,6 +1,9 @@
 name: cargo-semver-checks
 
 on:
+
+
+timeout-minutes: 15
   pull_request:
     paths: ['**/Cargo.toml']
   workflow_dispatch:

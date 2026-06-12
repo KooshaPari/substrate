@@ -40,3 +40,4 @@ coverage/
 *.tmp
 *.bak
 *.orig
+.grade-reports/

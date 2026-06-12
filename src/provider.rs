@@ -109,7 +109,12 @@ fn droid_argv(_args: &Cli, prompt: &str) -> Vec<String> {
 
 fn minimax_argv(args: &Cli, prompt: &str) -> Vec<String> {
     // Route through cheap-llm CLI (which wraps the MCP-backed router).
-    let mut a = vec!["cheap-llm".into(), prompt.into(), "--provider".into(), "minimax".into()];
+    let mut a = vec![
+        "cheap-llm".into(),
+        prompt.into(),
+        "--provider".into(),
+        "minimax".into(),
+    ];
     if let Some(model) = &args.model {
         a.push("--model".into());
         a.push(model.clone());

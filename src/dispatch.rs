@@ -69,9 +69,9 @@ pub fn run(args: Cli) -> Result<()> {
     let mut cmd = Command::new(&final_argv[0]);
     cmd.args(&final_argv[1..]);
     cmd.current_dir(&args.cwd);
-    let status = cmd.status().with_context(|| {
-        format!("failed to execute provider CLI: {}", final_argv[0])
-    })?;
+    let status = cmd
+        .status()
+        .with_context(|| format!("failed to execute provider CLI: {}", final_argv[0]))?;
     if !status.success() {
         anyhow::bail!("provider exited with {}", status);
     }
@@ -82,12 +82,7 @@ pub fn run(args: Cli) -> Result<()> {
 /// detection means this prints a kitty/rounded panel on capable terminals and
 /// degrades to a plain-ASCII box (or simpler) when piped, in CI, or on
 /// terminals without graphics support — so the output stays pipe-safe.
-fn print_dry_run_panel(
-    provider: &str,
-    mode: &str,
-    session: &str,
-    argv: &[String],
-) -> Result<()> {
+fn print_dry_run_panel(provider: &str, mode: &str, session: &str, argv: &[String]) -> Result<()> {
     use std::io::Write;
 
     let caps = rck_core::detect();
@@ -118,7 +113,13 @@ fn print_dry_run_panel(
     };
 
     let mut out = std::io::stdout().lock();
-    rck_core::emit_panel(&mut out, &caps, "thegent-dispatch - dry run", &line_refs, border)?;
+    rck_core::emit_panel(
+        &mut out,
+        &caps,
+        "thegent-dispatch - dry run",
+        &line_refs,
+        border,
+    )?;
     out.flush()?;
     Ok(())
 }

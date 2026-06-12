@@ -27,10 +27,14 @@ fn forge_basic() {
 #[test]
 fn codex_with_reasoning() {
     let cli = parse(&[
-        "--provider", "codex",
-        "--prompt", "refactor this",
-        "--reasoning", "high",
-        "--mode", "plan",
+        "--provider",
+        "codex",
+        "--prompt",
+        "refactor this",
+        "--reasoning",
+        "high",
+        "--mode",
+        "plan",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert_eq!(argv[0], "codex-agent");
@@ -41,9 +45,12 @@ fn codex_with_reasoning() {
 #[test]
 fn copilot_rejects_model() {
     let cli = parse(&[
-        "--provider", "copilot",
-        "--prompt", "x",
-        "--model", "something",
+        "--provider",
+        "copilot",
+        "--prompt",
+        "x",
+        "--model",
+        "something",
     ]);
     let err = build_argv(&cli).unwrap_err();
     assert!(err.to_string().contains("Haiku-locked"));
@@ -51,7 +58,14 @@ fn copilot_rejects_model() {
 
 #[test]
 fn copilot_autopilot_mode() {
-    let cli = parse(&["--provider", "copilot", "--prompt", "x", "--mode", "autopilot"]);
+    let cli = parse(&[
+        "--provider",
+        "copilot",
+        "--prompt",
+        "x",
+        "--mode",
+        "autopilot",
+    ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.iter().any(|a| a == "autopilot"));
 }
@@ -77,9 +91,12 @@ fn minimax_routes_through_cheap_llm() {
 #[test]
 fn forge_with_model() {
     let cli = parse(&[
-        "--provider", "forge",
-        "--prompt", "hello",
-        "--model", "claude-opus-4",
+        "--provider",
+        "forge",
+        "--prompt",
+        "hello",
+        "--model",
+        "claude-opus-4",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"--model".into()));
@@ -89,9 +106,12 @@ fn forge_with_model() {
 #[test]
 fn forge_with_cwd() {
     let cli = parse(&[
-        "--provider", "forge",
-        "--prompt", "hello",
-        "--cwd", "/tmp/test",
+        "--provider",
+        "forge",
+        "--prompt",
+        "hello",
+        "--cwd",
+        "/tmp/test",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"-C".into()));
@@ -115,8 +135,10 @@ fn forge_restricted_flag() {
 #[test]
 fn forge_extra_flags() {
     let cli = parse(&[
-        "--provider", "forge",
-        "--prompt", "x",
+        "--provider",
+        "forge",
+        "--prompt",
+        "x",
         "--",
         "--verbose",
         "--max-tokens=4096",
@@ -132,11 +154,7 @@ fn forge_extra_flags() {
 #[test]
 fn codex_read_only_modes() {
     for mode in ["read-only", "research", "plan", "quick-edit"] {
-        let cli = parse(&[
-            "--provider", "codex",
-            "--prompt", "x",
-            "--mode", mode,
-        ]);
+        let cli = parse(&["--provider", "codex", "--prompt", "x", "--mode", mode]);
         let argv = build_argv(&cli).unwrap();
         assert!(
             argv.contains(&"--mode".into()) && argv.contains(&"read-only".into()),
@@ -148,11 +166,7 @@ fn codex_read_only_modes() {
 #[test]
 fn codex_write_modes() {
     for mode in ["agent", "write", "autopilot"] {
-        let cli = parse(&[
-            "--provider", "codex",
-            "--prompt", "x",
-            "--mode", mode,
-        ]);
+        let cli = parse(&["--provider", "codex", "--prompt", "x", "--mode", mode]);
         let argv = build_argv(&cli).unwrap();
         assert!(
             argv.contains(&"--mode".into()) && argv.contains(&"workspace-write".into()),
@@ -164,9 +178,12 @@ fn codex_write_modes() {
 #[test]
 fn codex_background_mode() {
     let cli = parse(&[
-        "--provider", "codex",
-        "--prompt", "x",
-        "--mode", "background",
+        "--provider",
+        "codex",
+        "--prompt",
+        "x",
+        "--mode",
+        "background",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"workspace-write".into()));
@@ -175,23 +192,28 @@ fn codex_background_mode() {
 #[test]
 fn codex_reasoning_levels() {
     for level in ["low", "medium", "high"] {
-        let cli = parse(&[
-            "--provider", "codex",
-            "--prompt", "x",
-            "--reasoning", level,
-        ]);
+        let cli = parse(&["--provider", "codex", "--prompt", "x", "--reasoning", level]);
         let argv = build_argv(&cli).unwrap();
-        assert!(argv.contains(&"--reasoning".into()), "reasoning {level} missing flag");
-        assert!(argv.contains(&level.to_string()), "reasoning {level} missing value");
+        assert!(
+            argv.contains(&"--reasoning".into()),
+            "reasoning {level} missing flag"
+        );
+        assert!(
+            argv.contains(&level.to_string()),
+            "reasoning {level} missing value"
+        );
     }
 }
 
 #[test]
 fn codex_model_forwarded() {
     let cli = parse(&[
-        "--provider", "codex",
-        "--prompt", "x",
-        "--model", "claude-sonnet-4",
+        "--provider",
+        "codex",
+        "--prompt",
+        "x",
+        "--model",
+        "claude-sonnet-4",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"--model".into()));
@@ -201,9 +223,12 @@ fn codex_model_forwarded() {
 #[test]
 fn codex_cwd_forwarded() {
     let cli = parse(&[
-        "--provider", "codex",
-        "--prompt", "x",
-        "--cwd", "/project/src",
+        "--provider",
+        "codex",
+        "--prompt",
+        "x",
+        "--cwd",
+        "/project/src",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"--cd".into()));
@@ -228,11 +253,7 @@ fn gemini_argv() {
 #[test]
 fn copilot_programmatic_modes() {
     for mode in ["quick-edit", "research", "plan"] {
-        let cli = parse(&[
-            "--provider", "copilot",
-            "--prompt", "x",
-            "--mode", mode,
-        ]);
+        let cli = parse(&["--provider", "copilot", "--prompt", "x", "--mode", mode]);
         let argv = build_argv(&cli).unwrap();
         assert!(
             argv.contains(&"programmatic".into()),
@@ -243,11 +264,7 @@ fn copilot_programmatic_modes() {
 
 #[test]
 fn copilot_with_cwd() {
-    let cli = parse(&[
-        "--provider", "copilot",
-        "--prompt", "x",
-        "--cwd", "/app",
-    ]);
+    let cli = parse(&["--provider", "copilot", "--prompt", "x", "--cwd", "/app"]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"--cd".into()));
     assert!(argv.contains(&"/app".into()));
@@ -284,9 +301,12 @@ fn droid_argv() {
 #[test]
 fn minimax_with_model() {
     let cli = parse(&[
-        "--provider", "minimax",
-        "--prompt", "hi",
-        "--model", "abab6.5s",
+        "--provider",
+        "minimax",
+        "--prompt",
+        "hi",
+        "--model",
+        "abab6.5s",
     ]);
     let argv = build_argv(&cli).unwrap();
     assert!(argv.contains(&"--model".into()));
@@ -311,11 +331,7 @@ fn claude_argv() {
 #[test]
 fn copilot_model_rejection_all_variants() {
     for model in ["claude-sonnet-4", "gpt-5", "gemini-2.5"] {
-        let cli = parse(&[
-            "--provider", "copilot",
-            "--prompt", "x",
-            "--model", model,
-        ]);
+        let cli = parse(&["--provider", "copilot", "--prompt", "x", "--model", model]);
         let err = build_argv(&cli).unwrap_err();
         assert!(
             err.to_string().contains("Haiku-locked") || err.to_string().contains("model"),
@@ -326,21 +342,25 @@ fn copilot_model_rejection_all_variants() {
 
 #[test]
 fn prompt_optional_for_interactive_session() {
-    let cli = parse(&[
-        "--provider", "forge",
-        "--session", "interactive",
-    ]);
+    let cli = parse(&["--provider", "forge", "--session", "interactive"]);
     let argv = build_argv(&cli);
-    assert!(argv.is_ok(), "interactive session should not require prompt");
+    assert!(
+        argv.is_ok(),
+        "interactive session should not require prompt"
+    );
 }
 
 #[test]
 fn bg_session_with_prompt_and_owner() {
     let cli = parse(&[
-        "--provider", "forge",
-        "--session", "bg",
-        "--owner", "test",
-        "--prompt", "background task",
+        "--provider",
+        "forge",
+        "--session",
+        "bg",
+        "--owner",
+        "test",
+        "--prompt",
+        "background task",
     ]);
     let argv = build_argv(&cli);
     assert!(argv.is_ok(), "bg session with prompt+owner should succeed");
@@ -352,8 +372,10 @@ fn bg_session_with_prompt_and_owner() {
 
 fn assert_extra_flags_after_provider_args(provider: &str) {
     let cli = parse(&[
-        "--provider", provider,
-        "--prompt", "x",
+        "--provider",
+        provider,
+        "--prompt",
+        "x",
         "--",
         "--verbose",
         "--timeout=300",
@@ -367,23 +389,37 @@ fn assert_extra_flags_after_provider_args(provider: &str) {
 }
 
 #[test]
-fn extra_flags_forge() { assert_extra_flags_after_provider_args("forge"); }
+fn extra_flags_forge() {
+    assert_extra_flags_after_provider_args("forge");
+}
 #[test]
-fn extra_flags_codex() { assert_extra_flags_after_provider_args("codex"); }
+fn extra_flags_codex() {
+    assert_extra_flags_after_provider_args("codex");
+}
 #[test]
-fn extra_flags_gemini() { assert_extra_flags_after_provider_args("gemini"); }
+fn extra_flags_gemini() {
+    assert_extra_flags_after_provider_args("gemini");
+}
 #[test]
-fn extra_flags_copilot() { assert_extra_flags_after_provider_args("copilot"); }
+fn extra_flags_copilot() {
+    assert_extra_flags_after_provider_args("copilot");
+}
 #[test]
-fn extra_flags_cursor() { assert_extra_flags_after_provider_args("cursor"); }
+fn extra_flags_cursor() {
+    assert_extra_flags_after_provider_args("cursor");
+}
 #[test]
-fn extra_flags_droid() { assert_extra_flags_after_provider_args("droid"); }
+fn extra_flags_droid() {
+    assert_extra_flags_after_provider_args("droid");
+}
 #[test]
 fn extra_flags_minimax() {
     // minimax injects --provider internally; use a flag name that won't conflict
     let cli = parse(&[
-        "--provider", "minimax",
-        "--prompt", "x",
+        "--provider",
+        "minimax",
+        "--prompt",
+        "x",
         "--",
         "--verbose",
         "--timeout=300",
@@ -392,4 +428,6 @@ fn extra_flags_minimax() {
     assert!(argv.ends_with(&["--verbose".to_owned(), "--timeout=300".to_owned()]));
 }
 #[test]
-fn extra_flags_claude() { assert_extra_flags_after_provider_args("claude"); }
+fn extra_flags_claude() {
+    assert_extra_flags_after_provider_args("claude");
+}
