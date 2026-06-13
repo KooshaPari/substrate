@@ -1,9 +1,6 @@
 name: Cargo Audit
 
 on:
-
-
-timeout-minutes: 10
   workflow_dispatch:
   schedule:
     - cron: "0 2 * * 3"
@@ -18,6 +15,7 @@ jobs:
   audit:
     name: Cargo Audit
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # pin@v4

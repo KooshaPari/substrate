@@ -1,7 +1,5 @@
 name: OpenSSF Scorecard
 on:
-
-timeout-minutes: 10
   branch_protection_rule:
   schedule:
     - cron: '17 3 * * 6'
@@ -14,6 +12,7 @@ jobs:
   analysis:
     name: Scorecard analysis
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       security-events: write
       id-token: write
@@ -25,7 +24,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ossf/scorecard-action@v2.4.2
+      - uses: ossf/scorecard-action@05b42c624433fc40578a4040d5cf5e36ddca8cde # pin@v2.4.2
         with:
           results_file: results.sarif
           results_format: sarif
@@ -37,6 +36,6 @@ jobs:
           path: results.sarif
           retention-days: 5
 
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@dd903d2e4f5405488e5ef1422510ee31c8b32357 # pin@v3
         with:
           sarif_file: results.sarif

@@ -1,8 +1,6 @@
 name: cargo-deny
 
 on:
-
-timeout-minutes: 10
   workflow_dispatch:
   pull_request:
     paths:
@@ -20,14 +18,15 @@ timeout-minutes: 10
 jobs:
   cargo-deny:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@e97e2d8cc328f1b50210efc529dca0028893a2d9
 
       - name: Run cargo-deny
-        uses: EmbarkStudios/cargo-deny-action@v2
+        uses: EmbarkStudios/cargo-deny-action@bb137d7af7e4fb67e5f82a49c4fce4fad40782fe # pin@v2
         with:
           rust-version: stable

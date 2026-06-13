@@ -1,9 +1,6 @@
 name: cargo-machete
 
 on:
-
-
-timeout-minutes: 10
   push:
     branches: [main]
     paths: ['Cargo.toml', '**/Cargo.toml']
@@ -16,6 +13,7 @@ timeout-minutes: 10
 jobs:
   machete:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # pin@v4
-      - uses: bnjbvr/cargo-machete@main
+      - uses: bnjbvr/cargo-machete@fbb3fa76a4af23b0146dc1b1c248965a300282e8 # pin@main
