@@ -66,3 +66,8 @@ tasks:
       - lefthook install
     status:
       - test -f .git/hooks/lefthook
+
+  coverage:
+    desc: Measure code coverage (SSOT: see grade.sh for the canonical command).
+    cmds:
+      - cargo llvm-cov --workspace --fail-under-lines 85
