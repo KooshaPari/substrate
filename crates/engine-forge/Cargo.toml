@@ -1,0 +1,21 @@
+[package]
+name = "engine-forge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "FORGE engine adapter implementing EnginePort by driving the forge CLI."
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+engine-spec = { path = "../engine-spec" }
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+regex.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

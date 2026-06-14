@@ -1,0 +1,19 @@
+[package]
+name = "store-file"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "File-backed StorePort: one JSON file per task/result, lockfile-lease atomic claim."
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+serde.workspace = true
+serde_json.workspace = true
+async-trait.workspace = true
+uuid.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt"] }

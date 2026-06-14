@@ -1,0 +1,8 @@
+{
+  "conversation_id": "11111111-1111-1111-1111-111111111111",
+  "exit_code": 0,
+  "messages": [
+    { "role": "user", "content": "echo hi" },
+    { "role": "assistant", "content": "Sure. DONE: printed hi to stdout." }
+  ]
+}
