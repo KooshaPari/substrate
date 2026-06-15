@@ -91,3 +91,11 @@ cargo test
 ## License
 
 MIT
+
+## Documentation
+
+This repository includes the following cross-cutting documents:
+
+- [`AGENTS.md`](AGENTS.md) — operating instructions for AI agents and human contributors
+- [`docs/`](docs/) — design notes, ADRs, and supporting documentation (see [`docs/index.md`](docs/index.md))
+
