@@ -1,6 +1,6 @@
 # substrate
 
-**Work state:** ACTIVE · ███░░░░░░░ 3/6 phases · Phase 2 (durable mailbox + tasklist) complete
+**Work state:** ACTIVE · ████░░░░░░ 4/6 phases · Phase 3 (supervisor loop + pump + resume-400 fallback) complete
 
 A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug

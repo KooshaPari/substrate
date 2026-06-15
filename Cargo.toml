@@ -13,6 +13,7 @@ members = [
     "tools/fake-forge",
     "crates/a2a",
     "crates/store-sqlite",
+    "crates/supervisor",
 ]
 [workspace.package]
 version = "0.1.0"
