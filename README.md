@@ -1,6 +1,6 @@
 # substrate
 
-**Work state:** ACTIVE · ███░░░░░░░ 1/6 phases · Phase 0 (spine) complete
+**Work state:** ACTIVE · ██░░░░░░░░ 2/6 phases · Phase 1 (forge engine) complete
 
 A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug

@@ -9,9 +9,9 @@ members = [
     "crates/substrate-app",
     "crates/driver-cli",
     "crates/arch-test",
+    "crates/omniroute-adapter",
     "tools/fake-forge",
 ]
-
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
@@ -33,6 +33,7 @@ toml = "0.8"
 tempfile = "3.14"
 assert_cmd = "2.0"
 predicates = "3.1"
+dotenvy = "0.15"
 
 [profile.release]
 strip = true

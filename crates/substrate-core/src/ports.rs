@@ -7,7 +7,8 @@
 use async_trait::async_trait;
 
 use crate::domain::{
-    ConversationDump, EngineCapabilities, Mailbox, Message, StructuredResult, Task,
+    ConversationDump, EngineCapabilities, Mailbox, Message, RoutingDecision, StructuredResult,
+    Task,
 };
 use crate::error::Result;
 
@@ -46,7 +47,17 @@ pub trait EnginePort: Send + Sync {
 #[async_trait]
 pub trait RoutingPort: Send + Sync {
     /// Return the engine name that should handle `task`.
-    async fn route(&self, task: &Task) -> Result<String>;
+    async fn route(&self, task: &Task) -> Result<String> {
+        // Backwards-compatible default: delegate to the structured decision.
+        Ok(self.route_decision(task).await?.engine)
+    }
+
+    /// Return a full [`RoutingDecision`] (engine + model + rationale).
+    ///
+    /// Phase 1 introduces the structured decision so adapters (e.g. the
+    /// `omniroute-adapter`) can route to a specific model/provider while
+    /// preserving the engine target.
+    async fn route_decision(&self, task: &Task) -> Result<RoutingDecision>;
 }
 
 /// A message bus / mailbox transport.

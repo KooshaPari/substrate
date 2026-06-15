@@ -1,0 +1,8 @@
+{
+  "conversation_id": "33333333-3333-3333-3333-333333333333",
+  "exit_code": 0,
+  "messages": [
+    { "role": "user", "content": "open a PR" },
+    { "role": "assistant", "content": "Opened https://github.com/KooshaPari/substrate/pull/2 but then hit max steps on follow-up." }
+  ]
+}

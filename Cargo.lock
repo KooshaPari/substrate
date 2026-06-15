@@ -194,6 +194,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6184e33543162437515c2e2b48714794e37845ec9851711914eec9d308f6ebe8"
 
 [[package]]
+name = "dotenvy"
+version = "0.15.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
+
+[[package]]
 name = "driver-cli"
 version = "0.1.0"
 dependencies = [
@@ -217,10 +223,13 @@ version = "0.1.0"
 dependencies = [
  "async-trait",
  "engine-spec",
+ "libc",
  "regex",
  "serde",
  "serde_json",
  "substrate-core",
+ "tempfile",
+ "thiserror",
  "tokio",
  "uuid",
 ]
@@ -427,6 +436,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "071dfc062690e90b734c0b2273ce72ad0ffa95f0c74596bc250dcfd960262841"
 dependencies = [
  "autocfg",
+]
+
+[[package]]
+name = "omniroute-adapter"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "dotenvy",
+ "serde",
+ "serde_json",
+ "substrate-core",
+ "tempfile",
+ "thiserror",
+ "tokio",
 ]
 
 [[package]]

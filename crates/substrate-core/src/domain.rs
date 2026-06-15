@@ -285,3 +285,30 @@ pub struct Session {
     /// Path to the captured log file, if any.
     pub logfile: Option<String>,
 }
+
+/// A routing decision: which engine + which model the router chose for a task.
+///
+/// Returned by [`crate::ports::RoutingPort::route_decision`]. The default
+/// engine is `forge`; the default model is
+/// `accounts/fireworks/routers/kimi-k2p6-turbo` (Phase 1's OmniRoute target).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct RoutingDecision {
+    /// The engine name that should handle the task (e.g. `"forge"`).
+    pub engine: String,
+    /// The model identifier the engine should use.
+    pub model: String,
+    /// Free-form rationale (provider hint, reason code, etc.).
+    #[serde(default)]
+    pub reason: Option<String>,
+}
+
+impl RoutingDecision {
+    /// The Phase 1 default decision (forge + OmniRoute kimi router).
+    pub fn default_forge_kimi() -> Self {
+        RoutingDecision {
+            engine: "forge".to_string(),
+            model: "accounts/fireworks/routers/kimi-k2p6-turbo".to_string(),
+            reason: Some("phase1-default".to_string()),
+        }
+    }
+}
