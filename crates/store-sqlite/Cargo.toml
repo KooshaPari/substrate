@@ -1,0 +1,19 @@
+[package]
+name = "store-sqlite"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+a2a = { path = "../a2a" }
+substrate-core = { path = "../substrate-core" }
+rusqlite = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+thiserror = { workspace = true }
+chrono = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

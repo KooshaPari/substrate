@@ -11,6 +11,8 @@ members = [
     "crates/arch-test",
     "crates/omniroute-adapter",
     "tools/fake-forge",
+    "crates/a2a",
+    "crates/store-sqlite",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -34,6 +36,8 @@ tempfile = "3.14"
 assert_cmd = "2.0"
 predicates = "3.1"
 dotenvy = "0.15"
+chrono = { version = "0.4", features = ["serde"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
 
 [profile.release]
 strip = true
