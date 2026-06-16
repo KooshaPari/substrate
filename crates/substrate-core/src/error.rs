@@ -70,6 +70,14 @@ pub enum SubstrateError {
     #[error("memory error: {0}")]
     Memory(String),
 
+    /// A managed subprocess operation failed.
+    #[error("process error: {0}")]
+    Process(String),
+
+    /// A filesystem watcher operation failed.
+    #[error("watcher error: {0}")]
+    Watcher(String),
+
     /// A catch-all for adapter-specific failures that do not fit above.
     #[error("{0}")]
     Other(String),

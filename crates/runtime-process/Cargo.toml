@@ -1,0 +1,18 @@
+[package]
+name = "runtime-process"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "ProcessPort implementation: cross-platform managed subprocess via command-group."
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+async-trait.workspace = true
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "process", "sync", "time"] }
+uuid.workspace = true
+command-group = { version = "5.0", features = ["with-tokio"] }
+
+[dev-dependencies]
+tempfile.workspace = true
