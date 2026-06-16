@@ -9,9 +9,7 @@ use uuid::Uuid;
 
 fn conv_id_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?i)conversation[ _-]?id[:=]?\s*([0-9a-f-]{8,})").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(?i)conversation[ _-]?id[:=]?\s*([0-9a-f-]{8,})").unwrap())
 }
 
 fn uuid_re() -> &'static Regex {
@@ -24,9 +22,7 @@ fn uuid_re() -> &'static Regex {
 
 fn pr_url_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r#"https://github\.com/[^ )"']+/pull/\d+"#).unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r#"https://github\.com/[^ )"']+/pull/\d+"#).unwrap())
 }
 
 /// Extract a conversation id from engine stdout.
@@ -269,10 +265,7 @@ mod tests {
         };
         let r = parse_dump(&dump).unwrap();
         assert_eq!(r.status, TaskState::Failed);
-        assert_eq!(
-            r.pr_urls,
-            vec!["https://github.com/a/b/pull/9".to_string()]
-        );
+        assert_eq!(r.pr_urls, vec!["https://github.com/a/b/pull/9".to_string()]);
     }
 
     #[test]

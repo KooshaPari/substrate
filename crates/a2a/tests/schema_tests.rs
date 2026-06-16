@@ -39,7 +39,10 @@ fn artifact_serde_round_trip() {
 
 #[test]
 fn task_state_submitted_to_working_is_legal() {
-    assert!(TaskState::can_transition(TaskState::Submitted, TaskState::Working));
+    assert!(TaskState::can_transition(
+        TaskState::Submitted,
+        TaskState::Working
+    ));
     assert!(!TaskState::Working.is_terminal());
     assert!(TaskState::Completed.is_terminal());
 }

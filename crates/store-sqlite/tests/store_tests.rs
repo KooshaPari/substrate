@@ -18,9 +18,7 @@ fn inbox_returns_unread_for_correct_recipient() {
         "lead",
         "worker-1",
         MessageKind::Task,
-        vec![Part::Text {
-            text: "go".into(),
-        }],
+        vec![Part::Text { text: "go".into() }],
     );
     let msg2 = Message::new(
         "team-a",
@@ -88,10 +86,7 @@ fn task_tree_three_levels() {
     let tasks = store.task_list("team-c").unwrap();
     assert_eq!(tasks.len(), 3);
 
-    let gc = tasks
-        .iter()
-        .find(|t| t.title == "grandchild task")
-        .unwrap();
+    let gc = tasks.iter().find(|t| t.title == "grandchild task").unwrap();
     assert_eq!(gc.parent_task_id, Some(child.id));
 
     let ch = tasks.iter().find(|t| t.title == "child task").unwrap();

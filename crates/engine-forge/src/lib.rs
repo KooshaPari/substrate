@@ -78,11 +78,7 @@ impl ArgvBuilder for ForgeArgv {
     }
 
     fn build_dump(&self, conversation_id: &str) -> Vec<String> {
-        vec![
-            "conversation".into(),
-            "dump".into(),
-            conversation_id.into(),
-        ]
+        vec!["conversation".into(), "dump".into(), conversation_id.into()]
     }
 }
 
@@ -258,9 +254,10 @@ impl ForgeEngine {
         // memory: the spec requires "tee stdout to a logfile", not a full
         // buffered copy. A bounded read of the head is performed later for
         // the regex fast-path.
-        let mut stdout = child.stdout.take().ok_or_else(|| {
-            std::io::Error::other("child stdout not piped")
-        })?;
+        let mut stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| std::io::Error::other("child stdout not piped"))?;
         let log_path = logfile.clone();
         let writer = tokio::spawn(async move {
             let mut file = match tokio::fs::File::create(&log_path).await {
@@ -381,7 +378,10 @@ impl EnginePort for ForgeEngine {
             Some(id) => Some(id),
             None => {
                 let after = self.list_conversation_ids().await;
-                find_new_conversation_id(before.iter().map(String::as_str), after.iter().map(String::as_str))
+                find_new_conversation_id(
+                    before.iter().map(String::as_str),
+                    after.iter().map(String::as_str),
+                )
             }
         };
 
@@ -398,7 +398,10 @@ impl EnginePort for ForgeEngine {
             if let Some(parent) = logfile.parent() {
                 let _ = tokio::fs::write(
                     parent.join(format!("forge-{}.timeout", task.id)),
-                    format!("timed out after {}s\nconv_id={conv_id}\n", self.timeout.as_secs()),
+                    format!(
+                        "timed out after {}s\nconv_id={conv_id}\n",
+                        self.timeout.as_secs()
+                    ),
                 )
                 .await;
             }
@@ -491,10 +494,14 @@ mod tests {
         assert_eq!(
             args,
             vec![
-                "-p", "do it",
-                "--agent", "forge",
-                "-C", "/tmp",
-                "--sandbox", "lane-a",
+                "-p",
+                "do it",
+                "--agent",
+                "forge",
+                "-C",
+                "/tmp",
+                "--sandbox",
+                "lane-a",
             ]
         );
     }
@@ -530,6 +537,8 @@ mod tests {
         let e = ForgeEngine::new().with_log_root("/tmp/my-logs");
         let p = e.logfile_for(Uuid::nil());
         assert!(p.starts_with("/tmp/my-logs"));
-        assert!(p.to_string_lossy().contains("forge-00000000-0000-0000-0000-000000000000.log"));
+        assert!(p
+            .to_string_lossy()
+            .contains("forge-00000000-0000-0000-0000-000000000000.log"));
     }
 }

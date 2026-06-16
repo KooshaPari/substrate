@@ -12,7 +12,9 @@ fn msg(to: &str) -> Message {
         from: "lead".into(),
         to: to.into(),
         kind: MessageKind::Task,
-        parts: vec![Part::Text { text: "work".into() }],
+        parts: vec![Part::Text {
+            text: "work".into(),
+        }],
         in_reply_to: None,
     }
 }

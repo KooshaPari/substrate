@@ -73,12 +73,18 @@ impl RecordingTrace {
 
     /// Return a snapshot of all recorded events in arrival order.
     pub fn events(&self) -> Vec<TraceEvent> {
-        self.events.lock().expect("RecordingTrace lock poisoned").clone()
+        self.events
+            .lock()
+            .expect("RecordingTrace lock poisoned")
+            .clone()
     }
 
     /// Return the number of recorded events.
     pub fn len(&self) -> usize {
-        self.events.lock().expect("RecordingTrace lock poisoned").len()
+        self.events
+            .lock()
+            .expect("RecordingTrace lock poisoned")
+            .len()
     }
 
     /// Returns true if no events have been recorded.
@@ -236,7 +242,6 @@ impl AgilePlusTrace {
             rt: Arc::new(tokio::runtime::Handle::current()),
         }
     }
-
 }
 
 impl TracePort for AgilePlusTrace {

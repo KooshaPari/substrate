@@ -63,14 +63,10 @@ impl FakeEngine {
                 pid: None,
                 logfile: Some(text),
             }),
-            FakeResponse::Resume400 => {
-                Err(substrate_core::error::SubstrateError::Engine(
-                    "resume-400: reasoning_details not permitted".into(),
-                ))
-            }
-            FakeResponse::Fail(msg) => {
-                Err(substrate_core::error::SubstrateError::Engine(msg))
-            }
+            FakeResponse::Resume400 => Err(substrate_core::error::SubstrateError::Engine(
+                "resume-400: reasoning_details not permitted".into(),
+            )),
+            FakeResponse::Fail(msg) => Err(substrate_core::error::SubstrateError::Engine(msg)),
         }
     }
 }
