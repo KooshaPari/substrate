@@ -284,7 +284,7 @@ impl RoutingSelector {
                     let seed = state.selection_counter.wrapping_add(p2c_seed);
                     state.selection_counter = state.selection_counter.wrapping_add(1);
                     let i = (seed as usize) % n;
-                    let j = ((seed / n as u64 + 1) as usize) % n;
+                    let j = (seed.wrapping_mul(31).wrapping_add(17) as usize) % n;
                     let (a, b) = if i == j {
                         (healthy[i], healthy[(i + 1) % n])
                     } else {
