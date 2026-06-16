@@ -33,8 +33,20 @@ fn classify_event(path: &Path, known: &mut HashSet<std::path::PathBuf>) -> Watch
     }
 }
 
+fn seed_known_paths(path: &Path, known: &mut HashSet<std::path::PathBuf>) {
+    if path.is_dir() {
+        if let Ok(entries) = std::fs::read_dir(path) {
+            for entry in entries.flatten() {
+                known.insert(entry.path());
+            }
+        }
+    } else if path.exists() {
+        known.insert(path.to_path_buf());
+    }
+}
+
 struct Subscription {
-    rx: mpsc::Receiver<WatchEvent>,
+    rx: Arc<Mutex<mpsc::Receiver<Result<WatchEvent>>>>,
     /// Keeps the debouncer alive for the subscription lifetime.
     _debouncer: Box<dyn std::any::Any + Send>,
 }
@@ -72,12 +84,16 @@ impl WatcherPort for NotifyWatcher {
         let (tx, rx) = mpsc::channel(64);
         let debounce = Duration::from_millis(debounce_ms);
         let known_paths = Arc::new(StdMutex::new(HashSet::<std::path::PathBuf>::new()));
+        {
+            let mut known = known_paths.lock().expect("known_paths lock");
+            seed_known_paths(path, &mut known);
+        }
 
         let debouncer = new_debouncer(debounce, {
             let tx = tx.clone();
             let known_paths = Arc::clone(&known_paths);
-            move |res: DebounceEventResult| {
-                if let Ok(events) = res {
+            move |res: DebounceEventResult| match res {
+                Ok(events) => {
                     for event in events {
                         let mut known = known_paths.lock().expect("known_paths lock");
                         let kind = classify_event(&event.path, &mut known);
@@ -85,8 +101,13 @@ impl WatcherPort for NotifyWatcher {
                             path: event.path,
                             kind,
                         };
-                        let _ = tx.blocking_send(mapped);
+                        let _ = tx.blocking_send(Ok(mapped));
                     }
+                }
+                Err(e) => {
+                    let _ = tx.blocking_send(Err(SubstrateError::Watcher(format!(
+                        "debouncer event: {e}"
+                    ))));
                 }
             }
         })
@@ -106,7 +127,7 @@ impl WatcherPort for NotifyWatcher {
         self.subs.lock().await.insert(
             id,
             Subscription {
-                rx,
+                rx: Arc::new(Mutex::new(rx)),
                 _debouncer: Box::new(debouncer),
             },
         );
@@ -118,13 +139,17 @@ impl WatcherPort for NotifyWatcher {
         handle: &WatchHandle,
         timeout: Duration,
     ) -> Result<Option<WatchEvent>> {
-        let mut subs = self.subs.lock().await;
-        let sub = subs
-            .get_mut(&handle.id)
-            .ok_or_else(|| SubstrateError::NotFound(format!("watch {}", handle.id)))?;
+        let rx = {
+            let subs = self.subs.lock().await;
+            let sub = subs
+                .get(&handle.id)
+                .ok_or_else(|| SubstrateError::NotFound(format!("watch {}", handle.id)))?;
+            Arc::clone(&sub.rx)
+        };
 
-        match tokio::time::timeout(timeout, sub.rx.recv()).await {
-            Ok(Some(event)) => Ok(Some(event)),
+        match tokio::time::timeout(timeout, async { rx.lock().await.recv().await }).await {
+            Ok(Some(Ok(event))) => Ok(Some(event)),
+            Ok(Some(Err(e))) => Err(e),
             Ok(None) => Ok(None),
             Err(_) => Ok(None),
         }

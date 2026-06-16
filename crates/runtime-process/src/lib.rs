@@ -20,7 +20,7 @@ use tokio::sync::Mutex;
 use uuid::Uuid;
 
 struct ManagedChild {
-    child: AsyncGroupChild,
+    child: Arc<Mutex<AsyncGroupChild>>,
 }
 
 /// [`ProcessPort`] that spawns via `command-group` for portable process groups.
@@ -71,22 +71,35 @@ impl ProcessPort for CommandGroupProcess {
         let id = Uuid::new_v4();
         let handle = ProcessHandle { id, pid };
 
-        self.children
-            .lock()
-            .await
-            .insert(id, ManagedChild { child });
+        self.children.lock().await.insert(
+            id,
+            ManagedChild {
+                child: Arc::new(Mutex::new(child)),
+            },
+        );
 
         Ok(handle)
     }
 
     async fn status(&self, handle: &ProcessHandle) -> Result<ProcessState> {
-        let mut children = self.children.lock().await;
-        let managed = children
-            .get_mut(&handle.id)
-            .ok_or_else(|| SubstrateError::NotFound(format!("process {}", handle.id)))?;
+        let child = {
+            let children = self.children.lock().await;
+            let managed = children
+                .get(&handle.id)
+                .ok_or_else(|| SubstrateError::NotFound(format!("process {}", handle.id)))?;
+            Arc::clone(&managed.child)
+        };
 
-        match managed.child.try_wait() {
-            Ok(Some(status)) => Ok(Self::map_state(handle.pid, status.code())),
+        let wait_status = {
+            let mut child = child.lock().await;
+            child.try_wait()
+        };
+
+        match wait_status {
+            Ok(Some(status)) => {
+                self.children.lock().await.remove(&handle.id);
+                Ok(Self::map_state(handle.pid, status.code()))
+            }
             Ok(None) => Ok(ProcessState::Running { pid: handle.pid }),
             Err(e) => Err(SubstrateError::Process(format!("try_wait: {e}"))),
         }
@@ -97,40 +110,63 @@ impl ProcessPort for CommandGroupProcess {
         handle: &ProcessHandle,
         timeout: Duration,
     ) -> Result<ProcessState> {
-        let mut children = self.children.lock().await;
-        let managed = children
-            .get_mut(&handle.id)
-            .ok_or_else(|| SubstrateError::NotFound(format!("process {}", handle.id)))?;
+        let child = {
+            let children = self.children.lock().await;
+            let managed = children
+                .get(&handle.id)
+                .ok_or_else(|| SubstrateError::NotFound(format!("process {}", handle.id)))?;
+            Arc::clone(&managed.child)
+        };
 
-        match tokio::time::timeout(timeout, managed.child.wait()).await {
+        let wait_result = {
+            let mut child = child.lock().await;
+            tokio::time::timeout(timeout, child.wait()).await
+        };
+
+        match wait_result {
             Ok(Ok(status)) => {
-                let state = Self::map_state(handle.pid, status.code());
-                children.remove(&handle.id);
-                Ok(state)
+                self.children.lock().await.remove(&handle.id);
+                Ok(Self::map_state(handle.pid, status.code()))
             }
-            Ok(Err(e)) => Err(SubstrateError::Process(format!("wait: {e}"))),
+            Ok(Err(e)) => {
+                self.children.lock().await.remove(&handle.id);
+                Err(SubstrateError::Process(format!("wait: {e}")))
+            }
             Err(_) => {
-                let _ = managed.child.kill().await;
-                let _ = managed.child.wait().await;
-                children.remove(&handle.id);
+                let mut child = child.lock().await;
+                child
+                    .kill()
+                    .await
+                    .map_err(|e| SubstrateError::Process(format!("kill on timeout: {e}")))?;
+                child
+                    .wait()
+                    .await
+                    .map_err(|e| SubstrateError::Process(format!("wait after kill: {e}")))?;
+                self.children.lock().await.remove(&handle.id);
                 Ok(Self::map_state(handle.pid, None))
             }
         }
     }
 
     async fn kill_group(&self, handle: &ProcessHandle) -> Result<()> {
-        let mut children = self.children.lock().await;
-        let managed = children
-            .get_mut(&handle.id)
-            .ok_or_else(|| SubstrateError::NotFound(format!("process {}", handle.id)))?;
+        let child = {
+            let children = self.children.lock().await;
+            let managed = children
+                .get(&handle.id)
+                .ok_or_else(|| SubstrateError::NotFound(format!("process {}", handle.id)))?;
+            Arc::clone(&managed.child)
+        };
 
-        managed
-            .child
+        let mut child = child.lock().await;
+        child
             .kill()
             .await
             .map_err(|e| SubstrateError::Process(format!("kill_group: {e}")))?;
-        let _ = managed.child.wait().await;
-        children.remove(&handle.id);
+        child
+            .wait()
+            .await
+            .map_err(|e| SubstrateError::Process(format!("wait after kill_group: {e}")))?;
+        self.children.lock().await.remove(&handle.id);
         Ok(())
     }
 }
