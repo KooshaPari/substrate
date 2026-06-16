@@ -46,3 +46,19 @@ jobs:
           EOF
           cargo publish --dry-run -p substrate-core
           cargo publish --dry-run -p substrate
+
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install driver-mcp dependencies
+        run: pip install -r driver-mcp/requirements.txt
+
+      - name: Test driver-mcp
+        run: pytest driver-mcp/

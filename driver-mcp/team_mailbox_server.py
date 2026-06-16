@@ -19,12 +19,7 @@ AGENT_NAME = os.environ.get("SUBSTRATE_AGENT_NAME", "unknown")
 
 _db = open_db()
 
-_ALLOWED_KEYS = frozenset({"ok", "id", "state", "count", "messages", "tasks", "error"})
-
-
-def _sanitize_response(response: dict[str, Any]) -> dict[str, Any]:
-    """Strip non-allowlisted keys before returning to MCP client."""
-    return {k: v for k, v in response.items() if k in _ALLOWED_KEYS}
+from _sanitize import sanitize_response as _sanitize_response
 
 
 @mcp.tool()
