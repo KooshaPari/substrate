@@ -25,7 +25,14 @@ fn any_live_state_may_fail_or_cancel() {
 fn terminal_states_have_no_outgoing_edges() {
     use TaskState::*;
     for from in [Completed, Failed, Cancelled] {
-        for to in [Submitted, Working, InputRequired, Completed, Failed, Cancelled] {
+        for to in [
+            Submitted,
+            Working,
+            InputRequired,
+            Completed,
+            Failed,
+            Cancelled,
+        ] {
             assert!(
                 !TaskState::can_transition(from, to),
                 "terminal {from:?} must not -> {to:?}"

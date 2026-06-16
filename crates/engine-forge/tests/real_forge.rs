@@ -86,7 +86,9 @@ async fn real_forge_dispatch_emits_structured_result() {
     // We DO assert the result is one of the two legal terminal states and
     // that the dump was non-empty.
     assert!(
-        !result.text.is_empty() || !result.pr_urls.is_empty() || result.status == substrate_core::domain::TaskState::Failed,
+        !result.text.is_empty()
+            || !result.pr_urls.is_empty()
+            || result.status == substrate_core::domain::TaskState::Failed,
         "real forge should produce a non-empty result or a Failed status, got: {result:?}"
     );
 }
@@ -121,12 +123,16 @@ async fn real_forge_dump_to_structured_result() {
     println!("  Conversation ID: {}", session.conv_id);
 
     // Dump the conversation — this runs `forge conversation dump <id>` and returns JSON.
-    let dump = engine.dump(&session.conv_id).await
+    let dump = engine
+        .dump(&session.conv_id)
+        .await
         .expect("dump should succeed");
     println!("  Dump raw length: {} bytes", dump.raw.len());
 
     // Extract the structured result — this parses the JSON dump into a StructuredResult.
-    let result = engine.extract_result(&dump).expect("extract should succeed");
+    let result = engine
+        .extract_result(&dump)
+        .expect("extract should succeed");
 
     // Verify we got a non-empty result.
     assert!(
@@ -134,5 +140,8 @@ async fn real_forge_dump_to_structured_result() {
         "result should have text or PR URLs, got: {result:?}"
     );
     println!("  Status: {:?}", result.status);
-    println!("  Text (first 100 chars): {}", &result.text[..std::cmp::min(100, result.text.len())]);
+    println!(
+        "  Text (first 100 chars): {}",
+        &result.text[..std::cmp::min(100, result.text.len())]
+    );
 }

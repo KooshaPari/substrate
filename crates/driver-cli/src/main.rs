@@ -17,7 +17,10 @@ use substrate_core::ports::DispatchApi;
 use transport_file::FileTransport;
 
 #[derive(Parser)]
-#[command(name = "substrate", about = "Dispatch agent tasks over the substrate spine.")]
+#[command(
+    name = "substrate",
+    about = "Dispatch agent tasks over the substrate spine."
+)]
 struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -44,7 +47,9 @@ enum Command {
 /// Locate the bundled `fake-forge` binary next to the running executable.
 fn fake_forge_path() -> anyhow::Result<PathBuf> {
     let exe = std::env::current_exe().context("resolve current exe")?;
-    let dir = exe.parent().ok_or_else(|| anyhow!("exe has no parent dir"))?;
+    let dir = exe
+        .parent()
+        .ok_or_else(|| anyhow!("exe has no parent dir"))?;
     let name = if cfg!(windows) {
         "fake-forge.exe"
     } else {
@@ -72,7 +77,9 @@ async fn main() -> anyhow::Result<()> {
             prompt,
         } => {
             if engine != "forge" {
-                return Err(anyhow!("Phase 0 supports only --engine forge, got {engine}"));
+                return Err(anyhow!(
+                    "Phase 0 supports only --engine forge, got {engine}"
+                ));
             }
             if fake {
                 let path = fake_forge_path()?;

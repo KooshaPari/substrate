@@ -32,8 +32,8 @@ fn collect_dep_names(table: Option<&toml::Value>) -> Vec<String> {
 #[test]
 fn substrate_core_has_no_adapter_dependencies() {
     let path = core_manifest_path();
-    let text = std::fs::read_to_string(&path)
-        .unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
+    let text =
+        std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
     let manifest: toml::Value = text.parse().expect("parse substrate-core Cargo.toml");
 
     let mut deps = collect_dep_names(manifest.get("dependencies"));
@@ -58,7 +58,13 @@ fn forbidden_predicate_matches_expected_patterns() {
     ] {
         assert!(is_forbidden(d), "{d} should be forbidden");
     }
-    for d in ["serde", "thiserror", "uuid", "async-trait", "substrate-core"] {
+    for d in [
+        "serde",
+        "thiserror",
+        "uuid",
+        "async-trait",
+        "substrate-core",
+    ] {
         assert!(!is_forbidden(d), "{d} should be allowed");
     }
 }

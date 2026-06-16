@@ -181,7 +181,14 @@ where
         let wave_task = {
             let t = A2aTask::new(
                 &self.team_id,
-                format!("wave:{}", specs.iter().map(|s| s.lane.as_str()).collect::<Vec<_>>().join(",")),
+                format!(
+                    "wave:{}",
+                    specs
+                        .iter()
+                        .map(|s| s.lane.as_str())
+                        .collect::<Vec<_>>()
+                        .join(",")
+                ),
                 "wave-runner",
             );
             self.store
@@ -248,7 +255,10 @@ where
                             .and_then(|d| engine.extract_result(&d).ok());
 
                         let (status, pr_urls) = match structured {
-                            Some(ref r) if r.status == TaskState::Completed || r.status == TaskState::Failed => {
+                            Some(ref r)
+                                if r.status == TaskState::Completed
+                                    || r.status == TaskState::Failed =>
+                            {
                                 let mts = if r.status == TaskState::Completed {
                                     MailboxTaskState::Completed
                                 } else {
@@ -316,8 +326,14 @@ where
         }
 
         // Aggregate.
-        let done = lanes.iter().filter(|r| r.status == LaneStatus::Completed).count();
-        let failed = lanes.iter().filter(|r| !matches!(r.status, LaneStatus::Completed)).count();
+        let done = lanes
+            .iter()
+            .filter(|r| r.status == LaneStatus::Completed)
+            .count();
+        let failed = lanes
+            .iter()
+            .filter(|r| !matches!(r.status, LaneStatus::Completed))
+            .count();
 
         // De-duplicate PR urls preserving order.
         let mut seen = std::collections::HashSet::new();
@@ -355,10 +371,8 @@ pub fn task_depth_in_store(
         .map_err(|e| WaveError::Store(e.to_string()))?;
 
     // Build a map from id → parent_id.
-    let parent_map: std::collections::HashMap<Uuid, Option<Uuid>> = tasks
-        .iter()
-        .map(|t| (t.id, t.parent_task_id))
-        .collect();
+    let parent_map: std::collections::HashMap<Uuid, Option<Uuid>> =
+        tasks.iter().map(|t| (t.id, t.parent_task_id)).collect();
 
     let mut depth = 1usize;
     let mut current = task_id;
@@ -372,7 +386,7 @@ pub fn task_depth_in_store(
                     format!("task {current} not found in team {team_id}"),
                 ))
             }
-            Some(None) => break,        // root
+            Some(None) => break, // root
             Some(Some(pid)) => {
                 depth += 1;
                 if depth > MAX_WALK {
@@ -397,7 +411,5 @@ fn harvest_pr_urls(text: &str) -> Vec<String> {
     use regex::Regex;
     // Reuse the same pattern as engine-forge parse.rs.
     let re = Regex::new(r"https://github\.com/[^\s]+/pull/\d+").unwrap();
-    re.find_iter(text)
-        .map(|m| m.as_str().to_string())
-        .collect()
+    re.find_iter(text).map(|m| m.as_str().to_string()).collect()
 }

@@ -67,5 +67,9 @@ pub struct ScheduleInstant {
 /// Computes the next fire time for a [`ScheduleTrigger`].
 pub trait SchedulePort: Send + Sync {
     /// Return the next fire instant strictly after `after`.
-    fn next_run(&self, trigger: &ScheduleTrigger, after: ScheduleInstant) -> Result<ScheduleInstant>;
+    fn next_run(
+        &self,
+        trigger: &ScheduleTrigger,
+        after: ScheduleInstant,
+    ) -> Result<ScheduleInstant>;
 }

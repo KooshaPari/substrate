@@ -107,8 +107,8 @@ impl AgentApiEngine {
     /// Construct from the `AGENTAPI_ENDPOINT` env var (default
     /// `"http://localhost:3284"`).
     pub fn new() -> Self {
-        let endpoint = std::env::var("AGENTAPI_ENDPOINT")
-            .unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
+        let endpoint =
+            std::env::var("AGENTAPI_ENDPOINT").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
         AgentApiEngine {
             endpoint,
             client: reqwest::Client::new(),

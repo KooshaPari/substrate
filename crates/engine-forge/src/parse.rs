@@ -9,9 +9,7 @@ use uuid::Uuid;
 
 fn conv_id_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r"(?i)conversation[ _-]?id[:=]?\s*([0-9a-f-]{8,})").unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r"(?i)conversation[ _-]?id[:=]?\s*([0-9a-f-]{8,})").unwrap())
 }
 
 fn uuid_re() -> &'static Regex {
@@ -24,9 +22,7 @@ fn uuid_re() -> &'static Regex {
 
 fn pr_url_re() -> &'static Regex {
     static RE: OnceLock<Regex> = OnceLock::new();
-    RE.get_or_init(|| {
-        Regex::new(r#"https://github\.com/[^ )"']+/pull/\d+"#).unwrap()
-    })
+    RE.get_or_init(|| Regex::new(r#"https://github\.com/[^ )"']+/pull/\d+"#).unwrap())
 }
 
 /// Extract a conversation id from engine stdout.
@@ -82,10 +78,13 @@ struct ForgeMessage {
 /// `text` is the last assistant message content; `pr_urls` is the
 /// de-duplicated, ordered list of GitHub PR URLs across all messages.
 pub fn parse_dump(dump: &ConversationDump) -> Result<StructuredResult> {
-    let parsed: ForgeDump = serde_json::from_str(&dump.raw)
-        .map_err(|e| SubstrateError::Engine(
-            format!("forge dump parse failed (JSON parse error: {}); raw output: {}", e, &dump.raw[..std::cmp::min(500, dump.raw.len())])
-        ))?;
+    let parsed: ForgeDump = serde_json::from_str(&dump.raw).map_err(|e| {
+        SubstrateError::Engine(format!(
+            "forge dump parse failed (JSON parse error: {}); raw output: {}",
+            e,
+            &dump.raw[..std::cmp::min(500, dump.raw.len())]
+        ))
+    })?;
 
     let all_text: String = parsed
         .messages
@@ -271,10 +270,7 @@ mod tests {
         };
         let r = parse_dump(&dump).unwrap();
         assert_eq!(r.status, TaskState::Failed);
-        assert_eq!(
-            r.pr_urls,
-            vec!["https://github.com/a/b/pull/9".to_string()]
-        );
+        assert_eq!(r.pr_urls, vec!["https://github.com/a/b/pull/9".to_string()]);
     }
 
     #[test]

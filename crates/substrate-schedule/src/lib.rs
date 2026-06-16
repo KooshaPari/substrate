@@ -88,7 +88,11 @@ fn next_weekly(
 }
 
 impl SchedulePort for CronSchedule {
-    fn next_run(&self, trigger: &ScheduleTrigger, after: ScheduleInstant) -> Result<ScheduleInstant> {
+    fn next_run(
+        &self,
+        trigger: &ScheduleTrigger,
+        after: ScheduleInstant,
+    ) -> Result<ScheduleInstant> {
         let after_dt = from_instant(after);
         match trigger {
             ScheduleTrigger::Cron { expr } => {
@@ -130,11 +134,7 @@ mod tests {
     }
 
     fn at(y: i32, m: u32, d: u32, h: u32, min: u32) -> ScheduleInstant {
-        to_instant(
-            Utc.with_ymd_and_hms(y, m, d, h, min, 0)
-                .single()
-                .unwrap(),
-        )
+        to_instant(Utc.with_ymd_and_hms(y, m, d, h, min, 0).single().unwrap())
     }
 
     #[test]
@@ -158,12 +158,7 @@ mod tests {
         let s = sched();
         let after = at(2026, 6, 15, 10, 0);
         let next = s
-            .next_run(
-                &ScheduleTrigger::Interval {
-                    every_secs: 300,
-                },
-                after,
-            )
+            .next_run(&ScheduleTrigger::Interval { every_secs: 300 }, after)
             .unwrap();
         assert_eq!(next.secs - after.secs, 300);
     }
@@ -173,13 +168,7 @@ mod tests {
         let s = sched();
         let after = at(2026, 6, 15, 8, 0);
         let next = s
-            .next_run(
-                &ScheduleTrigger::Daily {
-                    hour: 9,
-                    minute: 0,
-                },
-                after,
-            )
+            .next_run(&ScheduleTrigger::Daily { hour: 9, minute: 0 }, after)
             .unwrap();
         let dt = from_instant(next);
         assert_eq!(dt.hour(), 9);

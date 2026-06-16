@@ -167,8 +167,7 @@ impl MailboxStore for SqliteMailboxStore {
                     created_str,
                     consumed_str,
                 )| {
-                    let parts: Vec<Part> =
-                        serde_json::from_str(&parts_json).unwrap_or_default();
+                    let parts: Vec<Part> = serde_json::from_str(&parts_json).unwrap_or_default();
                     let state = match state_str.as_str() {
                         "delivered" => MsgState::Delivered,
                         "consumed" => MsgState::Consumed,

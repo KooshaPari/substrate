@@ -67,7 +67,8 @@ fn levenshtein_similarity(a: &str, b: &str) -> f64 {
 
 /// Returns true when bodies are near-duplicates by token Jaccard or Levenshtein.
 pub fn bodies_are_near_duplicate(a: &str, b: &str) -> bool {
-    token_jaccard(a, b) >= JACCARD_THRESHOLD || levenshtein_similarity(a, b) >= LEVENSHTEIN_THRESHOLD
+    token_jaccard(a, b) >= JACCARD_THRESHOLD
+        || levenshtein_similarity(a, b) >= LEVENSHTEIN_THRESHOLD
 }
 
 impl ClaimPort for SqliteClaimStore {
