@@ -31,6 +31,9 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      - name: Build driver-http
+        run: cargo build -p driver-http
+
       - name: Publish dry-run (SDK crates)
         run: |
           mkdir -p .cargo
