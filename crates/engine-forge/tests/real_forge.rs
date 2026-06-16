@@ -90,3 +90,49 @@ async fn real_forge_dispatch_emits_structured_result() {
         "real forge should produce a non-empty result or a Failed status, got: {result:?}"
     );
 }
+
+/// Simpler integration test: verify that the conversation dump → structured result
+/// path works for a tiny task via real forge.
+#[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+#[ignore = "requires RUN_FORGE_INT=1, the real forge binary, and network access"]
+async fn real_forge_dump_to_structured_result() {
+    if std::env::var("RUN_FORGE_INT").is_err() {
+        return;
+    }
+    if !git_available() {
+        return;
+    }
+
+    let cwd = init_temp_git_repo();
+    let engine = ForgeEngine::with_bin("forge").with_timeout(Duration::from_secs(300));
+
+    let task = Task {
+        id: Uuid::new_v4(),
+        prompt: "Create a file called success.txt with the content OK. Then respond DONE:".into(),
+        cwd: cwd.to_string_lossy().into_owned(),
+        state: substrate_core::domain::TaskState::Working,
+        parent_task_id: None,
+        requirement_id: None,
+        epic_id: None,
+    };
+
+    // Start the task — this spawns real forge and captures the conversation id.
+    let session = engine.start(&task).await.expect("start");
+    println!("  Conversation ID: {}", session.conv_id);
+
+    // Dump the conversation — this runs `forge conversation dump <id>` and returns JSON.
+    let dump = engine.dump(&session.conv_id).await
+        .expect("dump should succeed");
+    println!("  Dump raw length: {} bytes", dump.raw.len());
+
+    // Extract the structured result — this parses the JSON dump into a StructuredResult.
+    let result = engine.extract_result(&dump).expect("extract should succeed");
+
+    // Verify we got a non-empty result.
+    assert!(
+        !result.text.is_empty() || !result.pr_urls.is_empty(),
+        "result should have text or PR URLs, got: {result:?}"
+    );
+    println!("  Status: {:?}", result.status);
+    println!("  Text (first 100 chars): {}", &result.text[..std::cmp::min(100, result.text.len())]);
+}

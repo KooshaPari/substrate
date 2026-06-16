@@ -425,7 +425,24 @@ impl EnginePort for ForgeEngine {
 
     async fn dump(&self, conv_id: &str) -> Result<ConversationDump> {
         let args = self.argv.build_dump(conv_id);
-        let (stdout, _code) = self.run_simple(args).await?;
+        let (stdout, code) = self.run_simple(args).await?;
+
+        // Validate that the dump command succeeded.
+        if let Some(non_zero) = code {
+            if non_zero != 0 {
+                return Err(SubstrateError::Engine(
+                    format!("forge conversation dump exited {}: {}", non_zero, stdout)
+                ));
+            }
+        }
+
+        // Validate that we got some output.
+        if stdout.trim().is_empty() {
+            return Err(SubstrateError::Engine(
+                "forge conversation dump returned empty output".to_string()
+            ));
+        }
+
         Ok(ConversationDump {
             conversation_id: conv_id.to_string(),
             raw: stdout,
