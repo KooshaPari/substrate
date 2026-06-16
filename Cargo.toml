@@ -15,6 +15,11 @@ members = [
     "crates/store-sqlite",
     "crates/supervisor",
     "crates/wave",
+    "crates/engine-conformance",
+    "crates/engine-codex",
+    "crates/engine-claude",
+    "crates/engine-agentapi",
+    "crates/substrate-trace",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -40,6 +45,7 @@ predicates = "3.1"
 dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 
 [profile.release]
 strip = true

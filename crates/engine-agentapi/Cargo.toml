@@ -1,0 +1,21 @@
+[package]
+name = "engine-agentapi"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "EnginePort HTTP adapter for agentapi-plusplus (default port 3284)."
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+engine-spec = { path = "../engine-spec" }
+async-trait = { workspace = true }
+tokio = { workspace = true }
+uuid = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+reqwest = { workspace = true }
+
+[dev-dependencies]
+engine-conformance = { path = "../engine-conformance" }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

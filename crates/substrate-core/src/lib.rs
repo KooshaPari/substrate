@@ -13,6 +13,8 @@ pub mod domain;
 pub mod error;
 pub mod mailbox_port;
 pub mod ports;
+pub mod trace;
 
 pub use error::{Result, SubstrateError};
 pub use mailbox_port::MailboxStore;
+pub use trace::{TaskCompleted, TaskFailed, TaskRegistered, TracePort};
