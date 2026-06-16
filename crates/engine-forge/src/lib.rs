@@ -227,25 +227,22 @@ impl ForgeEngine {
         args: Vec<String>,
         logfile: PathBuf,
     ) -> std::io::Result<(tokio::process::Child, tokio::task::JoinHandle<()>)> {
-        let mut cmd = Command::new(&self.bin);
-        cmd.args(&args);
         // Detach into a fresh process group so we can signal the whole
-        // subtree on timeout (Unix: setsid; Windows: CREATE_NEW_PROCESS_GROUP).
+        // subtree on timeout (Unix: setsid(1); Windows: CREATE_NEW_PROCESS_GROUP).
         #[cfg(unix)]
-        {
-            use std::os::unix::process::CommandExt;
-            cmd.pre_exec(|| {
-                // Become session leader; pgid == child pid so killpg can
-                // terminate the whole subtree on timeout.
-                nix::unistd::setsid().map_err(std::io::Error::from)?;
-                Ok(())
-            });
-        }
+        let mut cmd = {
+            let mut c = Command::new("setsid");
+            c.arg(&self.bin).args(&args);
+            c
+        };
         #[cfg(windows)]
-        {
+        let mut cmd = {
+            let mut c = Command::new(&self.bin);
+            c.args(&args);
             const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
-            cmd.creation_flags(CREATE_NEW_PROCESS_GROUP);
-        }
+            c.creation_flags(CREATE_NEW_PROCESS_GROUP);
+            c
+        };
 
         let mut child = cmd
             .stdout(std::process::Stdio::piped())
