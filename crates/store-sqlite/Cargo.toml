@@ -10,6 +10,7 @@ rust-version.workspace = true
 a2a = { path = "../a2a" }
 substrate-core = { path = "../substrate-core" }
 rusqlite = { workspace = true }
+serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }
 thiserror = { workspace = true }

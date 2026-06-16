@@ -1607,6 +1607,7 @@ dependencies = [
  "a2a",
  "chrono",
  "rusqlite",
+ "serde",
  "serde_json",
  "strsim",
  "substrate-core",
