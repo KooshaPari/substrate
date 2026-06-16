@@ -15,6 +15,7 @@ pub mod error;
 pub mod mailbox_port;
 pub mod memory_port;
 pub mod ports;
+pub mod routing_port;
 pub mod schedule_port;
 pub mod skill_port;
 pub mod trace;
@@ -24,6 +25,11 @@ pub use claim_port::{ClaimPort, WorkItem, WorkItemState};
 pub use error::{Result, SubstrateError};
 pub use mailbox_port::MailboxStore;
 pub use memory_port::{MemoryEntry, MemoryPort};
+pub use routing_port::{
+    CircuitBreaker, CircuitBreakerConfig, CircuitState, FallbackEntry, RoutingPoolState,
+    RoutingSelector, RoutingStrategy, RoutingSuperset, RoutingTarget, SupersetRoutingDecision,
+    TargetHealth,
+};
 pub use schedule_port::{ScheduleInstant, SchedulePort, ScheduleTrigger, Weekday};
 pub use skill_port::{
     validate_json_schema, SkillDescriptor, SkillHandler, SkillPort, ToolRegistry,
