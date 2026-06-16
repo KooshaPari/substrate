@@ -38,8 +38,8 @@ concrete engines, transports, and stores into those contracts; the
     └───────────────┘                   └────┬─────┘
                                              │ depends on
     ┌───────────────┐  DispatchApi           ▼
-    │  (future       │ ───────────────▶ ┌────────────────┐   RoutingPort    ┌──────────────────┐
-    │   MCP)         │                  │ substrate-core  │ ◀───────────────── │ omniroute-adapter │
+    │  driver-mcp    │ ───────────────▶ ┌────────────────┐   RoutingPort    ┌──────────────────┐
+    │  (FastMCP)     │                  │ substrate-core  │ ◀───────────────── │ omniroute-adapter │
     └───────────────┘                  │ domain + ports  │                    └──────────────────┘
                                        │ (no adapter dep)│   engine-spec: TaskSpec -> argv
                                        └────────────────┘
@@ -70,6 +70,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `substrate-trace` | adapter | `TracePort` adapters: `NoopTrace`, `RecordingTrace` (test double), `MultiTrace` (fan-out), `AgilePlusTrace`, `TraceraTrace`. |
 | `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters (`dispatch`, `plan`, `--dry-run`). |
 | `driver-http` | inbound adapter | `substrate-http` REST server (axum): `/v1/dispatch`, `/v1/plan`, `/v1/route`, `/v1/mailbox/*`, `/healthz`. |
+| `driver-mcp` | inbound adapter | FastMCP servers (`substrate_server.py`): `substrate_dispatch` / `substrate_plan` / `substrate_route` over HTTP + team mailbox tools. |
 | `omniroute-adapter` | adapter | `RoutingPort`: OmniRoute proxy config + optional routing superset (load-balance, circuit breaker, fallback). |
 | `arch-test` | test-only | Architecture conformance (dependency direction). |
 | `substrate-schedule` | adapter | `SchedulePort`: cron/interval/daily/weekly `next_run` via croner. |
@@ -152,6 +153,39 @@ curl -s localhost:8080/v1/plan \
 ```
 
 Enable as a library: `driver-http = { git = "https://github.com/KooshaPari/substrate", package = "driver-http" }`.
+
+## MCP SDK (`driver-mcp`)
+
+Python [FastMCP](https://github.com/jlowin/fastmcp) servers expose substrate to MCP clients (forge, codex, claude, OmniRoute A2A). The primary entrypoint is `substrate_server.py`, which proxies dispatch/plan/route to `driver-http` and keeps team mailbox tools local.
+
+```sh
+# Start substrate HTTP (required for dispatch/plan/route tools)
+export SUBSTRATE_HTTP_URL=http://127.0.0.1:8080   # default
+export SUBSTRATE_HTTP_AUTH_TOKEN=                # optional bearer
+cargo run -p driver-http --bin substrate-http
+
+# Run the MCP server (stdio)
+pip install -r driver-mcp/requirements.txt
+python driver-mcp/substrate_server.py
+```
+
+| MCP tool | HTTP / backend | Description |
+|----------|----------------|-------------|
+| `substrate_dispatch` | `POST /v1/dispatch` | Run a prompt through substrate (spawns engine). Args: `prompt`, optional `engine`, `cwd`, `mode`. |
+| `substrate_plan` | `POST /v1/plan` | Dry-run dispatch plan (no spawn). Args: `prompt`, optional `engine`, `cwd`. |
+| `substrate_route` | `POST /v1/route` | Route a `task` object via OmniRoute adapter. |
+| `team_send` | local SQLite | Send a message to another agent. |
+| `team_inbox` | local SQLite | Fetch unread messages for this agent. |
+| `task_list` | local SQLite | List team tasks. |
+
+Phase 2 servers remain available: `lead_server.py` (lead inbox + `task_list`), `team_mailbox_server.py` (teammate inbox + `task_create` / `task_update`). Responses pass through `_sanitize_response` allowlist before returning to MCP clients.
+
+Config: `SUBSTRATE_HTTP_URL` (default `http://127.0.0.1:8080`), `SUBSTRATE_HTTP_AUTH_TOKEN`, `SUBSTRATE_TEAM_ID`, `SUBSTRATE_AGENT_NAME`, `SUBSTRATE_DB`.
+
+```sh
+pip install -r driver-mcp/requirements.txt
+pytest driver-mcp/
+```
 
 ## Quickstart
 

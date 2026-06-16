@@ -1,17 +1,10 @@
-"""pytest: _sanitize_response strips non-allowlisted keys."""
-import sys
+"""pytest: sanitize_response strips non-allowlisted keys."""
 import os
+import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 
-# We import the function directly to test it without needing fastmcp installed
-# or a real DB connection.
-_ALLOWED_KEYS = frozenset({"ok", "id", "state", "count", "messages", "tasks", "error"})
-
-
-def _sanitize_response(response: dict) -> dict:
-    """Strip non-allowlisted keys before returning to MCP client."""
-    return {k: v for k, v in response.items() if k in _ALLOWED_KEYS}
+from _sanitize import sanitize_response as _sanitize_response
 
 
 def test_allowed_keys_pass_through():
