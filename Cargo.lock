@@ -318,7 +318,11 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
+ "engine-agentapi",
+ "engine-claude",
+ "engine-codex",
  "engine-forge",
+ "engine-spec",
  "predicates",
  "serde_json",
  "store-file",
@@ -1627,6 +1631,8 @@ name = "substrate-app"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "engine-spec",
+ "serde",
  "substrate-core",
  "tokio",
  "uuid",

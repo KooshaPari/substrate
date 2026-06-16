@@ -11,6 +11,12 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
+mod dispatch_planner;
+
+pub use dispatch_planner::{
+    DispatchPlan, DispatchPlanner, EngineCandidate, PlanRequest, SessionMode,
+};
+
 use std::sync::Arc;
 
 use async_trait::async_trait;

@@ -1,7 +1,7 @@
 # substrate
 
-**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing + process + event sourcing superset**
-**Status: all phases green · 150+ tests passing · clippy clean**
+**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing + process + event sourcing + dispatch planner superset**
+**Status: all phases green · 150+ tests passing · clippy clean · all absorptions done**
 
 Orchestration superset (2026-06): `SchedulePort` + `substrate-schedule` (cron/interval/daily/weekly via croner), `WorkflowPort` + `substrate-dag` (petgraph DAG: topo order, ready-set, cycle reject), `ClaimPort` + `store-sqlite` (BEGIN IMMEDIATE atomic claim + strsim fuzzy dedup).
 
@@ -12,6 +12,8 @@ Routing superset (2026-06): `routing_port` in `substrate-core` (round-robin / we
 Process superset (2026-06): `ProcessPort` + `runtime-process` (cross-platform managed subprocess via `command-group`: spawn in process group, status poll, wait-with-timeout, kill-group-on-timeout), `WatcherPort` + `file-watcher` (debounced filesystem events via `notify` + `notify-debouncer-mini`).
 
 Event sourcing superset (2026-06): `EventStorePort` + `Projection`/`replay` in `substrate-core` (append-only per-aggregate event log, global monotonic sequence, duplicate-seq rejection), `SqliteEventStore` in `store-sqlite` (BEGIN IMMEDIATE seq allocation), `TaskLifecycleProjection` demo (task events → `TaskProjectionState`).
+
+Dispatch planner superset (2026-06): `DispatchPlanner` in `substrate-app` (multi-engine capability selection + `SessionMode` Background/Foreground/InProcess, optional routing preference), `driver-cli` `plan` subcommand and `dispatch --dry-run` (print `DispatchPlan` without spawning).
 
 A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug
@@ -63,9 +65,9 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `transport-file` | adapter | `TransportPort`: append-only JSONL mailboxes + lockfile-lease atomic claim. |
 | `store-file` | adapter | `StorePort`: one JSON file per task/result + lockfile-lease atomic claim. |
 | `store-sqlite` | adapter | `MailboxStore`, `ClaimPort`, `MemoryPort`, `EventStorePort` (append-only event log + global seq). |
-| `substrate-app` | application | `DispatchService` implementing `DispatchApi`, generic over the three driven ports + optional `TracePort`. |
+| `substrate-app` | application | `DispatchService` implementing `DispatchApi`, `DispatchPlanner` (engine + session-mode selection), generic over the three driven ports + optional `TracePort`. |
 | `substrate-trace` | adapter | `TracePort` adapters: `NoopTrace`, `RecordingTrace` (test double), `MultiTrace` (fan-out), `AgilePlusTrace`, `TraceraTrace`. |
-| `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters. |
+| `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters (`dispatch`, `plan`, `--dry-run`). |
 | `omniroute-adapter` | adapter | `RoutingPort`: OmniRoute proxy config + optional routing superset (load-balance, circuit breaker, fallback). |
 | `arch-test` | test-only | Architecture conformance (dependency direction). |
 | `substrate-schedule` | adapter | `SchedulePort`: cron/interval/daily/weekly `next_run` via croner. |
@@ -86,6 +88,10 @@ cargo clippy --workspace -- -D warnings
 # Run a fully offline dispatch through the fake forge:
 cargo run -p driver-cli --bin substrate -- \
   dispatch --engine forge --fake --cwd . "echo hi"
+
+# Dry-run: print the dispatch plan without spawning:
+cargo run -p driver-cli --bin substrate -- \
+  plan --engine forge --cwd . "echo hi"
 ```
 
 ## Task lifecycle FSM
