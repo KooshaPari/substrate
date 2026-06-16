@@ -1,13 +1,15 @@
 # substrate
 
-**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing superset**
-**Status: all phases green · 134+ tests passing · clippy clean**
+**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing + process superset**
+**Status: all phases green · 140+ tests passing · clippy clean**
 
 Orchestration superset (2026-06): `SchedulePort` + `substrate-schedule` (cron/interval/daily/weekly via croner), `WorkflowPort` + `substrate-dag` (petgraph DAG: topo order, ready-set, cycle reject), `ClaimPort` + `store-sqlite` (BEGIN IMMEDIATE atomic claim + strsim fuzzy dedup).
 
 Skills + memory superset (2026-06): `SkillPort` + `ToolRegistry` + `substrate-skills` (named invokable skills with JSON schema input validation), `MemoryPort` + `substrate-memory` (bounded ring buffer + `store-sqlite` persistent history, two-tier compose).
 
 Routing superset (2026-06): `routing_port` in `substrate-core` (round-robin / weighted / least-used / power-of-two-choices, per-target circuit breaker Closed/Open/HalfOpen, weighted fallback chain) + `omniroute-adapter` wiring to OmniRoute providers.
+
+Process superset (2026-06): `ProcessPort` + `runtime-process` (cross-platform managed subprocess via `command-group`: spawn in process group, status poll, wait-with-timeout, kill-group-on-timeout), `WatcherPort` + `file-watcher` (debounced filesystem events via `notify` + `notify-debouncer-mini`).
 
 A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug
@@ -49,7 +51,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 
 | Crate | Layer | Responsibility |
 |-------|-------|----------------|
-| `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`, `SkillPort`, `ToolRegistry`, `MemoryPort`), routing superset (`RoutingStrategy`, circuit breaker, fallback chain), `TracePort` + event structs, `SubstrateError`. |
+| `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`, `SkillPort`, `ToolRegistry`, `MemoryPort`, `ProcessPort`, `WatcherPort`), routing superset (`RoutingStrategy`, circuit breaker, fallback chain), `TracePort` + event structs, `SubstrateError`. |
 | `engine-spec` | core-side contract | Provider-agnostic `TaskSpec` and the `ArgvBuilder` trait. |
 | `engine-forge` | adapter | `EnginePort` driving the `forge` CLI (`FORGE_BIN`); tolerant conversation-id regex, dump→`StructuredResult` normalization, PR-URL extraction. |
 | `engine-codex` | adapter | `EnginePort` driving the `codex` CLI (`CODEX_BIN`; `CODEX_INTEGRATION=1` for real calls). |
@@ -67,6 +69,8 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `substrate-dag` | adapter | `WorkflowPort`: petgraph DAG topo order, ready-set, cycle detection. |
 | `substrate-skills` | adapter | `SkillPort` + `ToolRegistry`: in-memory named skills with JSON schema validation. |
 | `substrate-memory` | adapter | `MemoryPort`: bounded ring buffer + two-tier compose with `store-sqlite` persistent tier. |
+| `runtime-process` | adapter | `ProcessPort`: cross-platform managed subprocess (process group spawn, monitor, wait-with-timeout, kill-group) via `command-group`. |
+| `file-watcher` | adapter | `WatcherPort`: debounced filesystem create/modify/remove events via `notify`. |
 | `tools/fake-forge` | test fixture | Network-free stand-in for the forge CLI. |
 
 ## Quickstart
