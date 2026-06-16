@@ -10,7 +10,7 @@ description = "EnginePort adapter for the claude CLI (Claude Code)."
 substrate-core = { path = "../substrate-core" }
 engine-spec = { path = "../engine-spec" }
 async-trait = { workspace = true }
-tokio = { workspace = true }
+tokio = { workspace = true, features = ["process"] }
 uuid = { workspace = true }
 
 [dev-dependencies]

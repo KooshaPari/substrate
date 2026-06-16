@@ -91,6 +91,14 @@ where
             });
         }
     }
+
+    /// After a task reached `Working`, mark it failed in trace and store.
+    async fn fail_working_task(&self, task: &mut Task, error: &str) {
+        self.emit_failed(task, error);
+        if task.advance(TaskState::Failed).is_ok() {
+            let _ = self.store.persist(task).await;
+        }
+    }
 }
 
 #[async_trait]
@@ -108,12 +116,18 @@ where
         self.emit_registered(&task);
 
         // 3. Move to Working and start the engine.
-        task.advance(TaskState::Working)?;
-        self.store.persist(&task).await?;
+        task.advance(TaskState::Working).map_err(|e| {
+            self.emit_failed(&task, &e.to_string());
+            e
+        })?;
+        self.store.persist(&task).await.map_err(|e| {
+            self.emit_failed(&task, &e.to_string());
+            e
+        })?;
         let session = match self.engine.start(&task).await {
             Ok(s) => s,
             Err(e) => {
-                self.emit_failed(&task, &e.to_string());
+                self.fail_working_task(&mut task, &e.to_string()).await;
                 return Err(e);
             }
         };
@@ -122,30 +136,42 @@ where
         let dump = match self.engine.dump(&session.conv_id).await {
             Ok(d) => d,
             Err(e) => {
-                self.emit_failed(&task, &e.to_string());
+                self.fail_working_task(&mut task, &e.to_string()).await;
                 return Err(e);
             }
         };
         let result = match self.engine.extract_result(&dump) {
             Ok(r) => r,
             Err(e) => {
-                self.emit_failed(&task, &e.to_string());
+                self.fail_working_task(&mut task, &e.to_string()).await;
                 return Err(e);
             }
         };
 
         // 5. Reflect the engine's terminal status onto the task.
         if task.state != result.status {
-            task.advance(result.status)?;
+            task.advance(result.status).map_err(|e| {
+                self.emit_failed(&task, &e.to_string());
+                e
+            })?;
         }
-        self.store.persist(&task).await?;
-        self.store.persist_result(&task.id, &result).await?;
+        self.store.persist(&task).await.map_err(|e| {
+            self.emit_failed(&task, &e.to_string());
+            e
+        })?;
+        self.store
+            .persist_result(&task.id, &result)
+            .await
+            .map_err(|e| {
+                self.emit_failed(&task, &e.to_string());
+                e
+            })?;
 
-        // 6. Emit TaskCompleted or TaskFailed based on the terminal status.
-        if result.status == TaskState::Failed {
-            self.emit_failed(&task, &result.text);
-        } else {
-            self.emit_completed(&task, &result);
+        // 6. Emit terminal trace events only for terminal engine statuses.
+        match result.status {
+            TaskState::Failed => self.emit_failed(&task, &result.text),
+            status if status.is_terminal() => self.emit_completed(&task, &result),
+            _ => {}
         }
 
         Ok(result)

@@ -21,8 +21,9 @@ use engine_spec::{ArgvBuilder, TaskSpec};
 use substrate_core::domain::{
     ConversationDump, EngineCapabilities, Mailbox, Session, StructuredResult, Task, TaskState,
 };
-use substrate_core::error::Result;
+use substrate_core::error::{Result, SubstrateError};
 use substrate_core::ports::EnginePort;
+use tokio::process::Command;
 
 /// Argv builder for the claude CLI surface.
 #[derive(Debug, Clone, Default)]
@@ -34,10 +35,7 @@ pub struct ClaudeArgv {
 impl ArgvBuilder for ClaudeArgv {
     fn build_start(&self, spec: &TaskSpec) -> Vec<String> {
         // claude -p "<prompt>" [--model <model>] --output-format stream-json --verbose
-        let mut args = vec![
-            "-p".into(),
-            spec.prompt.clone(),
-        ];
+        let mut args = vec!["-p".into(), spec.prompt.clone()];
         if let Some(model) = &self.model {
             args.push("--model".into());
             args.push(model.clone());
@@ -97,18 +95,39 @@ impl ClaudeEngine {
     pub fn argv_for(&self, spec: &TaskSpec) -> Vec<String> {
         self.argv.build_start(spec)
     }
+
+    /// Returns `true` when real CLI invocations should be made (i.e.
+    /// `CLAUDE_INTEGRATION=1` is set).
+    fn integration_enabled() -> bool {
+        std::env::var("CLAUDE_INTEGRATION").unwrap_or_default() == "1"
+    }
 }
 
 #[async_trait]
 impl EnginePort for ClaudeEngine {
     async fn start(&self, task: &Task) -> Result<Session> {
         let spec = TaskSpec::new(&task.prompt, &task.cwd);
-        let _args = self.argv.build_start(&spec);
-        // Real invocation: guarded in integration tests via CLAUDE_INTEGRATION.
-        // Stub: return a deterministic session so conformance tests pass offline.
+        let args = self.argv.build_start(&spec);
+
+        if !Self::integration_enabled() {
+            return Ok(Session {
+                conv_id: format!("claude-{}", task.id),
+                pid: None,
+                logfile: None,
+            });
+        }
+
+        let child = Command::new(&self.bin)
+            .args(&args)
+            .current_dir(&task.cwd)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::inherit())
+            .spawn()
+            .map_err(|e| SubstrateError::Engine(format!("spawn {}: {e}", self.bin)))?;
+
         Ok(Session {
             conv_id: format!("claude-{}", task.id),
-            pid: None,
+            pid: child.id(),
             logfile: None,
         })
     }

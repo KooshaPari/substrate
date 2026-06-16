@@ -26,8 +26,9 @@ use engine_spec::{ArgvBuilder, TaskSpec};
 use substrate_core::domain::{
     ConversationDump, EngineCapabilities, Mailbox, Session, StructuredResult, Task, TaskState,
 };
-use substrate_core::error::Result;
+use substrate_core::error::{Result, SubstrateError};
 use substrate_core::ports::EnginePort;
+use tokio::process::Command;
 
 /// Default model for the codex CLI.
 pub const DEFAULT_MODEL: &str = "gpt-5.3-codex-spark";
@@ -55,11 +56,7 @@ impl ArgvBuilder for CodexArgv {
     fn build_start(&self, spec: &TaskSpec) -> Vec<String> {
         // codex exec -m <model> [--dangerously-bypass-approvals-and-sandbox]
         //            -C <cwd> --prompt <prompt>
-        let mut args = vec![
-            "exec".into(),
-            "-m".into(),
-            self.model.clone(),
-        ];
+        let mut args = vec!["exec".into(), "-m".into(), self.model.clone()];
         if self.bypass_sandbox {
             args.push("--dangerously-bypass-approvals-and-sandbox".into());
         }
@@ -119,18 +116,39 @@ impl CodexEngine {
     pub fn argv_for(&self, spec: &TaskSpec) -> Vec<String> {
         self.argv.build_start(spec)
     }
+
+    /// Returns `true` when real CLI invocations should be made (i.e.
+    /// `CODEX_INTEGRATION=1` is set).
+    fn integration_enabled() -> bool {
+        std::env::var("CODEX_INTEGRATION").unwrap_or_default() == "1"
+    }
 }
 
 #[async_trait]
 impl EnginePort for CodexEngine {
     async fn start(&self, task: &Task) -> Result<Session> {
         let spec = TaskSpec::new(&task.prompt, &task.cwd);
-        let _args = self.argv.build_start(&spec);
-        // Real invocation: guarded in integration tests via CODEX_INTEGRATION.
-        // Stub: return a deterministic session so conformance tests pass offline.
+        let args = self.argv.build_start(&spec);
+
+        if !Self::integration_enabled() {
+            return Ok(Session {
+                conv_id: format!("codex-{}", task.id),
+                pid: None,
+                logfile: None,
+            });
+        }
+
+        let child = Command::new(&self.bin)
+            .args(&args)
+            .current_dir(&task.cwd)
+            .stdout(std::process::Stdio::piped())
+            .stderr(std::process::Stdio::inherit())
+            .spawn()
+            .map_err(|e| SubstrateError::Engine(format!("spawn {}: {e}", self.bin)))?;
+
         Ok(Session {
             conv_id: format!("codex-{}", task.id),
-            pid: None,
+            pid: child.id(),
             logfile: None,
         })
     }
