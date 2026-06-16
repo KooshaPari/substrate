@@ -83,7 +83,9 @@ struct ForgeMessage {
 /// de-duplicated, ordered list of GitHub PR URLs across all messages.
 pub fn parse_dump(dump: &ConversationDump) -> Result<StructuredResult> {
     let parsed: ForgeDump = serde_json::from_str(&dump.raw)
-        .map_err(|e| SubstrateError::Engine(format!("forge dump parse: {e}")))?;
+        .map_err(|e| SubstrateError::Engine(
+            format!("forge dump parse failed (JSON parse error: {}); raw output: {}", e, &dump.raw[..std::cmp::min(500, dump.raw.len())])
+        ))?;
 
     let all_text: String = parsed
         .messages
