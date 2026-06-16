@@ -11,7 +11,7 @@ pub enum StoreError {
     /// A JSON serialization/deserialization error.
     #[error("json: {0}")]
     Json(#[from] serde_json::Error),
-    /// A requested resource was not found.
-    #[error("not found: {0}")]
-    NotFound(String),
+    /// Enqueue rejected: near-duplicate body.
+    #[error("duplicate work: {0}")]
+    Duplicate(String),
 }

@@ -20,6 +20,8 @@ members = [
     "crates/engine-claude",
     "crates/engine-agentapi",
     "crates/substrate-trace",
+    "crates/substrate-schedule",
+    "crates/substrate-dag",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -46,6 +48,9 @@ dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+croner = "2.1"
+petgraph = "0.7"
+strsim = "0.11"
 
 [profile.release]
 strip = true

@@ -50,6 +50,18 @@ pub enum SubstrateError {
     #[error("io error: {0}")]
     Io(String),
 
+    /// A schedule expression or trigger is invalid.
+    #[error("invalid schedule: {0}")]
+    InvalidSchedule(String),
+
+    /// A workflow graph contains a cycle.
+    #[error("workflow cycle: {0}")]
+    CycleDetected(String),
+
+    /// Enqueue rejected because the body is a near-duplicate.
+    #[error("duplicate work: {0}")]
+    DuplicateWork(String),
+
     /// A catch-all for adapter-specific failures that do not fit above.
     #[error("{0}")]
     Other(String),
