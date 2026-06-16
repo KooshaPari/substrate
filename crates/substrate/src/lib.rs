@@ -37,7 +37,6 @@
 //! | `app` (default) | [`DispatchPlanner`], [`DispatchService`], planning types |
 //! | `spec` (default) | [`TaskSpec`], [`ArgvBuilder`] |
 //! | `a2a` | A2A wire-schema crate as [`a2a`] |
-//! | `http` | HTTP REST driver ([`driver_http`]) for non-Rust consumers |
 //!
 //! Adapter crates (`store-sqlite` with bundled SQLite, `engine-forge`) are
 //! separate workspace members — depend on them via git when needed:
@@ -94,7 +93,3 @@ pub use engine_spec::{ArgvBuilder, TaskSpec};
 pub mod a2a {
     pub use ::a2a::*;
 }
-
-/// HTTP REST driver (axum): dispatch, plan, route, mailbox endpoints.
-#[cfg(feature = "http")]
-pub use driver_http::{build_router, serve, AppState, HttpConfig};

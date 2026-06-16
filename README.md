@@ -107,7 +107,7 @@ let plan = DispatchPlanner::plan(&PlanRequest {
 })?;
 ```
 
-Published crates (publish-ready, `cargo publish --dry-run` green): `substrate-core`, `a2a`, `engine-spec`, `substrate-app`, and the `substrate` facade. Default features: `app` + `spec`. Optional: `a2a`, `http` (REST driver).
+Published crates (publish-ready, `cargo publish --dry-run` green): `substrate-core`, `a2a`, `engine-spec`, `substrate-app`, and the `substrate` facade. Default features: `app` + `spec`. Optional: `a2a`. HTTP REST surface: `driver-http` workspace crate (not published; git/path dep).
 
 ## HTTP API
 
@@ -151,7 +151,7 @@ curl -s localhost:8080/v1/plan \
   -d '{"cwd":"/tmp","prompt":"hi"}'
 ```
 
-Enable the SDK facade feature: `substrate = { ..., features = ["http"] }`.
+Enable as a library: `driver-http = { git = "https://github.com/KooshaPari/substrate", package = "driver-http" }`.
 
 ## Quickstart
 

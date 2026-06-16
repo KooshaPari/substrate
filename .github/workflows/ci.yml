@@ -31,8 +31,8 @@ jobs:
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
-      - name: Build substrate HTTP SDK feature
-        run: cargo build -p substrate --features http
+      - name: Build driver-http
+        run: cargo build -p driver-http
 
       - name: Publish dry-run (SDK crates)
         run: |
