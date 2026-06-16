@@ -44,6 +44,14 @@ pub fn init(conn: &Connection) -> Result<()> {
             claimed_by  TEXT,
             created_at  TEXT NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS idx_work_queue_pending ON work_queue(queue, state, created_at);",
+        CREATE INDEX IF NOT EXISTS idx_work_queue_pending ON work_queue(queue, state, created_at);
+
+        CREATE TABLE IF NOT EXISTS memory (
+            id          TEXT PRIMARY KEY,
+            mem_key     TEXT NOT NULL,
+            content     TEXT NOT NULL,
+            created_at  INTEGER NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_memory_created ON memory(created_at DESC);",
     )
 }
