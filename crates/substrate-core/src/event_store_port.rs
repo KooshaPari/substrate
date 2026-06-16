@@ -146,5 +146,7 @@ where
 {
     let envelopes = store.load(aggregate_id)?;
     let events: Vec<TaskLifecycleEvent> = envelopes.into_iter().map(|e| e.event).collect();
-    Ok(replay::<TaskLifecycleProjection>(&events))
+    let mut state = replay::<TaskLifecycleProjection>(&events);
+    state.id = Some(aggregate_id);
+    Ok(state)
 }
