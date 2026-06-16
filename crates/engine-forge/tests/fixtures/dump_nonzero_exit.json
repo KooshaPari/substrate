@@ -1,0 +1,8 @@
+{
+  "conversation_id": "44444444-4444-4444-4444-444444444444",
+  "exit_code": 2,
+  "messages": [
+    { "role": "user", "content": "do thing" },
+    { "role": "assistant", "content": "crashed unexpectedly" }
+  ]
+}

@@ -1,0 +1,51 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/substrate-core",
+    "crates/engine-spec",
+    "crates/engine-forge",
+    "crates/transport-file",
+    "crates/store-file",
+    "crates/substrate-app",
+    "crates/driver-cli",
+    "crates/arch-test",
+    "crates/omniroute-adapter",
+    "tools/fake-forge",
+    "crates/a2a",
+    "crates/store-sqlite",
+    "crates/supervisor",
+    "crates/wave",
+    "crates/engine-conformance",
+    "crates/engine-codex",
+    "crates/engine-claude",
+    "crates/engine-agentapi",
+    "crates/substrate-trace",
+]
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/substrate"
+rust-version = "1.80"
+
+[workspace.dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+uuid = { version = "1.11", features = ["v4", "serde"] }
+async-trait = "0.1"
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time"] }
+regex = "1.11"
+anyhow = "1.0"
+clap = { version = "4.5", features = ["derive", "env"] }
+toml = "0.8"
+tempfile = "3.14"
+assert_cmd = "2.0"
+predicates = "3.1"
+dotenvy = "0.15"
+chrono = { version = "0.4", features = ["serde"] }
+rusqlite = { version = "0.32", features = ["bundled"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+
+[profile.release]
+strip = true

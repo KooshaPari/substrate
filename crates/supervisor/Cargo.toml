@@ -1,0 +1,27 @@
+[package]
+name = "supervisor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+a2a = { path = "../a2a" }
+store-sqlite = { path = "../store-sqlite" }
+tokio = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
+substrate-core = { path = "../substrate-core" }
+a2a = { path = "../a2a" }
+store-sqlite = { path = "../store-sqlite" }
+
+[features]
+default = []

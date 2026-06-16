@@ -1,0 +1,12 @@
+[package]
+name = "fake-forge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "A network-free stand-in for the forge CLI, used by tests and the --fake flag."
+
+[[bin]]
+name = "fake-forge"
+path = "src/main.rs"
