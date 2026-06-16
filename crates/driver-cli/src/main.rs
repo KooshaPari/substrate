@@ -24,7 +24,19 @@ use transport_file::FileTransport;
 #[derive(Parser)]
 #[command(
     name = "substrate",
-    about = "Dispatch agent tasks over the substrate spine."
+    version,
+    about = "Dispatch agent tasks over the substrate hexagonal spine.",
+    long_about = "Substrate routes prompts to coding engines (forge, codex, claude, agentapi) \
+                  through a deterministic planner. Use `plan` or `dispatch --dry-run` to inspect \
+                  the chosen engine, session mode, and argv without spawning a process.",
+    subcommand_required = true,
+    arg_required_else_help = true,
+    after_help = "EXAMPLES:\n  \
+                  substrate plan --engine forge --cwd . \"fix the bug\"\n  \
+                  substrate dispatch --fake --cwd . \"echo hi\"\n  \
+                  substrate dispatch --dry-run --cwd . \"echo hi\"\n\n\
+                  ENV (engine binaries):\n  \
+                  FORGE_BIN, CODEX_BIN, CLAUDE_BIN, AGENTAPI_ENDPOINT"
 )]
 struct Cli {
     #[command(subcommand)]
@@ -33,54 +45,63 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Command {
-    /// Dispatch a single task to an engine and print the structured result.
+    /// Dispatch a task to an engine and print the structured result as JSON.
     Dispatch(DispatchArgs),
-    /// Print the dispatch plan without executing (dry-run).
+    /// Print the dispatch plan (engine, session mode, argv) without executing.
     Plan(DispatchArgs),
 }
 
-/// Shared flags for dispatch and plan.
+/// Flags shared by `dispatch` and `plan`.
 #[derive(Parser)]
+#[command(next_help_heading = "TASK")]
 struct DispatchArgs {
-    /// Engine to use; when omitted the planner selects by capabilities + routing.
-    #[arg(long)]
+    /// The prompt to dispatch.
+    prompt: String,
+
+    #[command(flatten)]
+    options: DispatchOptions,
+}
+
+#[derive(Parser)]
+#[command(next_help_heading = "OPTIONS")]
+struct DispatchOptions {
+    /// Engine to use (`forge`, `codex`, `claude`, `agentapi`); planner selects when omitted.
+    #[arg(long, value_name = "ENGINE")]
     engine: Option<String>,
-    /// Session mode: background, foreground, in_process.
-    #[arg(long)]
+    /// Session mode: `background`, `foreground`, or `in_process`.
+    #[arg(long, value_name = "MODE")]
     mode: Option<String>,
-    /// Use the bundled network-free fake forge.
+    /// Use the bundled network-free fake forge (sets `FORGE_BIN` and `in_process` mode).
     #[arg(long)]
     fake: bool,
-    /// Print the plan without spawning (alias for the `plan` subcommand).
+    /// Print the plan without spawning (same output as the `plan` subcommand).
     #[arg(long)]
     dry_run: bool,
     /// Working directory the engine runs in.
-    #[arg(long)]
+    #[arg(long, value_name = "DIR")]
     cwd: String,
-    /// Conversation id to resume (requires an engine with supports_resume).
-    #[arg(long)]
+    /// Conversation id to resume (requires an engine with `supports_resume`).
+    #[arg(long, value_name = "CONV_ID")]
     resume: Option<String>,
-    /// Named agent/persona (use `subagent` to require supports_subagents).
-    #[arg(long)]
+    /// Named agent/persona (`subagent` requires `supports_subagents`).
+    #[arg(long, value_name = "NAME")]
     agent: Option<String>,
-    /// The prompt to dispatch.
-    prompt: String,
 }
 
 impl DispatchArgs {
     fn task_spec(&self) -> TaskSpec {
-        let mut spec = TaskSpec::new(&self.prompt, &self.cwd);
-        if let Some(agent) = &self.agent {
+        let mut spec = TaskSpec::new(&self.prompt, &self.options.cwd);
+        if let Some(agent) = &self.options.agent {
             spec = spec.with_agent(agent.clone());
         }
-        if let Some(resume) = &self.resume {
+        if let Some(resume) = &self.options.resume {
             spec.resume = Some(resume.clone());
         }
         spec
     }
 
     fn session_mode(&self) -> anyhow::Result<Option<SessionMode>> {
-        match &self.mode {
+        match &self.options.mode {
             None => Ok(None),
             Some(s) => SessionMode::parse_cli(s).map(Some).ok_or_else(|| {
                 anyhow!("invalid --mode {s}: use background, foreground, or in_process")
@@ -94,13 +115,13 @@ impl DispatchArgs {
         let mut plan = DispatchPlanner::plan(&PlanRequest {
             spec: &spec,
             engines: &engines,
-            explicit_engine: self.engine.as_deref(),
+            explicit_engine: self.options.engine.as_deref(),
             session_mode: self.session_mode()?,
-            routing_engine: self.engine.as_deref().or(Some("forge")),
+            routing_engine: self.options.engine.as_deref().or(Some("forge")),
         })
         .map_err(|e| anyhow!("plan failed: {e}"))?;
         enrich_plan_argv(&mut plan);
-        if self.fake {
+        if self.options.fake {
             plan.session_mode = SessionMode::InProcess;
         }
         Ok(plan)
@@ -158,16 +179,16 @@ async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     match cli.command {
         Command::Dispatch(args) => {
-            if args.fake {
+            if args.options.fake {
                 let path = fake_forge_path()?;
                 std::env::set_var("FORGE_BIN", path);
             }
             let plan = args.plan()?;
-            if args.dry_run {
+            if args.options.dry_run {
                 print_plan(&plan)?;
                 return Ok(());
             }
-            execute_plan(&plan, &args.cwd).await
+            execute_plan(&plan, &args.options.cwd).await
         }
         Command::Plan(args) => {
             let plan = args.plan()?;

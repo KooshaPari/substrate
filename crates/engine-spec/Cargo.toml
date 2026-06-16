@@ -6,7 +6,10 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Provider-agnostic TaskSpec -> argv contract."
+readme = "README.md"
+keywords = ["agent", "argv", "task", "substrate"]
+categories = ["development-tools"]
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
+substrate-core.workspace = true
 serde.workspace = true

@@ -99,3 +99,15 @@ fn dispatch_dry_run_prints_plan_without_spawning() {
         .stdout(predicate::str::contains("\"engine\": \"forge\""))
         .stdout(predicate::str::contains("\"argv\""));
 }
+
+#[test]
+fn help_lists_dispatch_and_plan_subcommands() {
+    Command::cargo_bin("substrate")
+        .unwrap()
+        .arg("--help")
+        .assert()
+        .success()
+        .stdout(predicate::str::contains("dispatch"))
+        .stdout(predicate::str::contains("plan"))
+        .stdout(predicate::str::contains("--dry-run"));
+}

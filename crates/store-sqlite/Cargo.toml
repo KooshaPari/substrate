@@ -5,10 +5,14 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+description = "SQLite-backed MailboxStore, ClaimPort, MemoryPort, and EventStorePort adapters (bundled SQLite)."
+readme = "README.md"
+keywords = ["sqlite", "store", "claim", "substrate"]
+categories = ["database"]
 
 [dependencies]
-a2a = { path = "../a2a" }
-substrate-core = { path = "../substrate-core" }
+a2a.workspace = true
+substrate-core.workspace = true
 rusqlite = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
