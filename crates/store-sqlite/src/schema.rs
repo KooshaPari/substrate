@@ -34,6 +34,16 @@ pub fn init(conn: &Connection) -> Result<()> {
             updated_at      TEXT NOT NULL,
             note            TEXT
         );
-        CREATE INDEX IF NOT EXISTS idx_tasklist_team ON tasklist(team_id);",
+        CREATE INDEX IF NOT EXISTS idx_tasklist_team ON tasklist(team_id);
+
+        CREATE TABLE IF NOT EXISTS work_queue (
+            id          TEXT PRIMARY KEY,
+            queue       TEXT NOT NULL,
+            body        TEXT NOT NULL,
+            state       TEXT NOT NULL DEFAULT 'pending',
+            claimed_by  TEXT,
+            created_at  TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_work_queue_pending ON work_queue(queue, state, created_at);",
     )
 }

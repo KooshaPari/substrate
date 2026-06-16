@@ -1,20 +1,15 @@
 [package]
-name = "store-sqlite"
+name = "substrate-schedule"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
+description = "SchedulePort implementation: cron/interval/daily/weekly next_run via croner."
 
 [dependencies]
-a2a = { path = "../a2a" }
 substrate-core = { path = "../substrate-core" }
-rusqlite = { workspace = true }
-serde_json = { workspace = true }
-uuid = { workspace = true }
-thiserror = { workspace = true }
+croner = "2.1"
 chrono = { workspace = true }
-strsim = "0.11"
 
 [dev-dependencies]
-tempfile = { workspace = true }
