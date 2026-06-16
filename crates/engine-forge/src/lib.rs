@@ -48,8 +48,9 @@ pub use parse::{
     parse_dump, parse_list_snapshot,
 };
 
-/// Default per-run timeout for `start()`.
-pub const DEFAULT_TIMEOUT_SECS: u64 = 1800;
+/// Default per-run timeout for `start()` (300 seconds = 5 minutes).
+/// Can be overridden via `SUBSTRATE_FORGE_TIMEOUT_SECS` env var.
+pub const DEFAULT_TIMEOUT_SECS: u64 = 300;
 
 /// Argv builder for the forge CLI surface.
 #[derive(Debug, Clone, Default)]
@@ -125,23 +126,33 @@ impl Default for ForgeEngine {
 
 impl ForgeEngine {
     /// Construct from the `FORGE_BIN` env var (default `"forge"`).
+    /// Also reads `SUBSTRATE_FORGE_TIMEOUT_SECS` env var for the timeout (default 300s).
     pub fn new() -> Self {
         let bin = std::env::var("FORGE_BIN").unwrap_or_else(|_| "forge".to_string());
+        let timeout_secs = std::env::var("SUBSTRATE_FORGE_TIMEOUT_SECS")
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(300); // Default 300s, not 1800s
         ForgeEngine {
             bin,
             argv: ForgeArgv::default(),
-            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+            timeout: Duration::from_secs(timeout_secs),
             store: None,
             log_root: None,
         }
     }
 
     /// Construct with an explicit binary path (bypasses the env var).
+    /// Still reads `SUBSTRATE_FORGE_TIMEOUT_SECS` env var for the timeout (default 300s).
     pub fn with_bin(bin: impl Into<String>) -> Self {
+        let timeout_secs = std::env::var("SUBSTRATE_FORGE_TIMEOUT_SECS")
+            .ok()
+            .and_then(|s| s.parse::<u64>().ok())
+            .unwrap_or(300); // Default 300s, not 1800s
         ForgeEngine {
             bin: bin.into(),
             argv: ForgeArgv::default(),
-            timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+            timeout: Duration::from_secs(timeout_secs),
             store: None,
             log_root: None,
         }

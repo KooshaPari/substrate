@@ -2,6 +2,7 @@
 //!
 //! Recognised invocations:
 //! * `-p <prompt> --agent forge -C <dir>` -> prints a fixed conversation-id.
+//!   If `FAKE_FORGE_HANG=1` is set, prints the id then sleeps forever.
 //! * `conversation dump <id>` -> prints a canned JSON dump.
 
 const CONV_ID: &str = "11111111-1111-1111-1111-111111111111";
@@ -27,6 +28,12 @@ fn main() {
 
     if args.iter().any(|a| a == "-p") {
         println!("conversation-id: {CONV_ID}");
+        std::io::Write::flush(&mut std::io::stdout()).ok();
+
+        // If FAKE_FORGE_HANG is set, sleep forever to simulate a hanging forge.
+        if std::env::var("FAKE_FORGE_HANG").is_ok() {
+            std::thread::sleep(std::time::Duration::from_secs(u64::MAX));
+        }
         return;
     }
 
