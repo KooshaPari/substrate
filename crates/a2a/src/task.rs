@@ -23,7 +23,10 @@ pub enum TaskState {
 impl TaskState {
     /// Returns true if no further transitions are legal.
     pub fn is_terminal(self) -> bool {
-        matches!(self, TaskState::Completed | TaskState::Failed | TaskState::Cancelled)
+        matches!(
+            self,
+            TaskState::Completed | TaskState::Failed | TaskState::Cancelled
+        )
     }
 
     /// Pure transition predicate — does not mutate state.

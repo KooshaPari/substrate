@@ -21,7 +21,9 @@ impl DagWorkflow {
         Self
     }
 
-    fn build_graph(workflow: &Workflow) -> Result<(DiGraph<String, ()>, HashMap<String, NodeIndex>)> {
+    fn build_graph(
+        workflow: &Workflow,
+    ) -> Result<(DiGraph<String, ()>, HashMap<String, NodeIndex>)> {
         let mut graph = DiGraph::new();
         let mut index_of = HashMap::new();
 
@@ -155,14 +157,19 @@ mod tests {
     #[test]
     fn diamond_ready_set_after_partial() {
         let dag = DagWorkflow::new();
-        let w = wf(&["a", "b", "c", "d"], &[("a", "b"), ("a", "c"), ("b", "d"), ("c", "d")]);
+        let w = wf(
+            &["a", "b", "c", "d"],
+            &[("a", "b"), ("a", "c"), ("b", "d"), ("c", "d")],
+        );
         let ready0 = dag.ready_set(&w, &[]).unwrap();
         assert_eq!(ready0, vec!["a"]);
 
         let ready1 = dag.ready_set(&w, &["a".into()]).unwrap();
         assert_eq!(ready1, vec!["b", "c"]);
 
-        let ready2 = dag.ready_set(&w, &["a".into(), "b".into(), "c".into()]).unwrap();
+        let ready2 = dag
+            .ready_set(&w, &["a".into(), "b".into(), "c".into()])
+            .unwrap();
         assert_eq!(ready2, vec!["d"]);
     }
 

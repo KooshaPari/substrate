@@ -7,8 +7,7 @@
 use async_trait::async_trait;
 
 use crate::domain::{
-    ConversationDump, EngineCapabilities, Mailbox, Message, RoutingDecision, StructuredResult,
-    Task,
+    ConversationDump, EngineCapabilities, Mailbox, Message, RoutingDecision, StructuredResult, Task,
 };
 use crate::error::Result;
 
@@ -99,8 +98,7 @@ pub trait StorePort: Send + Sync {
     async fn load(&self, id: &uuid::Uuid) -> Result<Task>;
 
     /// Persist a normalized result for a task.
-    async fn persist_result(&self, task_id: &uuid::Uuid, result: &StructuredResult)
-        -> Result<()>;
+    async fn persist_result(&self, task_id: &uuid::Uuid, result: &StructuredResult) -> Result<()>;
 
     /// Atomically claim a task for exclusive work (CAS on lifecycle state).
     /// Returns `ClaimConflict` if another worker already holds it.

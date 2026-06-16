@@ -46,11 +46,10 @@ impl ProviderConfig {
     /// hardcoded — the key is sourced from the environment).
     pub fn from_env() -> Result<Self> {
         let _ = dotenvy::dotenv();
-        let api_key = std::env::var("OMNIROUTE_API_KEY").map_err(|e| {
-            SubstrateError::Routing(format!("OMNIROUTE_API_KEY not set: {e}"))
-        })?;
-        let base_url = std::env::var("OMNIROUTE_BASE_URL")
-            .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+        let api_key = std::env::var("OMNIROUTE_API_KEY")
+            .map_err(|e| SubstrateError::Routing(format!("OMNIROUTE_API_KEY not set: {e}")))?;
+        let base_url =
+            std::env::var("OMNIROUTE_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
         Ok(ProviderConfig { base_url, api_key })
     }
 
@@ -133,7 +132,10 @@ mod tests {
     fn default_model_is_kimi_router() {
         let adapter = OmniRouteAdapter::new();
         assert_eq!(adapter.model(), DEFAULT_MODEL);
-        assert_eq!(adapter.model(), "accounts/fireworks/routers/kimi-k2p6-turbo");
+        assert_eq!(
+            adapter.model(),
+            "accounts/fireworks/routers/kimi-k2p6-turbo"
+        );
     }
 
     #[test]

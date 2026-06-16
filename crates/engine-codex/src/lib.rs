@@ -55,11 +55,7 @@ impl ArgvBuilder for CodexArgv {
     fn build_start(&self, spec: &TaskSpec) -> Vec<String> {
         // codex exec -m <model> [--dangerously-bypass-approvals-and-sandbox]
         //            -C <cwd> --prompt <prompt>
-        let mut args = vec![
-            "exec".into(),
-            "-m".into(),
-            self.model.clone(),
-        ];
+        let mut args = vec!["exec".into(), "-m".into(), self.model.clone()];
         if self.bypass_sandbox {
             args.push("--dangerously-bypass-approvals-and-sandbox".into());
         }

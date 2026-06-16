@@ -181,9 +181,7 @@ mod tests {
                 .unwrap()
                 .first()
                 .cloned()
-                .unwrap_or_else(|| {
-                    "PR: https://github.com/example/repo/pull/1".to_string()
-                });
+                .unwrap_or_else(|| "PR: https://github.com/example/repo/pull/1".to_string());
             Ok(ConversationDump {
                 conversation_id: conv_id.to_string(),
                 raw: format!("DONE: ok\n{pr_url}\n"),
@@ -252,10 +250,7 @@ mod tests {
             "de-duplicated PR urls should be 1: {:?}",
             report.pr_urls
         );
-        assert_eq!(
-            report.pr_urls[0],
-            "https://github.com/example/repo/pull/42"
-        );
+        assert_eq!(report.pr_urls[0], "https://github.com/example/repo/pull/42");
     }
 
     // ── test 2: concurrency bound respected ───────────────────────────────────
@@ -274,7 +269,12 @@ mod tests {
         let specs = (0..4)
             .map(|i| WaveSpec::new(format!("lane-{i}"), format!("task {i}")))
             .collect::<Vec<_>>();
-        let runner = WaveRunner::new(Arc::clone(&engine) as Arc<ConcurrencyProbe>, store, "wave-bound".into(), 2);
+        let runner = WaveRunner::new(
+            Arc::clone(&engine) as Arc<ConcurrencyProbe>,
+            store,
+            "wave-bound".into(),
+            2,
+        );
         let report = runner.run(specs).await.unwrap();
         assert_eq!(report.done, 4);
 
@@ -330,11 +330,7 @@ mod tests {
             .iter()
             .filter(|t| t.parent_task_id == Some(wave_root.id))
             .collect();
-        assert_eq!(
-            lane_tasks.len(),
-            2,
-            "expected 2 lane tasks under wave root"
-        );
+        assert_eq!(lane_tasks.len(), 2, "expected 2 lane tasks under wave root");
 
         // Register subagent tasks manually under the first lane task.
         let lane0 = lane_tasks[0];
@@ -404,10 +400,7 @@ mod tests {
             "great-grandchild",
             "gg-agent",
         );
-        assert!(
-            result.is_err(),
-            "expected depth guard error but got Ok"
-        );
+        assert!(result.is_err(), "expected depth guard error but got Ok");
         let err_msg = result.unwrap_err().to_string();
         assert!(
             err_msg.contains("depth") || err_msg.contains("max"),
@@ -467,8 +460,7 @@ mod tests {
         };
         store.task_create(&grandchild).unwrap();
 
-        let depth =
-            runner::task_depth_in_store(&store, "team-d2", grandchild.id).unwrap();
+        let depth = runner::task_depth_in_store(&store, "team-d2", grandchild.id).unwrap();
         assert_eq!(depth, 3, "grandchild should have depth 3");
     }
 }

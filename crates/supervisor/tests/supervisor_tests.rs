@@ -10,7 +10,13 @@ use supervisor::{FakeEngine, FakeResponse, LaneConfig, Supervisor};
 
 /// Helper: build a text message addressed to `agent` in `team`.
 fn make_msg(team_id: &str, to: &str, kind: MessageKind, text: &str) -> Message {
-    Message::new(team_id, "test-sender", to, kind, vec![Part::Text { text: text.into() }])
+    Message::new(
+        team_id,
+        "test-sender",
+        to,
+        kind,
+        vec![Part::Text { text: text.into() }],
+    )
 }
 
 // ── 1. Basic turn pump ────────────────────────────────────────────────────────
@@ -162,14 +168,19 @@ async fn test_resume_400_fallback() {
     store.post(&msg).unwrap();
 
     // pump_one should not error — the retry succeeds.
-    sup.pump_one().await.expect("pump_one should recover from resume-400");
+    sup.pump_one()
+        .await
+        .expect("pump_one should recover from resume-400");
 
     // Inbox consumed.
     assert_eq!(store.inbox("team-400", "agent-d").unwrap().len(), 0);
 
     // Task record is still intact.
     let tasks = store.task_list("team-400").unwrap();
-    assert!(!tasks.is_empty(), "task record should survive the 400 retry");
+    assert!(
+        !tasks.is_empty(),
+        "task record should survive the 400 retry"
+    );
 
     // Two engine calls were made for the one pump_one (400 + retry).
     let calls = *engine.call_count.lock().unwrap();

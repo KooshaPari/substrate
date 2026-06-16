@@ -83,7 +83,10 @@ impl StorePort for MemStore {
             .ok_or_else(|| SubstrateError::NotFound(id.to_string()))
     }
     async fn persist_result(&self, task_id: &Uuid, result: &StructuredResult) -> Result<()> {
-        self.results.lock().unwrap().push((*task_id, result.clone()));
+        self.results
+            .lock()
+            .unwrap()
+            .push((*task_id, result.clone()));
         Ok(())
     }
     async fn claim_atomic(&self, id: &Uuid) -> Result<Task> {
@@ -115,11 +118,7 @@ impl TransportPort for NoopTransport {
 #[tokio::test]
 async fn dispatch_persists_and_completes() {
     let store = Arc::new(MemStore::default());
-    let svc = DispatchService::new(
-        Arc::new(FakeEngine),
-        store.clone(),
-        Arc::new(NoopTransport),
-    );
+    let svc = DispatchService::new(Arc::new(FakeEngine), store.clone(), Arc::new(NoopTransport));
 
     let task = Task::new("echo hi", "/tmp");
     let id = task.id;

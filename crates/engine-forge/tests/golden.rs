@@ -51,7 +51,9 @@ fn dump_with_max_steps_marks_failed_even_with_pr() {
 #[test]
 fn dump_with_nonzero_exit_marks_failed() {
     let engine = engine_forge::ForgeEngine::with_bin("unused");
-    let result = engine.extract_result(&load("dump_nonzero_exit.json")).unwrap();
+    let result = engine
+        .extract_result(&load("dump_nonzero_exit.json"))
+        .unwrap();
 
     assert_eq!(result.status, TaskState::Failed);
     assert!(result.pr_urls.is_empty());

@@ -34,10 +34,7 @@ pub struct ClaudeArgv {
 impl ArgvBuilder for ClaudeArgv {
     fn build_start(&self, spec: &TaskSpec) -> Vec<String> {
         // claude -p "<prompt>" [--model <model>] --output-format stream-json --verbose
-        let mut args = vec![
-            "-p".into(),
-            spec.prompt.clone(),
-        ];
+        let mut args = vec!["-p".into(), spec.prompt.clone()];
         if let Some(model) = &self.model {
             args.push("--model".into());
             args.push(model.clone());
