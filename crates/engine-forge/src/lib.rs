@@ -234,26 +234,17 @@ impl ForgeEngine {
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;
-            // Safety: `setsid(2)` is async-signal-safe and runs in the
-            // forked child only, before exec. On error, the child exits
-            // before it ever runs the engine binary.
-            unsafe {
-                cmd.pre_exec(|| {
-                    // 0 == setsid() with no args: become session leader and
-                    // create a new process group whose pgid == our pid.
-                    if libc::setsid() < 0 {
-                        return Err(std::io::Error::last_os_error());
-                    }
-                    Ok(())
-                });
-            }
+            cmd.pre_exec(|| {
+                // Become session leader; pgid == child pid so killpg can
+                // terminate the whole subtree on timeout.
+                nix::unistd::setsid().map_err(std::io::Error::from)?;
+                Ok(())
+            });
         }
         #[cfg(windows)]
         {
-            // 0x00000200 = CREATE_NEW_PROCESS_GROUP. The `creation_flags`
-            // method is added by `std::os::windows::process::CommandExt`
-            // which is auto-imported on Windows by the standard library.
-            cmd.creation_flags(0x0000_0200);
+            const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+            cmd.creation_flags(CREATE_NEW_PROCESS_GROUP);
         }
 
         let mut child = cmd
@@ -295,11 +286,10 @@ impl ForgeEngine {
         #[cfg(unix)]
         {
             if let Some(pid) = child.id() {
-                // Negative pid -> signal the process group.
-                let _ = std::process::Command::new("kill")
-                    .arg("-KILL")
-                    .arg(format!("-{pid}"))
-                    .output();
+                use nix::sys::signal::{killpg, Signal};
+                use nix::unistd::Pid;
+                // After setsid(), pgid == pid.
+                let _ = killpg(Pid::from_raw(pid as i32), Signal::SIGKILL);
             }
         }
         #[cfg(windows)]
