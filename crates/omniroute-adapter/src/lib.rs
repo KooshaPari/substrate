@@ -10,14 +10,22 @@
 //! [`RoutingPort::route_decision`] and returns a structured
 //! [`substrate_core::domain::RoutingDecision`] (engine + model + rationale).
 //!
+//! When configured with a [`RoutingSuperset`], the adapter load-balances across
+//! multiple targets with circuit-breaker health tracking and weighted fallback.
+//!
 //! This crate compiles against `substrate-core` only — no `engine-*` dependency.
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
+
+use std::sync::{Arc, Mutex};
 
 use async_trait::async_trait;
 use substrate_core::domain::{RoutingDecision, Task};
 use substrate_core::error::{Result, SubstrateError};
 use substrate_core::ports::RoutingPort;
+use substrate_core::routing_port::{
+    CircuitBreakerConfig, RoutingStrategy, RoutingSuperset, RoutingTarget, SupersetRoutingDecision,
+};
 
 /// Default base URL for the OmniRoute local proxy.
 pub const DEFAULT_BASE_URL: &str = "http://127.0.0.1:20128/v1";
@@ -69,15 +77,21 @@ impl ProviderConfig {
 /// `OmniRouteAdapter` is `Clone + Send + Sync`, holds no IO resources, and
 /// never touches the network itself — the network call is performed by the
 /// downstream engine (forge) once the provider has been configured.
+///
+/// When a [`RoutingSuperset`] is attached via [`Self::with_superset`], routing
+/// uses load-balancing strategies, per-target circuit breakers, and weighted
+/// fallback instead of returning a fixed model.
 #[derive(Debug, Clone)]
 pub struct OmniRouteAdapter {
     model: String,
+    superset: Option<Arc<Mutex<RoutingSuperset>>>,
 }
 
 impl Default for OmniRouteAdapter {
     fn default() -> Self {
         Self {
             model: DEFAULT_MODEL.to_string(),
+            superset: None,
         }
     }
 }
@@ -92,7 +106,27 @@ impl OmniRouteAdapter {
     pub fn with_model(model: impl Into<String>) -> Self {
         Self {
             model: model.into(),
+            superset: None,
         }
+    }
+
+    /// Attach a routing superset for load-balancing + circuit-breaker fallback.
+    pub fn with_superset(mut self, superset: RoutingSuperset) -> Self {
+        self.superset = Some(Arc::new(Mutex::new(superset)));
+        self
+    }
+
+    /// Build a default single-target superset pool (round-robin over one model).
+    pub fn with_default_superset(strategy: RoutingStrategy) -> Self {
+        let pool = vec![RoutingTarget {
+            id: "primary".to_string(),
+            engine: ENGINE.to_string(),
+            model: DEFAULT_MODEL.to_string(),
+            weight: 1,
+        }];
+        let superset =
+            RoutingSuperset::new(pool, Vec::new(), strategy, CircuitBreakerConfig::default());
+        Self::default().with_superset(superset)
     }
 
     /// Return the model id this adapter will route to.
@@ -106,11 +140,41 @@ impl OmniRouteAdapter {
     pub fn configure_forge_provider(&self) -> Result<ProviderConfig> {
         ProviderConfig::from_env()
     }
+
+    /// Record a routing outcome for superset health tracking (no-op without superset).
+    pub fn record_outcome(&self, target_id: &str, success: bool, now_secs: u64) {
+        if let Some(superset) = &self.superset {
+            if let Ok(mut guard) = superset.lock() {
+                guard.record_outcome(target_id, success, now_secs);
+            }
+        }
+    }
+
+    /// Route through the attached superset, returning the enriched decision.
+    pub fn route_superset(&self, now_secs: u64) -> Result<SupersetRoutingDecision> {
+        let superset = self.superset.as_ref().ok_or_else(|| {
+            SubstrateError::Routing("omniroute-adapter: no routing superset configured".to_string())
+        })?;
+        let mut guard = superset.lock().map_err(|_| {
+            SubstrateError::Routing("omniroute-adapter: superset lock poisoned".to_string())
+        })?;
+        guard.route(now_secs)
+    }
 }
 
 #[async_trait]
 impl RoutingPort for OmniRouteAdapter {
     async fn route_decision(&self, _task: &Task) -> Result<RoutingDecision> {
+        if let Some(superset) = &self.superset {
+            let now_secs = std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .map(|d| d.as_secs())
+                .unwrap_or(0);
+            let mut guard = superset.lock().map_err(|_| {
+                SubstrateError::Routing("omniroute-adapter: superset lock poisoned".to_string())
+            })?;
+            return Ok(guard.route(now_secs)?.decision);
+        }
         Ok(RoutingDecision {
             engine: ENGINE.to_string(),
             model: self.model.clone(),
@@ -251,5 +315,36 @@ mod tests {
         let task = Task::new("anything", "/tmp");
         let engine = adapter.route(&task).await.unwrap();
         assert_eq!(engine, "forge");
+    }
+
+    #[tokio::test]
+    async fn superset_route_decision_uses_pool() {
+        let pool = vec![
+            RoutingTarget {
+                id: "a".to_string(),
+                engine: ENGINE.to_string(),
+                model: "model-a".to_string(),
+                weight: 1,
+            },
+            RoutingTarget {
+                id: "b".to_string(),
+                engine: ENGINE.to_string(),
+                model: "model-b".to_string(),
+                weight: 1,
+            },
+        ];
+        let superset = RoutingSuperset::new(
+            pool,
+            Vec::new(),
+            RoutingStrategy::RoundRobin,
+            CircuitBreakerConfig::default(),
+        );
+        let adapter = OmniRouteAdapter::new().with_superset(superset);
+        let task = Task::new("prompt", "/tmp");
+        let d1 = adapter.route_decision(&task).await.unwrap();
+        let d2 = adapter.route_decision(&task).await.unwrap();
+        assert_eq!(d1.engine, "forge");
+        assert_eq!(d2.engine, "forge");
+        assert_ne!(d1.model, d2.model);
     }
 }

@@ -43,6 +43,9 @@ pub trait EnginePort: Send + Sync {
 }
 
 /// Selects an engine/agent target for a task.
+///
+/// Adapters may delegate to [`crate::routing_port::RoutingSuperset`] for
+/// load-balancing strategies, per-target circuit breakers, and weighted fallback.
 #[async_trait]
 pub trait RoutingPort: Send + Sync {
     /// Return the engine name that should handle `task`.
