@@ -52,6 +52,17 @@ pub fn init(conn: &Connection) -> Result<()> {
             content     TEXT NOT NULL,
             created_at  INTEGER NOT NULL
         );
-        CREATE INDEX IF NOT EXISTS idx_memory_created ON memory(created_at DESC);",
+        CREATE INDEX IF NOT EXISTS idx_memory_created ON memory(created_at DESC);
+
+        CREATE TABLE IF NOT EXISTS event_log (
+            aggregate_id  TEXT NOT NULL,
+            aggregate_seq INTEGER NOT NULL,
+            global_seq    INTEGER NOT NULL,
+            payload       TEXT NOT NULL,
+            occurred_at   INTEGER NOT NULL,
+            PRIMARY KEY (aggregate_id, aggregate_seq)
+        );
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_event_log_global ON event_log(global_seq);
+        CREATE INDEX IF NOT EXISTS idx_event_log_aggregate ON event_log(aggregate_id, aggregate_seq);",
     )
 }

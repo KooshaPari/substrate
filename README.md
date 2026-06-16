@@ -1,7 +1,7 @@
 # substrate
 
-**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing + process superset**
-**Status: all phases green · 140+ tests passing · clippy clean**
+**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing + process + event sourcing superset**
+**Status: all phases green · 150+ tests passing · clippy clean**
 
 Orchestration superset (2026-06): `SchedulePort` + `substrate-schedule` (cron/interval/daily/weekly via croner), `WorkflowPort` + `substrate-dag` (petgraph DAG: topo order, ready-set, cycle reject), `ClaimPort` + `store-sqlite` (BEGIN IMMEDIATE atomic claim + strsim fuzzy dedup).
 
@@ -10,6 +10,8 @@ Skills + memory superset (2026-06): `SkillPort` + `ToolRegistry` + `substrate-sk
 Routing superset (2026-06): `routing_port` in `substrate-core` (round-robin / weighted / least-used / power-of-two-choices, per-target circuit breaker Closed/Open/HalfOpen, weighted fallback chain) + `omniroute-adapter` wiring to OmniRoute providers.
 
 Process superset (2026-06): `ProcessPort` + `runtime-process` (cross-platform managed subprocess via `command-group`: spawn in process group, status poll, wait-with-timeout, kill-group-on-timeout), `WatcherPort` + `file-watcher` (debounced filesystem events via `notify` + `notify-debouncer-mini`).
+
+Event sourcing superset (2026-06): `EventStorePort` + `Projection`/`replay` in `substrate-core` (append-only per-aggregate event log, global monotonic sequence, duplicate-seq rejection), `SqliteEventStore` in `store-sqlite` (BEGIN IMMEDIATE seq allocation), `TaskLifecycleProjection` demo (task events → `TaskProjectionState`).
 
 A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug
@@ -51,7 +53,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 
 | Crate | Layer | Responsibility |
 |-------|-------|----------------|
-| `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`, `SkillPort`, `ToolRegistry`, `MemoryPort`, `ProcessPort`, `WatcherPort`), routing superset (`RoutingStrategy`, circuit breaker, fallback chain), `TracePort` + event structs, `SubstrateError`. |
+| `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`, `SkillPort`, `ToolRegistry`, `MemoryPort`, `ProcessPort`, `WatcherPort`, `EventStorePort`), routing superset (`RoutingStrategy`, circuit breaker, fallback chain), `Projection`/`replay`, `TracePort` + event structs, `SubstrateError`. |
 | `engine-spec` | core-side contract | Provider-agnostic `TaskSpec` and the `ArgvBuilder` trait. |
 | `engine-forge` | adapter | `EnginePort` driving the `forge` CLI (`FORGE_BIN`); tolerant conversation-id regex, dump→`StructuredResult` normalization, PR-URL extraction. |
 | `engine-codex` | adapter | `EnginePort` driving the `codex` CLI (`CODEX_BIN`; `CODEX_INTEGRATION=1` for real calls). |
@@ -60,6 +62,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `engine-conformance` | test harness | `assert_engine_conformance<E>` — runs the harness-agnostic contract suite against any adapter, offline. |
 | `transport-file` | adapter | `TransportPort`: append-only JSONL mailboxes + lockfile-lease atomic claim. |
 | `store-file` | adapter | `StorePort`: one JSON file per task/result + lockfile-lease atomic claim. |
+| `store-sqlite` | adapter | `MailboxStore`, `ClaimPort`, `MemoryPort`, `EventStorePort` (append-only event log + global seq). |
 | `substrate-app` | application | `DispatchService` implementing `DispatchApi`, generic over the three driven ports + optional `TracePort`. |
 | `substrate-trace` | adapter | `TracePort` adapters: `NoopTrace`, `RecordingTrace` (test double), `MultiTrace` (fan-out), `AgilePlusTrace`, `TraceraTrace`. |
 | `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters. |

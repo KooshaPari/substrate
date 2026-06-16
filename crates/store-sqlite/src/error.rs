@@ -14,4 +14,12 @@ pub enum StoreError {
     /// Enqueue rejected: near-duplicate body.
     #[error("duplicate work: {0}")]
     Duplicate(String),
+    /// Event append rejected: expected sequence mismatch or duplicate seq.
+    #[error("duplicate event seq: aggregate {aggregate_id} expected {expected}")]
+    DuplicateEventSeq {
+        /// Aggregate id.
+        aggregate_id: String,
+        /// Sequence the caller expected.
+        expected: u64,
+    },
 }

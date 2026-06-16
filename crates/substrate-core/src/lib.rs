@@ -12,6 +12,7 @@
 pub mod claim_port;
 pub mod domain;
 pub mod error;
+pub mod event_store_port;
 pub mod mailbox_port;
 pub mod memory_port;
 pub mod ports;
@@ -25,6 +26,10 @@ pub mod workflow_port;
 
 pub use claim_port::{ClaimPort, WorkItem, WorkItemState};
 pub use error::{Result, SubstrateError};
+pub use event_store_port::{
+    replay, replay_task_state, EventEnvelope, EventStorePort, Projection, TaskLifecycleEvent,
+    TaskLifecycleProjection, TaskProjectionState,
+};
 pub use mailbox_port::MailboxStore;
 pub use memory_port::{MemoryEntry, MemoryPort};
 pub use process_port::{ProcessHandle, ProcessPort, ProcessSpawnSpec, ProcessState};
