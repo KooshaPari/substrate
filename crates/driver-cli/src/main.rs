@@ -11,6 +11,7 @@ use std::sync::Arc;
 
 use anyhow::{anyhow, Context};
 use clap::{Parser, Subcommand};
+use driver_argv::ArgvCli;
 use engine_forge::ForgeEngine;
 use engine_spec::TaskSpec;
 use plan::{engine_catalog, enrich_plan_argv, print_plan};
@@ -34,7 +35,8 @@ use transport_file::FileTransport;
     after_help = "EXAMPLES:\n  \
                   substrate plan --engine forge --cwd . \"fix the bug\"\n  \
                   substrate dispatch --fake --cwd . \"echo hi\"\n  \
-                  substrate dispatch --dry-run --cwd . \"echo hi\"\n\n\
+                  substrate dispatch --dry-run --cwd . \"echo hi\"\n  \
+                  substrate argv --provider forge --prompt \"hello\" --dry-run\n\n\
                   ENV (engine binaries):\n  \
                   FORGE_BIN, CODEX_BIN, CLAUDE_BIN, AGENTAPI_ENDPOINT"
 )]
@@ -49,6 +51,11 @@ enum Command {
     Dispatch(DispatchArgs),
     /// Print the dispatch plan (engine, session mode, argv) without executing.
     Plan(DispatchArgs),
+    /// Build provider-native argv for external agent CLIs (thegent-dispatch surface).
+    Argv {
+        #[command(flatten)]
+        args: ArgvCli,
+    },
 }
 
 /// Flags shared by `dispatch` and `plan`.
@@ -194,5 +201,6 @@ async fn main() -> anyhow::Result<()> {
             let plan = args.plan()?;
             print_plan(&plan)
         }
+        Command::Argv { args } => driver_argv::dispatch::run(args),
     }
 }

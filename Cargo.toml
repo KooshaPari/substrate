@@ -10,6 +10,7 @@ members = [
     "crates/substrate-app",
     "crates/driver-cli",
     "crates/driver-http",
+    "crates/driver-argv",
     "crates/arch-test",
     "crates/omniroute-adapter",
     "tools/fake-forge",

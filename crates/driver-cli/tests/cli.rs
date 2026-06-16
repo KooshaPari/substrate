@@ -111,3 +111,24 @@ fn help_lists_dispatch_and_plan_subcommands() {
         .stdout(predicate::str::contains("plan"))
         .stdout(predicate::str::contains("--dry-run"));
 }
+
+#[test]
+fn argv_forge_dry_run_json_emit() {
+    let mut cmd = Command::cargo_bin("substrate").unwrap();
+    cmd.args([
+        "argv",
+        "--provider",
+        "forge",
+        "--prompt",
+        "hello",
+        "--dry-run",
+        "--emit",
+        "json",
+    ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("\"provider\": \"forge\""))
+        .stdout(predicate::str::contains("\"dry_run\": true"))
+        .stdout(predicate::str::contains("\"forge\""));
+}

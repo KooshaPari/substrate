@@ -14,6 +14,7 @@ path = "src/main.rs"
 [dependencies]
 substrate-core = { path = "../substrate-core" }
 substrate-app = { path = "../substrate-app" }
+driver-argv = { path = "../driver-argv" }
 engine-spec = { path = "../engine-spec" }
 engine-forge = { path = "../engine-forge" }
 engine-codex = { path = "../engine-codex" }
