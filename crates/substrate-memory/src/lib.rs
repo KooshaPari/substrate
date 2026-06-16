@@ -39,6 +39,14 @@ impl RingMemory {
 
     fn push_entry(&self, key: &str, content: &str) -> Uuid {
         let id = Uuid::new_v4();
+        self.push_entry_with_id(id, key, content);
+        id
+    }
+
+    fn push_entry_with_id(&self, id: Uuid, key: &str, content: &str) {
+        if self.capacity == 0 {
+            return;
+        }
         let entry = MemoryEntry {
             id,
             key: key.to_string(),
@@ -46,11 +54,10 @@ impl RingMemory {
             created_at: Utc::now().timestamp(),
         };
         let mut buf = self.entries.lock().unwrap();
-        if self.capacity > 0 && buf.len() >= self.capacity {
+        if buf.len() >= self.capacity {
             buf.pop_front();
         }
         buf.push_back(entry);
-        id
     }
 }
 
@@ -100,10 +107,12 @@ impl MemoryPort for TwoTierMemory {
     type Error = MemoryError;
 
     fn append(&self, key: &str, content: &str) -> Result<Uuid, Self::Error> {
-        self.ring.append(key, content)?;
+        let id = Uuid::new_v4();
         self.persistent
-            .append(key, content)
-            .map_err(MemoryError::from)
+            .append_with_id(id, key, content)
+            .map_err(MemoryError::from)?;
+        self.ring.push_entry_with_id(id, key, content);
+        Ok(id)
     }
 
     fn get(&self, key: &str) -> Result<Option<String>, Self::Error> {

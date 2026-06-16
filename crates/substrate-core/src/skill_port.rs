@@ -95,10 +95,18 @@ pub fn validate_json_schema(value: &Value, schema: &Value) -> Result<()> {
             let key_str = key.as_str().ok_or_else(|| {
                 SubstrateError::SchemaValidation("required entry must be a string".into())
             })?;
-            if !obj.contains_key(key_str) {
-                return Err(SubstrateError::SchemaValidation(format!(
-                    "missing required field: {key_str}"
-                )));
+            match obj.get(key_str) {
+                None => {
+                    return Err(SubstrateError::SchemaValidation(format!(
+                        "missing required field: {key_str}"
+                    )));
+                }
+                Some(Value::Null) => {
+                    return Err(SubstrateError::SchemaValidation(format!(
+                        "required field must not be null: {key_str}"
+                    )));
+                }
+                Some(_) => {}
             }
         }
     }
