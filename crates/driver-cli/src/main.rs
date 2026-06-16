@@ -82,11 +82,9 @@ impl DispatchArgs {
     fn session_mode(&self) -> anyhow::Result<Option<SessionMode>> {
         match &self.mode {
             None => Ok(None),
-            Some(s) => SessionMode::parse_cli(s)
-                .map(Some)
-                .ok_or_else(|| {
-                    anyhow!("invalid --mode {s}: use background, foreground, or in_process")
-                }),
+            Some(s) => SessionMode::parse_cli(s).map(Some).ok_or_else(|| {
+                anyhow!("invalid --mode {s}: use background, foreground, or in_process")
+            }),
         }
     }
 
