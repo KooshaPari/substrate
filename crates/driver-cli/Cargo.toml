@@ -14,7 +14,11 @@ path = "src/main.rs"
 [dependencies]
 substrate-core = { path = "../substrate-core" }
 substrate-app = { path = "../substrate-app" }
+engine-spec = { path = "../engine-spec" }
 engine-forge = { path = "../engine-forge" }
+engine-codex = { path = "../engine-codex" }
+engine-claude = { path = "../engine-claude" }
+engine-agentapi = { path = "../engine-agentapi" }
 transport-file = { path = "../transport-file" }
 store-file = { path = "../store-file" }
 clap.workspace = true

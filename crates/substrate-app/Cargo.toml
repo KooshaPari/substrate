@@ -9,7 +9,9 @@ description = "Application layer: DispatchService use-case, generic over the cor
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
+engine-spec = { path = "../engine-spec" }
 async-trait.workspace = true
+serde.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]

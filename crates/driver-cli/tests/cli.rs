@@ -54,3 +54,48 @@ fn dispatch_fake_forge_emits_completed_json() {
         .stdout(predicate::str::contains("\"status\": \"completed\""))
         .stdout(predicate::str::contains("DONE: printed hi"));
 }
+
+#[test]
+fn plan_prints_dispatch_plan_without_spawning() {
+    let tmp = tempfile::tempdir().unwrap();
+    // FORGE_BIN points at a non-existent binary; plan must not spawn.
+    let missing = tmp.path().join("definitely-not-forge.exe");
+
+    let mut cmd = Command::cargo_bin("substrate").unwrap();
+    cmd.env("FORGE_BIN", &missing).args([
+        "plan",
+        "--engine",
+        "forge",
+        "--cwd",
+        tmp.path().to_str().unwrap(),
+        "echo hi",
+    ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("\"engine\": \"forge\""))
+        .stdout(predicate::str::contains("\"session_mode\": \"foreground\""))
+        .stdout(predicate::str::contains("echo hi"));
+}
+
+#[test]
+fn dispatch_dry_run_prints_plan_without_spawning() {
+    let tmp = tempfile::tempdir().unwrap();
+    let missing = tmp.path().join("definitely-not-forge.exe");
+
+    let mut cmd = Command::cargo_bin("substrate").unwrap();
+    cmd.env("FORGE_BIN", &missing).args([
+        "dispatch",
+        "--dry-run",
+        "--engine",
+        "forge",
+        "--cwd",
+        tmp.path().to_str().unwrap(),
+        "echo hi",
+    ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("\"engine\": \"forge\""))
+        .stdout(predicate::str::contains("\"argv\""));
+}
