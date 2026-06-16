@@ -62,6 +62,14 @@ pub enum SubstrateError {
     #[error("duplicate work: {0}")]
     DuplicateWork(String),
 
+    /// Input failed JSON schema validation for a skill/tool.
+    #[error("schema validation: {0}")]
+    SchemaValidation(String),
+
+    /// A memory port operation failed.
+    #[error("memory error: {0}")]
+    Memory(String),
+
     /// A catch-all for adapter-specific failures that do not fit above.
     #[error("{0}")]
     Other(String),

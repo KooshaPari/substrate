@@ -1,9 +1,11 @@
 # substrate
 
-**Work-state: COMPLETE ██████████ 6/6 phases + orchestration superset**
-**Status: all phases green · 115+ tests passing · clippy clean**
+**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory superset**
+**Status: all phases green · 124+ tests passing · clippy clean**
 
 Orchestration superset (2026-06): `SchedulePort` + `substrate-schedule` (cron/interval/daily/weekly via croner), `WorkflowPort` + `substrate-dag` (petgraph DAG: topo order, ready-set, cycle reject), `ClaimPort` + `store-sqlite` (BEGIN IMMEDIATE atomic claim + strsim fuzzy dedup).
+
+Skills + memory superset (2026-06): `SkillPort` + `ToolRegistry` + `substrate-skills` (named invokable skills with JSON schema input validation), `MemoryPort` + `substrate-memory` (bounded ring buffer + `store-sqlite` persistent history, two-tier compose).
 
 A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug
@@ -45,7 +47,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 
 | Crate | Layer | Responsibility |
 |-------|-------|----------------|
-| `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`), `TracePort` + event structs, `SubstrateError`. |
+| `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`, `SkillPort`, `ToolRegistry`, `MemoryPort`), `TracePort` + event structs, `SubstrateError`. |
 | `engine-spec` | core-side contract | Provider-agnostic `TaskSpec` and the `ArgvBuilder` trait. |
 | `engine-forge` | adapter | `EnginePort` driving the `forge` CLI (`FORGE_BIN`); tolerant conversation-id regex, dump→`StructuredResult` normalization, PR-URL extraction. |
 | `engine-codex` | adapter | `EnginePort` driving the `codex` CLI (`CODEX_BIN`; `CODEX_INTEGRATION=1` for real calls). |
@@ -60,6 +62,8 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `arch-test` | test-only | Architecture conformance (dependency direction). |
 | `substrate-schedule` | adapter | `SchedulePort`: cron/interval/daily/weekly `next_run` via croner. |
 | `substrate-dag` | adapter | `WorkflowPort`: petgraph DAG topo order, ready-set, cycle detection. |
+| `substrate-skills` | adapter | `SkillPort` + `ToolRegistry`: in-memory named skills with JSON schema validation. |
+| `substrate-memory` | adapter | `MemoryPort`: bounded ring buffer + two-tier compose with `store-sqlite` persistent tier. |
 | `tools/fake-forge` | test fixture | Network-free stand-in for the forge CLI. |
 
 ## Quickstart

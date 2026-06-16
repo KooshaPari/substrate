@@ -1494,11 +1494,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "substrate-memory"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "store-sqlite",
+ "substrate-core",
+ "thiserror",
+ "uuid",
+]
+
+[[package]]
 name = "substrate-schedule"
 version = "0.1.0"
 dependencies = [
  "chrono",
  "croner",
+ "substrate-core",
+]
+
+[[package]]
+name = "substrate-skills"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
  "substrate-core",
 ]
 

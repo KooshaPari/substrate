@@ -13,14 +13,20 @@ pub mod claim_port;
 pub mod domain;
 pub mod error;
 pub mod mailbox_port;
+pub mod memory_port;
 pub mod ports;
 pub mod schedule_port;
+pub mod skill_port;
 pub mod trace;
 pub mod workflow_port;
 
 pub use claim_port::{ClaimPort, WorkItem, WorkItemState};
 pub use error::{Result, SubstrateError};
 pub use mailbox_port::MailboxStore;
+pub use memory_port::{MemoryEntry, MemoryPort};
 pub use schedule_port::{ScheduleInstant, SchedulePort, ScheduleTrigger, Weekday};
+pub use skill_port::{
+    validate_json_schema, SkillDescriptor, SkillHandler, SkillPort, ToolRegistry,
+};
 pub use trace::{TaskCompleted, TaskFailed, TaskRegistered, TracePort};
 pub use workflow_port::{Workflow, WorkflowEdge, WorkflowNode, WorkflowPort};

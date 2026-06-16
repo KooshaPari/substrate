@@ -3,9 +3,11 @@
 
 pub mod claim_store;
 pub mod error;
+pub mod memory_store;
 mod schema;
 pub mod store;
 
 pub use claim_store::{bodies_are_near_duplicate, SqliteClaimStore};
 pub use error::StoreError;
+pub use memory_store::SqliteMemoryStore;
 pub use store::SqliteMailboxStore;

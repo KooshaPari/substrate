@@ -22,6 +22,8 @@ members = [
     "crates/substrate-trace",
     "crates/substrate-schedule",
     "crates/substrate-dag",
+    "crates/substrate-skills",
+    "crates/substrate-memory",
 ]
 [workspace.package]
 version = "0.1.0"
