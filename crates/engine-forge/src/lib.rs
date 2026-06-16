@@ -28,8 +28,10 @@
 
 mod parse;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -41,6 +43,7 @@ use substrate_core::error::{Result, SubstrateError};
 use substrate_core::ports::{EnginePort, StorePort};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
+use tokio::sync::Mutex as AsyncMutex;
 use uuid::Uuid;
 
 pub use parse::{
@@ -100,6 +103,10 @@ pub struct ForgeEngine {
     store: Option<Arc<dyn StorePort>>,
     /// Directory used for logfiles; defaults to the OS temp dir.
     log_root: Option<PathBuf>,
+    /// Serializes conversation-list snapshots for parallel `start` calls.
+    list_diff_lock: Arc<AsyncMutex<()>>,
+    /// Maps engine `conv_id` → task cwd for `resume`.
+    conv_cwds: Arc<Mutex<HashMap<String, String>>>,
 }
 
 impl std::fmt::Debug for ForgeEngine {
@@ -135,6 +142,8 @@ impl ForgeEngine {
             timeout: Duration::from_secs(timeout_secs),
             store: None,
             log_root: None,
+            list_diff_lock: Arc::new(AsyncMutex::new(())),
+            conv_cwds: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -151,6 +160,8 @@ impl ForgeEngine {
             timeout: Duration::from_secs(timeout_secs),
             store: None,
             log_root: None,
+            list_diff_lock: Arc::new(AsyncMutex::new(())),
+            conv_cwds: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -402,11 +413,15 @@ impl EnginePort for ForgeEngine {
         let spec = TaskSpec::new(&task.prompt, &task.cwd).with_agent("forge");
         let args = self.argv.build_start(&spec);
 
+        let logfile = self.logfile_for(task.id);
+
+        // Serialize list-diff capture so parallel lanes don't race snapshots.
+        let _list_guard = self.list_diff_lock.lock().await;
+
         // ---- Step 1: snapshot the conversation list (BEFORE).
         let before = self.list_conversation_ids().await;
 
         // ---- Step 2: spawn the child in its own group, tee to logfile.
-        let logfile = self.logfile_for(task.id);
         let (mut child, writer) = self
             .spawn_with_group(args, logfile.clone())
             .map_err(|e| SubstrateError::Engine(format!("spawn {}: {e}", self.bin)))?;
@@ -452,6 +467,13 @@ impl EnginePort for ForgeEngine {
 
         let conv_id = conv_id.unwrap_or_else(fallback_conversation_id);
 
+        drop(_list_guard);
+
+        self.conv_cwds
+            .lock()
+            .unwrap()
+            .insert(conv_id.clone(), task.cwd.clone());
+
         // ---- Step 5: persist the conv id immediately (best-effort).
         self.persist_conv_id(task.id, &conv_id).await;
 
@@ -481,7 +503,14 @@ impl EnginePort for ForgeEngine {
 
     async fn resume(&self, conv_id: &str, prompt: &str) -> Result<Session> {
         // Phase 1: resume re-invokes with the prompt; conv id is preserved.
-        let spec = TaskSpec::new(prompt, ".").with_agent("forge");
+        let cwd = self
+            .conv_cwds
+            .lock()
+            .unwrap()
+            .get(conv_id)
+            .cloned()
+            .unwrap_or_else(|| ".".to_string());
+        let spec = TaskSpec::new(prompt, &cwd).with_agent("forge");
         let args = self.argv.build_start(&spec);
         let _ = self.run_simple(args).await?;
         Ok(Session {

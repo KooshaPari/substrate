@@ -124,6 +124,8 @@ where
                 return Err(e);
             }
         };
+        task.conv_id = Some(session.conv_id.clone());
+        self.store.persist(&task).await?;
 
         // 4. Dump and normalize.
         let dump = match self.engine.dump(&session.conv_id).await {
@@ -148,11 +150,11 @@ where
         self.store.persist(&task).await?;
         self.store.persist_result(&task.id, &result).await?;
 
-        // 6. Emit TaskCompleted or TaskFailed based on the terminal status.
-        if result.status == TaskState::Failed {
-            self.emit_failed(&task, &result.text);
-        } else {
-            self.emit_completed(&task, &result);
+        // 6. Emit TaskCompleted or TaskFailed only for terminal engine status.
+        match result.status {
+            TaskState::Failed => self.emit_failed(&task, &result.text),
+            TaskState::Completed => self.emit_completed(&task, &result),
+            _ => {}
         }
 
         Ok(result)
@@ -170,7 +172,10 @@ where
                 to: TaskState::Cancelled,
             });
         }
-        self.engine.cancel(&id.to_string()).await?;
+        let conv_id = task.conv_id.as_deref().ok_or_else(|| {
+            SubstrateError::Engine(format!("task {id} has no engine session to cancel"))
+        })?;
+        self.engine.cancel(conv_id).await?;
         task.advance(TaskState::Cancelled)?;
         self.store.persist(&task).await?;
         Ok(())

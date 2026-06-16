@@ -203,12 +203,19 @@ where
         match resume_result {
             Err(e) if is_resume_400(&e) => {
                 let fallback = format!("[context stripped]\n{prompt}");
-                self.engine
-                    .resume(conv_id, &fallback)
-                    .await
-                    .map_err(|e2| SupervisorError::Engine(e2.to_string()))?;
+                if let Err(e2) = self.engine.resume(conv_id, &fallback).await {
+                    self.store
+                        .unclaim(msg.id)
+                        .map_err(|e3| SupervisorError::Store(e3.to_string()))?;
+                    return Err(SupervisorError::Engine(e2.to_string()));
+                }
             }
-            Err(e) => return Err(SupervisorError::Engine(e.to_string())),
+            Err(e) => {
+                self.store
+                    .unclaim(msg.id)
+                    .map_err(|e2| SupervisorError::Store(e2.to_string()))?;
+                return Err(SupervisorError::Engine(e.to_string()));
+            }
             Ok(_) => {}
         }
 
