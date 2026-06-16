@@ -101,11 +101,21 @@ impl CircuitBreaker {
     }
 
     /// Whether a request may be sent to this target at `now_secs`.
-    pub fn allow_request(&self, now_secs: u64) -> bool {
-        matches!(
-            self.effective_state(now_secs),
-            CircuitState::Closed | CircuitState::HalfOpen
-        )
+    ///
+    /// In `HalfOpen`, only the first call admits a single probe request.
+    pub fn allow_request(&mut self, now_secs: u64) -> bool {
+        match self.effective_state(now_secs) {
+            CircuitState::Closed => true,
+            CircuitState::HalfOpen => {
+                if self.state == CircuitState::Open {
+                    self.state = CircuitState::HalfOpen;
+                    true
+                } else {
+                    false
+                }
+            }
+            CircuitState::Open => false,
+        }
     }
 
     /// Record a successful response.
@@ -224,17 +234,17 @@ impl RoutingSelector {
         now_secs: u64,
         p2c_seed: u64,
     ) -> Option<usize> {
-        let healthy: Vec<usize> = pool
-            .iter()
-            .enumerate()
-            .filter(|(_, t)| {
-                state
-                    .health_for(&t.id)
-                    .map(|h| h.breaker.allow_request(now_secs))
-                    .unwrap_or(true)
-            })
-            .map(|(i, _)| i)
-            .collect();
+        let mut healthy = Vec::new();
+        for (i, t) in pool.iter().enumerate() {
+            let allowed = state
+                .health
+                .get_mut(&t.id)
+                .map(|h| h.breaker.allow_request(now_secs))
+                .unwrap_or(true);
+            if allowed {
+                healthy.push(i);
+            }
+        }
 
         if healthy.is_empty() {
             return None;
@@ -313,7 +323,7 @@ impl RoutingSelector {
     /// Walk the fallback chain by rank; within each rank, weighted-select among healthy entries.
     pub fn select_fallback<'a>(
         chain: &'a [FallbackEntry],
-        health: &HashMap<String, TargetHealth>,
+        health: &mut HashMap<String, TargetHealth>,
         counter: &mut u64,
         now_secs: u64,
     ) -> Option<&'a RoutingTarget> {
@@ -329,7 +339,7 @@ impl RoutingSelector {
                 .filter(|e| e.rank == rank)
                 .filter(|e| {
                     health
-                        .get(&e.target.id)
+                        .get_mut(&e.target.id)
                         .map(|h| h.breaker.allow_request(now_secs))
                         .unwrap_or(true)
                 })
@@ -373,6 +383,7 @@ impl SupersetRoutingDecision {
                 engine: target.engine.clone(),
                 model: target.model.clone(),
                 reason: Some(reason.into()),
+                target_id: Some(target.id.clone()),
             },
         }
     }
@@ -433,7 +444,7 @@ impl RoutingSuperset {
 
         if let Some(target) = RoutingSelector::select_fallback(
             &self.fallback,
-            &self.state.health,
+            &mut self.state.health,
             &mut self.state.selection_counter,
             now_secs,
         ) {

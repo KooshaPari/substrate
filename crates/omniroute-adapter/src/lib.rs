@@ -179,6 +179,7 @@ impl RoutingPort for OmniRouteAdapter {
             engine: ENGINE.to_string(),
             model: self.model.clone(),
             reason: Some("omniroute-adapter:default".to_string()),
+            target_id: None,
         })
     }
 }
@@ -346,5 +347,7 @@ mod tests {
         assert_eq!(d1.engine, "forge");
         assert_eq!(d2.engine, "forge");
         assert_ne!(d1.model, d2.model);
+        assert!(d1.target_id.is_some());
+        assert!(d2.target_id.is_some());
     }
 }

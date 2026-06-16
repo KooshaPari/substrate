@@ -128,6 +128,7 @@ fn circuit_breaker_open_to_half_open_after_timeout() {
     assert_eq!(cb.effective_state(t0 + 59), CircuitState::Open);
     assert_eq!(cb.effective_state(t0 + 60), CircuitState::HalfOpen);
     assert!(cb.allow_request(t0 + 60));
+    assert!(!cb.allow_request(t0 + 60));
 }
 
 #[test]
@@ -140,6 +141,7 @@ fn circuit_breaker_half_open_to_closed_on_success() {
     }
     let t1 = t0 + 60;
     assert_eq!(cb.effective_state(t1), CircuitState::HalfOpen);
+    assert!(cb.allow_request(t1));
     cb.record_success(t1);
     assert_eq!(cb.effective_state(t1), CircuitState::Closed);
     assert_eq!(cb.consecutive_failures(), 0);
@@ -155,6 +157,7 @@ fn circuit_breaker_half_open_to_open_on_failure() {
     }
     let t1 = t0 + 60;
     assert_eq!(cb.effective_state(t1), CircuitState::HalfOpen);
+    assert!(cb.allow_request(t1));
     cb.record_failure(t1);
     assert_eq!(cb.effective_state(t1), CircuitState::Open);
 }
@@ -189,7 +192,7 @@ fn fallback_skips_open_targets_in_order() {
     );
     health.insert("secondary".to_string(), TargetHealth::default());
 
-    let picked = RoutingSelector::select_fallback(&chain, &health, &mut 0, 150).unwrap();
+    let picked = RoutingSelector::select_fallback(&chain, &mut health, &mut 0, 150).unwrap();
     assert_eq!(picked.id, "secondary");
 }
 
@@ -210,5 +213,9 @@ fn routing_superset_route_and_record_outcome() {
 
     let decision = superset.route(1_000).unwrap();
     assert!(decision.decision.model.starts_with("model-"));
+    assert_eq!(
+        decision.decision.target_id.as_deref(),
+        Some(decision.target_id.as_str())
+    );
     superset.record_outcome(&decision.target_id, true, 1_000);
 }

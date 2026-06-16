@@ -300,6 +300,9 @@ pub struct RoutingDecision {
     /// Free-form rationale (provider hint, reason code, etc.).
     #[serde(default)]
     pub reason: Option<String>,
+    /// Chosen superset target id (for outcome recording), when applicable.
+    #[serde(default)]
+    pub target_id: Option<String>,
 }
 
 impl RoutingDecision {
@@ -309,6 +312,7 @@ impl RoutingDecision {
             engine: "forge".to_string(),
             model: "accounts/fireworks/routers/kimi-k2p6-turbo".to_string(),
             reason: Some("phase1-default".to_string()),
+            target_id: None,
         }
     }
 }
