@@ -15,12 +15,14 @@ default = ["app", "spec"]
 app = ["dep:substrate-app"]
 spec = ["dep:engine-spec"]
 a2a = ["dep:a2a"]
+http = ["dep:driver-http"]
 
 [dependencies]
 substrate-core = { version = "0.1.0", path = "../substrate-core" }
 substrate-app = { version = "0.1.0", path = "../substrate-app", optional = true }
 engine-spec = { version = "0.1.0", path = "../engine-spec", optional = true }
 a2a = { version = "0.1.0", path = "../a2a", optional = true }
+driver-http = { version = "0.1.0", path = "../driver-http", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

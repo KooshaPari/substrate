@@ -40,6 +40,7 @@ let plan = DispatchPlanner::plan(&PlanRequest {
 Optional features:
 
 - `a2a` — A2A wire-schema types
+- `http` — REST driver (`build_router`, `serve`, `HttpConfig`) for non-Rust consumers
 - Adapter crates (`store-sqlite` with bundled SQLite, `engine-forge`) are separate workspace members — depend on them via git when needed
 
 Default features: `app` + `spec` (planner + `TaskSpec`).

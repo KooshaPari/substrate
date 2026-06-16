@@ -32,17 +32,17 @@ concrete engines, transports, and stores into those contracts; the
     └───────────────┘                   │          │                    └──────────────────┘
                                         │ substrate │   StorePort        ┌──────────────────┐
                                         │  -app     │ ◀───────────────── │  store-file       │
-    ┌───────────────┐  DispatchApi      │  (use-    │                    └──────────────────┘
-    │  (future       │ ───────────────▶ │  cases)  │   TransportPort    ┌──────────────────┐
-    │   HTTP/MCP)    │                   │          │ ◀───────────────── │  transport-file   │
-    └───────────────┘                   └────┬─────┘                    └──────────────────┘
+    ┌───────────────┐  DispatchApi      │  (use-    │   TransportPort    ┌──────────────────┐
+    │  driver-http   │ ───────────────▶ │  cases)  │ ◀───────────────── │  transport-file   │
+    │  (REST/axum)   │                   │          │                    └──────────────────┘
+    └───────────────┘                   └────┬─────┘
                                              │ depends on
-                                             ▼
-                                     ┌────────────────┐   RoutingPort (port defined, Phase 1 adapter)
-                                     │ substrate-core  │
-                                     │ domain + ports  │   engine-spec: TaskSpec -> argv
-                                     │ (no adapter dep)│
-                                     └────────────────┘
+    ┌───────────────┐  DispatchApi           ▼
+    │  (future       │ ───────────────▶ ┌────────────────┐   RoutingPort    ┌──────────────────┐
+    │   MCP)         │                  │ substrate-core  │ ◀───────────────── │ omniroute-adapter │
+    └───────────────┘                  │ domain + ports  │                    └──────────────────┘
+                                       │ (no adapter dep)│   engine-spec: TaskSpec -> argv
+                                       └────────────────┘
 ```
 
 **Dependency rule (enforced):** `substrate-core` depends only on `serde`,
@@ -69,6 +69,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `substrate-app` | application | `DispatchService` implementing `DispatchApi`, `DispatchPlanner` (engine + session-mode selection), generic over the three driven ports + optional `TracePort`. |
 | `substrate-trace` | adapter | `TracePort` adapters: `NoopTrace`, `RecordingTrace` (test double), `MultiTrace` (fan-out), `AgilePlusTrace`, `TraceraTrace`. |
 | `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters (`dispatch`, `plan`, `--dry-run`). |
+| `driver-http` | inbound adapter | `substrate-http` REST server (axum): `/v1/dispatch`, `/v1/plan`, `/v1/route`, `/v1/mailbox/*`, `/healthz`. |
 | `omniroute-adapter` | adapter | `RoutingPort`: OmniRoute proxy config + optional routing superset (load-balance, circuit breaker, fallback). |
 | `arch-test` | test-only | Architecture conformance (dependency direction). |
 | `substrate-schedule` | adapter | `SchedulePort`: cron/interval/daily/weekly `next_run` via croner. |
@@ -106,7 +107,51 @@ let plan = DispatchPlanner::plan(&PlanRequest {
 })?;
 ```
 
-Published crates (publish-ready, `cargo publish --dry-run` green): `substrate-core`, `a2a`, `engine-spec`, `substrate-app`, and the `substrate` facade. Default features: `app` + `spec`. Optional: `a2a`. Adapter crates (`store-sqlite` with bundled SQLite, `engine-forge`) are separate git dependencies.
+Published crates (publish-ready, `cargo publish --dry-run` green): `substrate-core`, `a2a`, `engine-spec`, `substrate-app`, and the `substrate` facade. Default features: `app` + `spec`. Optional: `a2a`, `http` (REST driver).
+
+## HTTP API
+
+Non-Rust consumers (Go agentapi-plusplus, TS OmniRoute) can drive substrate over REST via `driver-http`:
+
+```sh
+# Start the server (bind + state from env; optional bearer auth)
+export SUBSTRATE_HTTP_BIND=127.0.0.1:8080
+export SUBSTRATE_STATE_DIR=.substrate
+export SUBSTRATE_HTTP_AUTH_TOKEN=   # optional; omit for local dev
+export FORGE_BIN=/path/to/fake-forge   # or real forge
+
+cargo run -p driver-http --bin substrate-http
+```
+
+| Method | Path | Body | Response |
+|--------|------|------|----------|
+| `GET` | `/healthz` | — | `{ "status": "ok" }` |
+| `POST` | `/v1/plan` | `{ "engine?", "cwd", "prompt", "mode?" }` | `DispatchPlan` |
+| `POST` | `/v1/dispatch` | `{ "engine?", "cwd", "prompt", "mode?" }` | `StructuredResult` |
+| `POST` | `/v1/route` | `{ "task": Task }` | `RoutingDecision` |
+| `POST` | `/v1/mailbox/send` | `a2a::Message` | `201 Created` |
+| `GET` | `/v1/mailbox/inbox?team=&to=` | — | `[Message]` |
+| `GET` | `/v1/tasks?team=` | — | `[a2a::Task]` |
+
+```sh
+# Dry-run plan (no engine spawn)
+curl -s localhost:8080/v1/plan \
+  -H 'Content-Type: application/json' \
+  -d '{"engine":"forge","cwd":"/tmp","prompt":"echo hi"}'
+
+# Dispatch with fake forge (offline)
+curl -s localhost:8080/v1/dispatch \
+  -H 'Content-Type: application/json' \
+  -d '{"engine":"forge","cwd":"/tmp","prompt":"echo hi"}'
+
+# Optional bearer auth (when SUBSTRATE_HTTP_AUTH_TOKEN is set)
+curl -s localhost:8080/v1/plan \
+  -H "Authorization: Bearer $SUBSTRATE_HTTP_AUTH_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"cwd":"/tmp","prompt":"hi"}'
+```
+
+Enable the SDK facade feature: `substrate = { ..., features = ["http"] }`.
 
 ## Quickstart
 
