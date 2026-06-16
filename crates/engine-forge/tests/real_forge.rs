@@ -68,6 +68,7 @@ async fn real_forge_dispatch_emits_structured_result() {
         parent_task_id: None,
         requirement_id: None,
         epic_id: None,
+        conv_id: None,
     };
 
     let session = engine.start(&task).await.expect("start");
@@ -86,7 +87,9 @@ async fn real_forge_dispatch_emits_structured_result() {
     // We DO assert the result is one of the two legal terminal states and
     // that the dump was non-empty.
     assert!(
-        !result.text.is_empty() || !result.pr_urls.is_empty() || result.status == substrate_core::domain::TaskState::Failed,
+        !result.text.is_empty()
+            || !result.pr_urls.is_empty()
+            || result.status == substrate_core::domain::TaskState::Failed,
         "real forge should produce a non-empty result or a Failed status, got: {result:?}"
     );
 }

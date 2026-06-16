@@ -167,8 +167,7 @@ impl MailboxStore for SqliteMailboxStore {
                     created_str,
                     consumed_str,
                 )| {
-                    let parts: Vec<Part> =
-                        serde_json::from_str(&parts_json).unwrap_or_default();
+                    let parts: Vec<Part> = serde_json::from_str(&parts_json).unwrap_or_default();
                     let state = match state_str.as_str() {
                         "delivered" => MsgState::Delivered,
                         "consumed" => MsgState::Consumed,
@@ -207,6 +206,15 @@ impl MailboxStore for SqliteMailboxStore {
         conn.execute(
             "UPDATE mailbox SET state='consumed', consumed_at=?2 WHERE id=?1",
             params![message_id.to_string(), Utc::now().to_rfc3339()],
+        )?;
+        Ok(())
+    }
+
+    fn unclaim(&self, message_id: Uuid) -> Result<(), StoreError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE mailbox SET state='unread', consumed_at=NULL WHERE id=?1 AND state='delivered'",
+            params![message_id.to_string()],
         )?;
         Ok(())
     }

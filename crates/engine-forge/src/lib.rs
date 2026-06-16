@@ -28,8 +28,10 @@
 
 mod parse;
 
+use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::Mutex;
 use std::time::Duration;
 
 use async_trait::async_trait;
@@ -41,6 +43,7 @@ use substrate_core::error::{Result, SubstrateError};
 use substrate_core::ports::{EnginePort, StorePort};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::process::Command;
+use tokio::sync::Mutex as AsyncMutex;
 use uuid::Uuid;
 
 pub use parse::{
@@ -78,11 +81,7 @@ impl ArgvBuilder for ForgeArgv {
     }
 
     fn build_dump(&self, conversation_id: &str) -> Vec<String> {
-        vec![
-            "conversation".into(),
-            "dump".into(),
-            conversation_id.into(),
-        ]
+        vec!["conversation".into(), "dump".into(), conversation_id.into()]
     }
 }
 
@@ -103,6 +102,10 @@ pub struct ForgeEngine {
     store: Option<Arc<dyn StorePort>>,
     /// Directory used for logfiles; defaults to the OS temp dir.
     log_root: Option<PathBuf>,
+    /// Serializes conversation-list snapshots for parallel `start` calls.
+    list_diff_lock: Arc<AsyncMutex<()>>,
+    /// Maps engine `conv_id` → task cwd for `resume`.
+    conv_cwds: Arc<Mutex<HashMap<String, String>>>,
 }
 
 impl std::fmt::Debug for ForgeEngine {
@@ -133,6 +136,8 @@ impl ForgeEngine {
             timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             store: None,
             log_root: None,
+            list_diff_lock: Arc::new(AsyncMutex::new(())),
+            conv_cwds: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -144,6 +149,8 @@ impl ForgeEngine {
             timeout: Duration::from_secs(DEFAULT_TIMEOUT_SECS),
             store: None,
             log_root: None,
+            list_diff_lock: Arc::new(AsyncMutex::new(())),
+            conv_cwds: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 
@@ -258,9 +265,10 @@ impl ForgeEngine {
         // memory: the spec requires "tee stdout to a logfile", not a full
         // buffered copy. A bounded read of the head is performed later for
         // the regex fast-path.
-        let mut stdout = child.stdout.take().ok_or_else(|| {
-            std::io::Error::other("child stdout not piped")
-        })?;
+        let mut stdout = child
+            .stdout
+            .take()
+            .ok_or_else(|| std::io::Error::other("child stdout not piped"))?;
         let log_path = logfile.clone();
         let writer = tokio::spawn(async move {
             let mut file = match tokio::fs::File::create(&log_path).await {
@@ -340,11 +348,15 @@ impl EnginePort for ForgeEngine {
         let spec = TaskSpec::new(&task.prompt, &task.cwd).with_agent("forge");
         let args = self.argv.build_start(&spec);
 
+        let logfile = self.logfile_for(task.id);
+
+        // Serialize list-diff capture so parallel lanes don't race snapshots.
+        let _list_guard = self.list_diff_lock.lock().await;
+
         // ---- Step 1: snapshot the conversation list (BEFORE).
         let before = self.list_conversation_ids().await;
 
         // ---- Step 2: spawn the child in its own group, tee to logfile.
-        let logfile = self.logfile_for(task.id);
         let (mut child, writer) = self
             .spawn_with_group(args, logfile.clone())
             .map_err(|e| SubstrateError::Engine(format!("spawn {}: {e}", self.bin)))?;
@@ -381,11 +393,21 @@ impl EnginePort for ForgeEngine {
             Some(id) => Some(id),
             None => {
                 let after = self.list_conversation_ids().await;
-                find_new_conversation_id(before.iter().map(String::as_str), after.iter().map(String::as_str))
+                find_new_conversation_id(
+                    before.iter().map(String::as_str),
+                    after.iter().map(String::as_str),
+                )
             }
         };
 
         let conv_id = conv_id.unwrap_or_else(fallback_conversation_id);
+
+        drop(_list_guard);
+
+        self.conv_cwds
+            .lock()
+            .unwrap()
+            .insert(conv_id.clone(), task.cwd.clone());
 
         // ---- Step 5: persist the conv id immediately (best-effort).
         self.persist_conv_id(task.id, &conv_id).await;
@@ -398,7 +420,10 @@ impl EnginePort for ForgeEngine {
             if let Some(parent) = logfile.parent() {
                 let _ = tokio::fs::write(
                     parent.join(format!("forge-{}.timeout", task.id)),
-                    format!("timed out after {}s\nconv_id={conv_id}\n", self.timeout.as_secs()),
+                    format!(
+                        "timed out after {}s\nconv_id={conv_id}\n",
+                        self.timeout.as_secs()
+                    ),
                 )
                 .await;
             }
@@ -413,7 +438,14 @@ impl EnginePort for ForgeEngine {
 
     async fn resume(&self, conv_id: &str, prompt: &str) -> Result<Session> {
         // Phase 1: resume re-invokes with the prompt; conv id is preserved.
-        let spec = TaskSpec::new(prompt, ".").with_agent("forge");
+        let cwd = self
+            .conv_cwds
+            .lock()
+            .unwrap()
+            .get(conv_id)
+            .cloned()
+            .unwrap_or_else(|| ".".to_string());
+        let spec = TaskSpec::new(prompt, &cwd).with_agent("forge");
         let args = self.argv.build_start(&spec);
         let _ = self.run_simple(args).await?;
         Ok(Session {
@@ -491,10 +523,14 @@ mod tests {
         assert_eq!(
             args,
             vec![
-                "-p", "do it",
-                "--agent", "forge",
-                "-C", "/tmp",
-                "--sandbox", "lane-a",
+                "-p",
+                "do it",
+                "--agent",
+                "forge",
+                "-C",
+                "/tmp",
+                "--sandbox",
+                "lane-a",
             ]
         );
     }
@@ -530,6 +566,8 @@ mod tests {
         let e = ForgeEngine::new().with_log_root("/tmp/my-logs");
         let p = e.logfile_for(Uuid::nil());
         assert!(p.starts_with("/tmp/my-logs"));
-        assert!(p.to_string_lossy().contains("forge-00000000-0000-0000-0000-000000000000.log"));
+        assert!(p
+            .to_string_lossy()
+            .contains("forge-00000000-0000-0000-0000-000000000000.log"));
     }
 }

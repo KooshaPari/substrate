@@ -19,6 +19,8 @@
 use async_trait::async_trait;
 use engine_spec::{ArgvBuilder, TaskSpec};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::sync::Mutex;
 use substrate_core::domain::{
     ConversationDump, EngineCapabilities, Mailbox, Session, StructuredResult, Task, TaskState,
 };
@@ -38,7 +40,6 @@ struct StartRequest<'a> {
 /// Response from `POST /v1/tasks`.
 #[derive(Debug, Deserialize)]
 struct StartResponse {
-    #[allow(dead_code)] // used when AGENTAPI_INTEGRATION=1
     task_id: String,
     conv_id: String,
 }
@@ -87,6 +88,8 @@ impl ArgvBuilder for AgentApiArgv {
 pub struct AgentApiEngine {
     endpoint: String,
     client: reqwest::Client,
+    /// Maps engine `conv_id` → agentapi `task_id` for cancel.
+    task_ids: Mutex<HashMap<String, String>>,
 }
 
 impl std::fmt::Debug for AgentApiEngine {
@@ -107,11 +110,12 @@ impl AgentApiEngine {
     /// Construct from the `AGENTAPI_ENDPOINT` env var (default
     /// `"http://localhost:3284"`).
     pub fn new() -> Self {
-        let endpoint = std::env::var("AGENTAPI_ENDPOINT")
-            .unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
+        let endpoint =
+            std::env::var("AGENTAPI_ENDPOINT").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
         AgentApiEngine {
             endpoint,
             client: reqwest::Client::new(),
+            task_ids: Mutex::new(HashMap::new()),
         }
     }
 
@@ -120,6 +124,7 @@ impl AgentApiEngine {
         AgentApiEngine {
             endpoint: endpoint.into(),
             client: reqwest::Client::new(),
+            task_ids: Mutex::new(HashMap::new()),
         }
     }
 
@@ -164,6 +169,11 @@ impl EnginePort for AgentApiEngine {
             .json()
             .await
             .map_err(|e| SubstrateError::Engine(format!("agentapi parse response: {e}")))?;
+
+        self.task_ids
+            .lock()
+            .unwrap()
+            .insert(start.conv_id.clone(), start.task_id.clone());
 
         Ok(Session {
             conv_id: start.conv_id,
@@ -211,7 +221,16 @@ impl EnginePort for AgentApiEngine {
             return Ok(());
         }
 
-        let url = format!("{}/v1/conversations/{conv_id}/cancel", self.endpoint);
+        let task_id = self
+            .task_ids
+            .lock()
+            .unwrap()
+            .get(conv_id)
+            .cloned()
+            .ok_or_else(|| {
+                SubstrateError::Engine(format!("agentapi cancel: unknown conv_id {conv_id}"))
+            })?;
+        let url = format!("{}/v1/tasks/{task_id}/cancel", self.endpoint);
         self.client
             .post(&url)
             .send()
