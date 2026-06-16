@@ -30,3 +30,16 @@ jobs:
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Publish dry-run (SDK crates)
+        run: |
+          mkdir -p .cargo
+          cat > .cargo/config.toml <<'EOF'
+          [patch.crates-io]
+          substrate-core = { path = "crates/substrate-core" }
+          engine-spec = { path = "crates/engine-spec" }
+          substrate-app = { path = "crates/substrate-app" }
+          a2a = { path = "crates/a2a" }
+          EOF
+          cargo publish --dry-run -p substrate-core
+          cargo publish --dry-run -p substrate

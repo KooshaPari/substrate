@@ -6,6 +6,9 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Hexagonal core contracts (domain + ports) for substrate. Depends on nothing but serde/thiserror/uuid/async-trait."
+readme = "README.md"
+keywords = ["agent", "hexagonal", "ports", "dispatch", "substrate"]
+categories = ["development-tools"]
 
 [dependencies]
 serde.workspace = true

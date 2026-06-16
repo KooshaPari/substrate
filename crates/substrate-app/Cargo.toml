@@ -5,11 +5,14 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Application layer: DispatchService use-case, generic over the core ports."
+description = "Application layer: DispatchService use-case and DispatchPlanner, generic over the core ports."
+readme = "README.md"
+keywords = ["dispatch", "planner", "hexagonal", "substrate"]
+categories = ["development-tools"]
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core.workspace = true
+engine-spec.workspace = true
 async-trait.workspace = true
 serde.workspace = true
 uuid.workspace = true

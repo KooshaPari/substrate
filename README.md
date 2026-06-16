@@ -55,6 +55,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 
 | Crate | Layer | Responsibility |
 |-------|-------|----------------|
+| `substrate` | SDK facade | Re-exports domain, ports, [`DispatchPlanner`], optional `sqlite`/`forge` adapters. Single dependency for downstream repos. |
 | `substrate-core` | core | Domain entities + lifecycle FSM, port traits (`EnginePort`, `RoutingPort`, `TransportPort`, `StorePort`, `DispatchApi`, `SchedulePort`, `WorkflowPort`, `ClaimPort`, `SkillPort`, `ToolRegistry`, `MemoryPort`, `ProcessPort`, `WatcherPort`, `EventStorePort`), routing superset (`RoutingStrategy`, circuit breaker, fallback chain), `Projection`/`replay`, `TracePort` + event structs, `SubstrateError`. |
 | `engine-spec` | core-side contract | Provider-agnostic `TaskSpec` and the `ArgvBuilder` trait. |
 | `engine-forge` | adapter | `EnginePort` driving the `forge` CLI (`FORGE_BIN`); tolerant conversation-id regex, dump→`StructuredResult` normalization, PR-URL extraction. |
@@ -77,6 +78,35 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `runtime-process` | adapter | `ProcessPort`: cross-platform managed subprocess (process group spawn, monitor, wait-with-timeout, kill-group) via `command-group`. |
 | `file-watcher` | adapter | `WatcherPort`: debounced filesystem create/modify/remove events via `notify`. |
 | `tools/fake-forge` | test fixture | Network-free stand-in for the forge CLI. |
+
+## Rust SDK
+
+Downstream repos (thegent, Eidolon, Agentora, sharecli) can depend on substrate instead of reimplementing dispatch:
+
+```toml
+[dependencies]
+substrate = { git = "https://github.com/KooshaPari/substrate", package = "substrate" }
+# optional adapters:
+# substrate = { git = "...", package = "substrate", features = ["sqlite", "forge"] }
+```
+
+```rust
+use substrate::{
+    DispatchPlanner, EngineCandidate, EngineCapabilities, PlanRequest, SessionMode, TaskSpec,
+    Task, TaskState, EnginePort, StorePort, TransportPort, DispatchApi,
+};
+
+let spec = TaskSpec::new("implement feature X", "/my/repo");
+let plan = DispatchPlanner::plan(&PlanRequest {
+    spec: &spec,
+    engines: &[],
+    explicit_engine: Some("forge"),
+    session_mode: Some(SessionMode::Foreground),
+    routing_engine: Some("forge"),
+})?;
+```
+
+Published crates (publish-ready, `cargo publish --dry-run` green): `substrate-core`, `a2a`, `engine-spec`, `substrate-app`, and the `substrate` facade. Default features: `app` + `spec`. Optional: `a2a`. Adapter crates (`store-sqlite` with bundled SQLite, `engine-forge`) are separate git dependencies.
 
 ## Quickstart
 

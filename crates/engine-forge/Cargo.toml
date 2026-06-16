@@ -6,10 +6,13 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "FORGE engine adapter implementing EnginePort by driving the forge CLI."
+readme = "README.md"
+keywords = ["forge", "engine", "adapter", "substrate"]
+categories = ["development-tools"]
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core.workspace = true
+engine-spec.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 async-trait.workspace = true
