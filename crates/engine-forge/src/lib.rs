@@ -227,34 +227,22 @@ impl ForgeEngine {
         args: Vec<String>,
         logfile: PathBuf,
     ) -> std::io::Result<(tokio::process::Child, tokio::task::JoinHandle<()>)> {
-        let mut cmd = Command::new(&self.bin);
-        cmd.args(&args);
         // Detach into a fresh process group so we can signal the whole
-        // subtree on timeout (Unix: setsid; Windows: CREATE_NEW_PROCESS_GROUP).
+        // subtree on timeout (Unix: setsid(1); Windows: CREATE_NEW_PROCESS_GROUP).
         #[cfg(unix)]
-        {
-            use std::os::unix::process::CommandExt;
-            // Safety: `setsid(2)` is async-signal-safe and runs in the
-            // forked child only, before exec. On error, the child exits
-            // before it ever runs the engine binary.
-            unsafe {
-                cmd.pre_exec(|| {
-                    // 0 == setsid() with no args: become session leader and
-                    // create a new process group whose pgid == our pid.
-                    if libc::setsid() < 0 {
-                        return Err(std::io::Error::last_os_error());
-                    }
-                    Ok(())
-                });
-            }
-        }
+        let mut cmd = {
+            let mut c = Command::new("setsid");
+            c.arg(&self.bin).args(&args);
+            c
+        };
         #[cfg(windows)]
-        {
-            // 0x00000200 = CREATE_NEW_PROCESS_GROUP. The `creation_flags`
-            // method is added by `std::os::windows::process::CommandExt`
-            // which is auto-imported on Windows by the standard library.
-            cmd.creation_flags(0x0000_0200);
-        }
+        let mut cmd = {
+            let mut c = Command::new(&self.bin);
+            c.args(&args);
+            const CREATE_NEW_PROCESS_GROUP: u32 = 0x0000_0200;
+            c.creation_flags(CREATE_NEW_PROCESS_GROUP);
+            c
+        };
 
         let mut child = cmd
             .stdout(std::process::Stdio::piped())
@@ -295,11 +283,10 @@ impl ForgeEngine {
         #[cfg(unix)]
         {
             if let Some(pid) = child.id() {
-                // Negative pid -> signal the process group.
-                let _ = std::process::Command::new("kill")
-                    .arg("-KILL")
-                    .arg(format!("-{pid}"))
-                    .output();
+                use nix::sys::signal::{killpg, Signal};
+                use nix::unistd::Pid;
+                // After setsid(), pgid == pid.
+                let _ = killpg(Pid::from_raw(pid as i32), Signal::SIGKILL);
             }
         }
         #[cfg(windows)]
