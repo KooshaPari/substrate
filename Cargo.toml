@@ -11,6 +11,7 @@ members = [
     "crates/driver-cli",
     "crates/driver-http",
     "crates/driver-argv",
+    "crates/gateway",
     "crates/arch-test",
     "crates/omniroute-adapter",
     "tools/fake-forge",
