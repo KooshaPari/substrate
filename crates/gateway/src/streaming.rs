@@ -5,6 +5,7 @@ use axum::body::Body;
 use axum::http::Response;
 use bytes::Bytes;
 use futures::stream::Stream;
+use futures::TryStreamExt;
 use std::pin::Pin;
 use std::task::{Context, Poll};
 
