@@ -141,7 +141,18 @@ impl GatewayConfig {
     /// | `SUBSTRATE_STATE_DIR` | `./.substrate` |
     /// | `SUBSTRATE_GATEWAY_AUTH_TOKEN` | unset (no auth) |
     pub fn from_env() -> anyhow::Result<Self> {
+        // Load a project-local .env (walks up from CWD) first.
         let _ = dotenvy::dotenv();
+        // Also load the user's home `.env` so the gateway picks up provider keys
+        // even when launched without a pre-sourced shell (e.g. by forge).
+        // `dotenvy` does not overwrite vars already set, so a project .env or the
+        // real process environment still take precedence over the home file.
+        if let Some(home) = std::env::var_os("HOME")
+            .or_else(|| std::env::var_os("USERPROFILE"))
+            .map(PathBuf::from)
+        {
+            let _ = dotenvy::from_path(home.join(".env"));
+        }
         let bind = std::env::var("SUBSTRATE_GATEWAY_BIND")
             .unwrap_or_else(|_| "127.0.0.1:20128".into())
             .parse()
