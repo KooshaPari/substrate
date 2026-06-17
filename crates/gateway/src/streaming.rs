@@ -89,10 +89,7 @@ mod tests {
 
     #[test]
     fn test_streaming_response_builder() {
-        let stream = stream::iter(vec![
-            Ok(Bytes::from("chunk1")),
-            Ok(Bytes::from("chunk2")),
-        ]);
+        let stream = stream::iter(vec![Ok(Bytes::from("chunk1")), Ok(Bytes::from("chunk2"))]);
 
         let response = StreamingResponseBuilder::from_stream(stream);
         assert_eq!(response.status(), 200);
@@ -104,11 +101,21 @@ mod tests {
 
         let response = StreamingResponseBuilder::sse_stream(stream);
         assert_eq!(
-            response.headers().get("content-type").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("content-type")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "text/event-stream"
         );
         assert_eq!(
-            response.headers().get("transfer-encoding").unwrap().to_str().unwrap(),
+            response
+                .headers()
+                .get("transfer-encoding")
+                .unwrap()
+                .to_str()
+                .unwrap(),
             "chunked"
         );
     }

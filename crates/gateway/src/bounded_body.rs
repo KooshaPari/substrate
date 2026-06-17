@@ -1,12 +1,7 @@
 //! Request body size limiting layer — rejects requests exceeding max_body_size with 413 Payload Too Large.
 //! Scans only a configurable prefix for prompt detection, never buffers full body (O(prefix) memory).
 
-use axum::{
-    extract::Request,
-    http::StatusCode,
-    middleware::Next,
-    response::Response,
-};
+use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
 
 /// Bounded body layer configuration.
 #[derive(Debug, Clone)]

@@ -35,8 +35,8 @@ impl CircuitBreaker {
             state: CircuitState::Closed,
             failure_count: 0,
             success_count: 0,
-            failure_threshold: 5,      // Open after 5 consecutive failures
-            success_threshold: 2,      // Close after 2 successes in Half-Open
+            failure_threshold: 5, // Open after 5 consecutive failures
+            success_threshold: 2, // Close after 2 successes in Half-Open
             timeout: Duration::from_secs(60), // Wait 60s before transitioning to Half-Open
             last_failure_time: None,
         }

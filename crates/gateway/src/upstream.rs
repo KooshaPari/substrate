@@ -2,21 +2,14 @@
 //! Routes requests through substrate's RoutingPort to the selected provider.
 //! Streams responses directly to client (no buffering) for O(chunk_size) memory.
 
-use axum::{
-    body::Body,
-    http::Response,
-};
+use crate::circuit_breaker::CircuitBreaker;
+use axum::{body::Body, http::Response};
 use bytes::Bytes;
 use reqwest::Client;
-use std::sync::Arc;
-use substrate_core::{
-    domain::Task,
-    error::Result as SubstrateResult,
-    ports::RoutingPort,
-};
 use std::collections::HashMap;
+use std::sync::Arc;
+use substrate_core::{domain::Task, error::Result as SubstrateResult, ports::RoutingPort};
 use tokio::sync::RwLock;
-use crate::circuit_breaker::CircuitBreaker;
 
 /// Upstream provider client that routes via substrate's RoutingPort.
 /// Streams responses directly to client (never buffers full response body).
@@ -38,10 +31,7 @@ impl UpstreamClient {
 
     /// Route a request through substrate's RoutingPort and stream the response.
     /// Memory usage is O(chunk_size), not O(response_size).
-    pub async fn route_and_stream(
-        &self,
-        task: Task,
-    ) -> SubstrateResult<Response<Body>> {
+    pub async fn route_and_stream(&self, task: Task) -> SubstrateResult<Response<Body>> {
         // Get routing decision from substrate
         let decision = self.routing_port.route_decision(&task).await?;
 
@@ -64,7 +54,8 @@ impl UpstreamClient {
         let upstream_url = format!("http://{}:3000/v1/chat/completions", decision.engine);
 
         // Make streaming request to upstream provider
-        let response = self.http_client
+        let response = self
+            .http_client
             .post(&upstream_url)
             .header("user-agent", "substrate-gateway")
             .send()
@@ -98,7 +89,7 @@ mod tests {
         // For now, this test verifies the basic structure compiles
         let _expected_chunk_size = 64 * 1024; // 64 KB
         let _response_size = 100 * 1024 * 1024; // 100 MB
-        // Memory model: O(chunk_size) not O(response_size)
+                                                // Memory model: O(chunk_size) not O(response_size)
         assert!(_expected_chunk_size < _response_size);
     }
 
