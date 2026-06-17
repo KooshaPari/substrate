@@ -5,10 +5,15 @@
 use crate::circuit_breaker::CircuitBreaker;
 use axum::{body::Body, http::Response};
 use bytes::Bytes;
+use futures::TryStreamExt;
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::Arc;
-use substrate_core::{domain::Task, error::Result as SubstrateResult, ports::RoutingPort};
+use substrate_core::{
+    domain::Task,
+    error::{Result as SubstrateResult, SubstrateError},
+    ports::RoutingPort,
+};
 use tokio::sync::RwLock;
 
 /// Upstream provider client that routes via substrate's RoutingPort.
@@ -46,9 +51,10 @@ impl UpstreamClient {
             if breaker.is_open() {
                 // Return error: circuit breaker open
                 drop(breakers);
-                return Err(
-                    format!("Provider circuit breaker open for {}", decision.engine).into(),
-                );
+                return Err(SubstrateError::Engine(format!(
+                    "Provider circuit breaker open for {}",
+                    decision.engine
+                )));
             }
         }
 
@@ -64,7 +70,7 @@ impl UpstreamClient {
             .header("user-agent", "substrate-gateway")
             .send()
             .await
-            .map_err(|e| format!("Upstream request failed: {}", e))?;
+            .map_err(|e| SubstrateError::Engine(format!("Upstream request failed: {}", e)))?;
 
         let status = response.status();
 
