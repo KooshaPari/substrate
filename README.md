@@ -156,6 +156,12 @@ Enable as a library: `driver-http = { git = "https://github.com/KooshaPari/subst
 
 ## MCP SDK (`driver-mcp`)
 
+> **Canonical SSOT:** Deployable MCP server packages live in
+> [PhenoMCPServers](https://github.com/KooshaPari/PhenoMCPServers) (`servers/substrate/`).
+> `driver-mcp/` here is a **runtime convenience copy** for local development.
+> Per [ADR-019](https://github.com/KooshaPari/PhenoSpecs/blob/main/adrs/019-mcp-runtime-implementation-deps.md),
+> long-term wiring imports from PhenoMCPServers — do not fork tool definitions in substrate.
+
 Python [FastMCP](https://github.com/jlowin/fastmcp) servers expose substrate to MCP clients (forge, codex, claude, OmniRoute A2A). The primary entrypoint is `substrate_server.py`, which proxies dispatch/plan/route to `driver-http` and keeps team mailbox tools local.
 
 ```sh
@@ -185,6 +191,17 @@ Config: `SUBSTRATE_HTTP_URL` (default `http://127.0.0.1:8080`), `SUBSTRATE_HTTP_
 ```sh
 pip install -r driver-mcp/requirements.txt
 pytest driver-mcp/
+```
+
+## Budget LLM routing (`driver-argv`)
+
+There is **no** `cheap-llm-mcp` repo. Budget / tier routing lives in the `driver-argv`
+crate and the `substrate argv` CLI subcommand (multi-provider argv builder absorbed from
+thegent-dispatch). Use argv for CLI-only routing; use `driver-mcp/dispatch_server.py` or
+PhenoMCPServers `substrate-dispatch` for OmniRoute tier MCP tools.
+
+```sh
+cargo run -p driver-cli --bin substrate -- argv --provider forge --prompt "hello" --dry-run
 ```
 
 ## Quickstart
