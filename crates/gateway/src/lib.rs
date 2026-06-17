@@ -6,8 +6,15 @@
 
 mod config;
 mod openai;
+pub mod bounded_body;
+pub mod circuit_breaker;
+pub mod streaming;
+pub mod upstream;
 
 pub use config::GatewayConfig;
+pub use bounded_body::BoundedBodyConfig;
+pub use circuit_breaker::CircuitBreaker;
+pub use upstream::UpstreamClient;
 
 use std::path::Path;
 use std::sync::Arc;
