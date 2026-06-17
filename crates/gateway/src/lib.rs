@@ -13,7 +13,7 @@ pub mod upstream;
 
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
-pub use config::GatewayConfig;
+pub use config::{AuthScheme, GatewayConfig, ProviderConfig};
 pub use upstream::UpstreamClient;
 
 use std::path::Path;
@@ -47,6 +47,8 @@ pub struct AppState {
     mailbox: Arc<SqliteMailboxStore>,
     config: Arc<SqliteConfigStore>,
     auth_token: Option<String>,
+    /// Upstream provider configurations (keys resolved from env at request time).
+    providers: Arc<Vec<ProviderConfig>>,
 }
 
 impl AppState {
@@ -69,6 +71,7 @@ impl AppState {
             mailbox,
             config,
             auth_token: None,
+            providers: Arc::new(crate::config::builtin_providers()),
         })
     }
 
@@ -90,6 +93,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         mailbox,
         config,
         auth_token: None,
+        providers: Arc::new(crate::config::builtin_providers()),
     })
 }
 
@@ -169,7 +173,7 @@ async fn chat_completions_handler(
     State(state): State<AppState>,
     Json(body): Json<ChatCompletionRequest>,
 ) -> Result<Json<openai::ChatCompletionResponse>, ApiError> {
-    let response = complete_chat(state.routing.as_ref(), &body)
+    let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
         .await
         .map_err(ApiError::bad_request)?;
     Ok(Json(response))

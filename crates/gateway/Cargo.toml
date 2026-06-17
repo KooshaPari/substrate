@@ -28,7 +28,7 @@ uuid.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 bytes = "1.5"
-reqwest = { version = "0.12", features = ["stream", "rustls-tls"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 futures = "0.3"
 http-body-util.workspace = true
 
