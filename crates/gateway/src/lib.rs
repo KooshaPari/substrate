@@ -13,7 +13,7 @@ pub mod upstream;
 
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
-pub use config::{AuthScheme, GatewayConfig, ProviderConfig};
+pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
 pub use upstream::UpstreamClient;
 
 use std::path::Path;

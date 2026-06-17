@@ -4,16 +4,11 @@ use std::net::SocketAddr;
 use std::path::PathBuf;
 
 /// Authentication scheme for an upstream provider.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub enum AuthScheme {
     /// Standard OpenAI-style `Authorization: Bearer <key>`.
+    #[default]
     Bearer,
-}
-
-impl Default for AuthScheme {
-    fn default() -> Self {
-        Self::Bearer
-    }
 }
 
 /// Configuration for a single upstream provider (OpenAI-compatible passthrough).
