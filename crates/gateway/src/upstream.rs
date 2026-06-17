@@ -44,7 +44,10 @@ impl UpstreamClient {
         // Check if circuit breaker is open (fail fast if provider is down)
         if let Some(breaker) = breakers.get(&decision.engine) {
             if breaker.is_open() {
-                return Err(anyhow::anyhow!("Provider circuit breaker open").into());
+                return Err(Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Unavailable,
+                    "Provider circuit breaker open",
+                )).into());
             }
         }
 
@@ -60,7 +63,12 @@ impl UpstreamClient {
             .header("user-agent", "substrate-gateway")
             .send()
             .await
-            .map_err(|e| anyhow::anyhow!("Upstream request failed: {}", e))?;
+            .map_err(|e| {
+                Box::new(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    format!("Upstream request failed: {}", e),
+                )).into()
+            })?;
 
         let status = response.status();
 
