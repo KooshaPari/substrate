@@ -46,7 +46,9 @@ impl UpstreamClient {
             if breaker.is_open() {
                 // Return error: circuit breaker open
                 drop(breakers);
-                return Err(format!("Provider circuit breaker open for {}", decision.engine).into());
+                return Err(
+                    format!("Provider circuit breaker open for {}", decision.engine).into(),
+                );
             }
         }
 
