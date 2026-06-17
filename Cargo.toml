@@ -30,6 +30,7 @@ members = [
     "crates/substrate-memory",
     "crates/runtime-process",
     "crates/file-watcher",
+    "crates/phenotype-mcp",
 ]
 [workspace.package]
 version = "0.1.0"
