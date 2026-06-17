@@ -146,7 +146,7 @@ mod tests {
         // Memory ≤ chunk_size, regardless of total response size
 
         let chunk_size = 64 * 1024; // 64 KB
-        let response_size = 1 * 1024 * 1024 * 1024; // 1 GB
+        let response_size = 1024 * 1024 * 1024; // 1 GB
 
         // With streaming, we process 1GB response in 64KB chunks
         // Memory usage stays at O(chunk_size) = 64KB

@@ -79,7 +79,7 @@ impl UpstreamClient {
             response
                 .bytes_stream()
                 .map_ok(Bytes::from)
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)),
+                .map_err(std::io::Error::other),
         );
 
         Ok(Response::builder()
@@ -91,7 +91,6 @@ impl UpstreamClient {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
 
     #[test]
     fn test_upstream_client_creation() {

@@ -161,7 +161,7 @@ mod tests {
 
     #[test]
     fn test_open_to_half_open_transition() {
-        let mut breaker = CircuitBreaker {
+        let breaker = CircuitBreaker {
             state: CircuitState::Open,
             timeout: Duration::from_millis(1),
             last_failure_time: Some(Instant::now() - Duration::from_secs(1)),
