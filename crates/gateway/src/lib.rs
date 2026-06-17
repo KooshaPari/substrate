@@ -4,10 +4,17 @@
 //! `/a2a/*` mailbox surface, and `/management/config` backed by `store-sqlite`.
 #![forbid(unsafe_code)]
 
+pub mod bounded_body;
+pub mod circuit_breaker;
 mod config;
 mod openai;
+pub mod streaming;
+pub mod upstream;
 
+pub use bounded_body::BoundedBodyConfig;
+pub use circuit_breaker::CircuitBreaker;
 pub use config::GatewayConfig;
+pub use upstream::UpstreamClient;
 
 use std::path::Path;
 use std::sync::Arc;

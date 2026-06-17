@@ -27,6 +27,10 @@ dotenvy.workspace = true
 uuid.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
+bytes = "1.5"
+reqwest = { version = "0.12", features = ["stream", "rustls-tls"] }
+futures = "0.3"
+http-body-util.workspace = true
 
 [dev-dependencies]
 http-body-util.workspace = true
