@@ -63,6 +63,12 @@ pub fn init(conn: &Connection) -> Result<()> {
             PRIMARY KEY (aggregate_id, aggregate_seq)
         );
         CREATE UNIQUE INDEX IF NOT EXISTS idx_event_log_global ON event_log(global_seq);
-        CREATE INDEX IF NOT EXISTS idx_event_log_aggregate ON event_log(aggregate_id, aggregate_seq);",
+        CREATE INDEX IF NOT EXISTS idx_event_log_aggregate ON event_log(aggregate_id, aggregate_seq);
+
+        CREATE TABLE IF NOT EXISTS gateway_config (
+            key         TEXT PRIMARY KEY,
+            value       TEXT NOT NULL,
+            updated_at  TEXT NOT NULL
+        );",
     )
 }
