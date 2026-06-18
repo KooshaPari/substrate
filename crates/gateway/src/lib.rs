@@ -13,7 +13,7 @@ pub mod upstream;
 
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
-pub use config::GatewayConfig;
+pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
 pub use upstream::UpstreamClient;
 
 use std::path::Path;
@@ -47,6 +47,8 @@ pub struct AppState {
     mailbox: Arc<SqliteMailboxStore>,
     config: Arc<SqliteConfigStore>,
     auth_token: Option<String>,
+    /// Upstream provider configurations (keys resolved from env at request time).
+    providers: Arc<Vec<ProviderConfig>>,
 }
 
 impl AppState {
@@ -69,12 +71,20 @@ impl AppState {
             mailbox,
             config,
             auth_token: None,
+            providers: Arc::new(crate::config::builtin_providers()),
         })
     }
 
     /// Attach an optional bearer token for protected routes.
     pub fn with_auth_token(mut self, token: Option<String>) -> Self {
         self.auth_token = token;
+        self
+    }
+
+    /// Override the provider list (e.g. from `GatewayConfig.providers`).
+    /// If not called, `AppState::new` falls back to `builtin_providers()`.
+    pub fn with_providers(mut self, providers: Vec<ProviderConfig>) -> Self {
+        self.providers = Arc::new(providers);
         self
     }
 }
@@ -90,6 +100,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         mailbox,
         config,
         auth_token: None,
+        providers: Arc::new(crate::config::builtin_providers()),
     })
 }
 
@@ -116,7 +127,9 @@ pub fn build_router(state: AppState) -> Router {
 
 /// Bind and serve the gateway using `config`.
 pub async fn serve(config: GatewayConfig) -> anyhow::Result<()> {
-    let state = AppState::new(&config.state_dir)?.with_auth_token(config.auth_token);
+    let state = AppState::new(&config.state_dir)?
+        .with_auth_token(config.auth_token)
+        .with_providers(config.providers);
     let router = build_router(state);
     let listener = tokio::net::TcpListener::bind(config.bind).await?;
     axum::serve(listener, router).await?;
@@ -169,7 +182,7 @@ async fn chat_completions_handler(
     State(state): State<AppState>,
     Json(body): Json<ChatCompletionRequest>,
 ) -> Result<Json<openai::ChatCompletionResponse>, ApiError> {
-    let response = complete_chat(state.routing.as_ref(), &body)
+    let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
         .await
         .map_err(ApiError::bad_request)?;
     Ok(Json(response))
