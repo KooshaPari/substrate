@@ -14,3 +14,11 @@ Rust CLI tool for agent dispatch and orchestration across the Phenotype org.
 
 ## Notes
 CLI tool for dispatching agents. Follow Phenotype scripting language hierarchy (Rust default). Branch discipline: worktrees for feature work.
+
+## Architecture Decision Records
+
+> **Status:** No ADRs documented yet. Architecture decisions for dispatch functionality are tracked in the [thegent AGENTS.md](../thegent/AGENTS.md) and the `dispatch` skill definition. Add ADRs here as the dispatch architecture stabilizes.
+
+| ID | Title | Status | Location |
+|----|-------|--------|----------|
+| --- | *No ADRs recorded* | --- | --- |
