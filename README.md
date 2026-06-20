@@ -206,19 +206,20 @@ cargo run -p driver-cli --bin substrate -- argv --provider forge --prompt "hello
 
 ## Quickstart
 
-```sh
-cargo build --workspace
-cargo test --workspace
-cargo clippy --workspace -- -D warnings
+> Cross-cutting substrate for the Phenotype fleet (foundation layer)
 
-# Run a fully offline dispatch through the fake forge:
-cargo run -p driver-cli --bin substrate -- \
-  dispatch --engine forge --fake --cwd . "echo hi"
-
-# Dry-run: print the dispatch plan without spawning:
-cargo run -p driver-cli --bin substrate -- \
-  plan --engine forge --cwd . "echo hi"
+```bash
+# Clone, build, test
+git clone https://github.com/KooshaPari/substrate.git
+cd substrate
 ```
+
+```rust
+// Add to Cargo.toml:
+// substrate = "<version>"
+```
+
+See [SPEC.md](SPEC.md) for the full specification and [llms.txt](llms.txt) for machine-readable metadata.
 
 ## Task lifecycle FSM
 
