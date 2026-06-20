@@ -50,7 +50,7 @@ thegent-dispatch --provider copilot --prompt "x" --dry-run # preview argv
 
 ## Design
 
-See `cheap-llm-mcp/claude/thegent-unified-design.md` for the absorption rationale.
+See `phenotype-tooling/docs/absorbed-from-cheap-llm-mcp/` for the absorption rationale (the original `cheap-llm-mcp/claude/thegent-unified-design.md` was archived with the repo).
 
 ## Status
 
