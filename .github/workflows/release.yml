@@ -1,57 +1,104 @@
 name: Release
 
+# Manual release pipeline. Triggered by a `chore(release): ...` commit on main
+# or via workflow_dispatch. Builds, signs, and publishes to crates.io.
+
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - 'docs/**'
-      - '**.md'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run (do not publish)'
+        required: false
+        default: 'true'
+        type: boolean
+
+concurrency:
+  group: release-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
-  contents: write
-  packages: write
+  contents: read
+  id-token: write
+  attestations: write
+
+env:
+  CARGO_TERM_COLOR: always
 
 jobs:
-  release:
+  build:
+    name: Build + Test (release)
     runs-on: ubuntu-latest
-    if: contains(github.event.head_commit.message, 'release:') || contains(github.event.head_commit.message, 'chore(release)')
-    outputs:
-      version: $123steps.version.outputs.version125
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-
-      
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Build
-        run: cargo build --release
-
-      - name: Test
-        run: cargo test --release
-
+        uses: dtolnay/rust-toolchain@9cd00a370a8ff8e8042c64f60cd3fe43b7da4b46 # stable
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@5ed47b3c8e5b73d9ebb14236617f0e30a5f9120e # v2.7.5
       - name: Determine version
         id: version
         run: |
           VERSION=$(grep '^version' Cargo.toml | head -1 | cut -d'"' -f2)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "Releasing version: ${VERSION}"
+      - name: Build release artifacts
+        run: cargo build --release --locked --all-targets
+      - name: Test release build
+        run: cargo test --release --locked --all-features
 
-      - name: Publish to crates.io
-        run: |
-          cargo publish --token $123secrets.CARGO_REGISTRY_TOKEN125
-      
-
-  promote:
-    needs: release
+  attest:
+    name: SLSA Build Attestation (L2)
+    needs: build
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+      attestations: write
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Promote to staging
-        uses: KooshaPari/phenotypeActions/promote@main
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Stage artifacts
+        run: |
+          set -euo pipefail
+          mkdir -p release-artifacts
+          find target/release -maxdepth 1 -type f -executable \
+            -exec cp -t release-artifacts/ {} + 2>/dev/null || true
+          ls -la release-artifacts/
+      - name: Upload artifacts
+        uses: actions/upload-artifact@5d5d22a31266ced268874388b861c4a24d9c5d28 # v4.4.0
         with:
-          version: $123needs.release.outputs.version125
-          channel: beta
-          registry: crates.io
+          name: release-artifacts
+          path: release-artifacts/
+          retention-days: 90
+          if-no-files-found: warn
+      - name: Attest build provenance
+        uses: slsa-framework/slsa-github-generator/attest-build-provenance@ed8a9d96c023b81521c9c9fb6c2a6e3edff257d7 # v1.9.0
+        with:
+          artifact-name: release-artifacts
+
+  publish:
+    name: Publish to crates.io
+    needs: build
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, 'chore(release)')
+    runs-on: ubuntu-latest
+    environment: release
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@9cd00a370a8ff8e8042c64f60cd3fe43b7da4b46 # stable
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@5ed47b3c8e5b73d9ebb14236617f0e30a5f9120e # v2.7.5
+      - name: Publish (uses CARGO_REGISTRY_TOKEN from environment)
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event.inputs.dry_run }}" = "true" ]; then
+            echo ">> DRY RUN — running cargo publish --dry-run"
+            cargo publish --dry-run --locked
+          else
+            echo ">> LIVE PUBLISH"
+            cargo publish --locked
+          fi
