@@ -61,7 +61,7 @@ assert_cmd = "2.0"
 predicates = "3.1"
 dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
-rusqlite = { version = "0.32", features = ["bundled"] }
+rusqlite = { version = "0.40", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
 croner = "2.1"
 petgraph = "0.7"
