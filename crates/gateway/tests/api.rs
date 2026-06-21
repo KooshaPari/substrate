@@ -1,12 +1,24 @@
 //! Integration tests for the substrate gateway (offline, hexagonal fakes).
 
-use std::sync::Arc;
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc, Mutex,
+};
 
 use async_trait::async_trait;
-use axum::body::Body;
-use axum::http::{Request, StatusCode};
-use gateway::{build_router, test_state, AppState};
+use axum::{
+    body::Body,
+    extract::State,
+    http::{HeaderMap, Request, StatusCode},
+    response::IntoResponse,
+    routing::post,
+    Json, Router,
+};
+use bytes::Bytes;
+use futures::stream;
+use gateway::{build_router, test_state, AppState, UpstreamClient};
 use http_body_util::BodyExt;
+use serde_json::Value;
 use substrate_core::domain::{RoutingDecision, Task};
 use substrate_core::error::Result;
 use substrate_core::ports::RoutingPort;
@@ -42,10 +54,108 @@ fn fake_state(tmp: &tempfile::TempDir) -> AppState {
     test_state(tmp.path(), routing).unwrap()
 }
 
+fn fake_state_with_upstream(tmp: &tempfile::TempDir, upstream: UpstreamClient) -> AppState {
+    fake_state(tmp).with_upstream(upstream)
+}
+
 async fn body_json(resp: axum::response::Response) -> serde_json::Value {
     let bytes = resp.into_body().collect().await.unwrap().to_bytes();
     serde_json::from_slice(&bytes)
         .unwrap_or_else(|_| serde_json::Value::String(String::from_utf8_lossy(&bytes).into_owned()))
+}
+
+#[derive(Clone)]
+enum MockBehavior {
+    Streaming {
+        chunks: Vec<&'static str>,
+    },
+    Status {
+        status: StatusCode,
+        body: &'static str,
+    },
+}
+
+#[derive(Clone)]
+struct MockUpstreamState {
+    captured: Arc<Mutex<Vec<Value>>>,
+    auth_headers: Arc<Mutex<Vec<Option<String>>>>,
+    request_count: Arc<AtomicUsize>,
+    behavior: MockBehavior,
+}
+
+async fn mock_upstream_handler(
+    State(state): State<MockUpstreamState>,
+    headers: HeaderMap,
+    Json(body): Json<Value>,
+) -> impl IntoResponse {
+    state.request_count.fetch_add(1, Ordering::SeqCst);
+    state.captured.lock().unwrap().push(body);
+    state
+        .auth_headers
+        .lock()
+        .unwrap()
+        .push(headers.get(axum::http::header::AUTHORIZATION).map(|value| {
+            value
+                .to_str()
+                .unwrap_or("<invalid-authorization-header>")
+                .to_string()
+        }));
+
+    match state.behavior.clone() {
+        MockBehavior::Streaming { chunks } => {
+            let stream = stream::iter(
+                chunks
+                    .into_iter()
+                    .map(|chunk| Ok::<Bytes, std::io::Error>(Bytes::from(chunk))),
+            );
+            let body = Body::from_stream(stream);
+            let mut builder = axum::http::Response::builder().status(StatusCode::OK);
+            builder = builder.header(axum::http::header::CONTENT_TYPE, "text/event-stream");
+            builder = builder.header(axum::http::header::CACHE_CONTROL, "no-cache");
+            builder = builder.header(axum::http::header::TRANSFER_ENCODING, "chunked");
+            builder.body(body).unwrap()
+        }
+        MockBehavior::Status { status, body } => {
+            let _ = headers;
+            (status, body).into_response()
+        }
+    }
+}
+
+async fn spawn_mock_upstream(
+    behavior: MockBehavior,
+) -> (
+    String,
+    Arc<Mutex<Vec<Value>>>,
+    Arc<Mutex<Vec<Option<String>>>>,
+    Arc<AtomicUsize>,
+) {
+    let captured = Arc::new(Mutex::new(Vec::new()));
+    let auth_headers = Arc::new(Mutex::new(Vec::new()));
+    let request_count = Arc::new(AtomicUsize::new(0));
+    let state = MockUpstreamState {
+        captured: captured.clone(),
+        auth_headers: auth_headers.clone(),
+        request_count: request_count.clone(),
+        behavior,
+    };
+
+    let app = Router::new()
+        .route("/v1/chat/completions", post(mock_upstream_handler))
+        .with_state(state);
+
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    tokio::spawn(async move {
+        let _ = axum::serve(listener, app).await;
+    });
+
+    (
+        format!("http://{addr}/v1"),
+        captured,
+        auth_headers,
+        request_count,
+    )
 }
 
 #[tokio::test]
@@ -92,9 +202,17 @@ async fn models_lists_routed_model() {
 }
 
 #[tokio::test]
-async fn chat_completions_routes_via_routing_port() {
+async fn chat_completions_forwards_request_shape() {
     let tmp = tempfile::tempdir().unwrap();
-    let app = build_router(fake_state(&tmp));
+    let (base_url, captured, auth_headers, _requests) =
+        spawn_mock_upstream(MockBehavior::Streaming {
+            chunks: vec!["data: {\"id\":\"chunk-1\"}\n\n"],
+        })
+        .await;
+    let app = build_router(fake_state_with_upstream(
+        &tmp,
+        UpstreamClient::new(base_url, "upstream-key"),
+    ));
 
     let resp = app
         .oneshot(
@@ -103,7 +221,7 @@ async fn chat_completions_routes_via_routing_port() {
                 .uri("/v1/chat/completions")
                 .header("content-type", "application/json")
                 .body(Body::from(
-                    r#"{"model":"auto","messages":[{"role":"user","content":"hello"}]}"#,
+                    r#"{"model":"gpt-4o","messages":[{"role":"user","content":"hello"}],"metadata":{"trace":"abc-123"},"temperature":0.2}"#,
                 ))
                 .unwrap(),
         )
@@ -111,19 +229,37 @@ async fn chat_completions_routes_via_routing_port() {
         .unwrap();
 
     assert_eq!(resp.status(), StatusCode::OK);
-    let json = body_json(resp).await;
-    assert_eq!(json["object"], "chat.completion");
-    assert_eq!(json["model"], "test-model");
-    assert!(json["choices"][0]["message"]["content"]
-        .as_str()
+    let received = captured.lock().unwrap();
+    assert_eq!(received.len(), 1);
+    let forwarded = &received[0];
+    assert_eq!(forwarded["model"], "gpt-4o");
+    assert_eq!(forwarded["messages"][0]["role"], "user");
+    assert_eq!(forwarded["messages"][0]["content"], "hello");
+    assert_eq!(forwarded["metadata"]["trace"], "abc-123");
+    assert_eq!(forwarded["temperature"], 0.2);
+    assert_eq!(forwarded["stream"], true);
+    let auth = auth_headers
+        .lock()
         .unwrap()
-        .contains("test-model"));
+        .first()
+        .cloned()
+        .flatten()
+        .unwrap();
+    assert_eq!(auth, "Bearer upstream-key");
 }
 
 #[tokio::test]
-async fn chat_completions_rejects_empty_messages() {
+async fn chat_completions_streams_sse_passthrough() {
     let tmp = tempfile::tempdir().unwrap();
-    let app = build_router(fake_state(&tmp));
+    let (base_url, _captured, _auth_headers, _requests) =
+        spawn_mock_upstream(MockBehavior::Streaming {
+            chunks: vec!["data: one\n\n", "data: two\n\n"],
+        })
+        .await;
+    let app = build_router(fake_state_with_upstream(
+        &tmp,
+        UpstreamClient::new(base_url, "upstream-key"),
+    ));
 
     let resp = app
         .oneshot(
@@ -131,13 +267,66 @@ async fn chat_completions_rejects_empty_messages() {
                 .method("POST")
                 .uri("/v1/chat/completions")
                 .header("content-type", "application/json")
-                .body(Body::from(r#"{"model":"auto","messages":[]}"#))
+                .body(Body::from(
+                    r#"{"model":"gpt-4o","messages":[{"role":"user","content":"stream it"}]}"#,
+                ))
                 .unwrap(),
         )
         .await
         .unwrap();
 
-    assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
+    assert_eq!(resp.status(), StatusCode::OK);
+    assert_eq!(
+        resp.headers()
+            .get(axum::http::header::CONTENT_TYPE)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "text/event-stream"
+    );
+    assert_eq!(
+        resp.headers()
+            .get(axum::http::header::TRANSFER_ENCODING)
+            .unwrap()
+            .to_str()
+            .unwrap(),
+        "chunked"
+    );
+    let bytes = resp.into_body().collect().await.unwrap().to_bytes();
+    assert_eq!(bytes, Bytes::from_static(b"data: one\n\ndata: two\n\n"));
+}
+
+#[tokio::test]
+async fn chat_completions_circuit_breaker_opens_on_5xx() {
+    let tmp = tempfile::tempdir().unwrap();
+    let (base_url, _captured, _auth_headers, requests) =
+        spawn_mock_upstream(MockBehavior::Status {
+            status: StatusCode::INTERNAL_SERVER_ERROR,
+            body: "upstream blew up",
+        })
+        .await;
+    let app = build_router(fake_state_with_upstream(
+        &tmp,
+        UpstreamClient::new(base_url, "upstream-key"),
+    ));
+
+    let request = || {
+        Request::builder()
+            .method("POST")
+            .uri("/v1/chat/completions")
+            .header("content-type", "application/json")
+            .body(Body::from(
+                r#"{"model":"gpt-4o","messages":[{"role":"user","content":"hello"}]}"#,
+            ))
+            .unwrap()
+    };
+
+    let first = app.clone().oneshot(request()).await.unwrap();
+    assert_eq!(first.status(), StatusCode::INTERNAL_SERVER_ERROR);
+
+    let second = app.oneshot(request()).await.unwrap();
+    assert_eq!(second.status(), StatusCode::SERVICE_UNAVAILABLE);
+    assert_eq!(requests.load(Ordering::SeqCst), 1);
 }
 
 #[tokio::test]

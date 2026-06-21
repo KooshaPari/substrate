@@ -13,7 +13,7 @@ pub mod upstream;
 
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
-pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
+pub use config::GatewayConfig;
 pub use upstream::UpstreamClient;
 
 use std::path::Path;
@@ -34,7 +34,8 @@ use substrate_core::domain::Task;
 use substrate_core::mailbox_port::MailboxStore;
 use substrate_core::ports::RoutingPort;
 
-use openai::{complete_chat, models_from_decision, ChatCompletionRequest};
+use crate::bounded_body::bounded_body_middleware;
+use openai::models_from_decision;
 
 // ---------------------------------------------------------------------------
 // App state
@@ -47,8 +48,7 @@ pub struct AppState {
     mailbox: Arc<SqliteMailboxStore>,
     config: Arc<SqliteConfigStore>,
     auth_token: Option<String>,
-    /// Upstream provider configurations (keys resolved from env at request time).
-    providers: Arc<Vec<ProviderConfig>>,
+    upstream: Option<Arc<UpstreamClient>>,
 }
 
 impl AppState {
@@ -71,7 +71,7 @@ impl AppState {
             mailbox,
             config,
             auth_token: None,
-            providers: Arc::new(crate::config::builtin_providers()),
+            upstream: None,
         })
     }
 
@@ -81,10 +81,9 @@ impl AppState {
         self
     }
 
-    /// Override the provider list (e.g. from `GatewayConfig.providers`).
-    /// If not called, `AppState::new` falls back to `builtin_providers()`.
-    pub fn with_providers(mut self, providers: Vec<ProviderConfig>) -> Self {
-        self.providers = Arc::new(providers);
+    /// Attach the upstream OpenAI-compatible provider client.
+    pub fn with_upstream(mut self, upstream: UpstreamClient) -> Self {
+        self.upstream = Some(Arc::new(upstream));
         self
     }
 }
@@ -100,7 +99,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         mailbox,
         config,
         auth_token: None,
-        providers: Arc::new(crate::config::builtin_providers()),
+        upstream: None,
     })
 }
 
@@ -110,8 +109,14 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
 
 /// Build the axum router for `state`.
 pub fn build_router(state: AppState) -> Router {
-    let protected = Router::new()
+    let chat = Router::new()
         .route("/v1/chat/completions", post(chat_completions_handler))
+        .layer(middleware::from_fn_with_state(
+            BoundedBodyConfig::default(),
+            bounded_body_middleware,
+        ));
+    let protected = Router::new()
+        .merge(chat)
         .route("/v1/models", get(models_handler))
         .route("/management/config", post(management_config_handler))
         .route("/a2a/messages", post(a2a_send_handler))
@@ -129,7 +134,10 @@ pub fn build_router(state: AppState) -> Router {
 pub async fn serve(config: GatewayConfig) -> anyhow::Result<()> {
     let state = AppState::new(&config.state_dir)?
         .with_auth_token(config.auth_token)
-        .with_providers(config.providers);
+        .with_upstream(UpstreamClient::new(
+            config.upstream_url,
+            config.upstream_key,
+        ));
     let router = build_router(state);
     let listener = tokio::net::TcpListener::bind(config.bind).await?;
     axum::serve(listener, router).await?;
@@ -180,12 +188,16 @@ async fn models_handler(
 
 async fn chat_completions_handler(
     State(state): State<AppState>,
-    Json(body): Json<ChatCompletionRequest>,
-) -> Result<Json<openai::ChatCompletionResponse>, ApiError> {
-    let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
+    Json(body): Json<serde_json::Value>,
+) -> Result<Response, ApiError> {
+    let upstream = state
+        .upstream
+        .as_ref()
+        .ok_or_else(|| ApiError::service_unavailable("upstream provider not configured"))?;
+    upstream
+        .chat_completions(body)
         .await
-        .map_err(ApiError::bad_request)?;
-    Ok(Json(response))
+        .map_err(ApiError::from_upstream)
 }
 
 // ---------------------------------------------------------------------------
@@ -361,6 +373,35 @@ impl ApiError {
         Self {
             status: StatusCode::INTERNAL_SERVER_ERROR,
             message: msg.into(),
+        }
+    }
+
+    fn service_unavailable(msg: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::SERVICE_UNAVAILABLE,
+            message: msg.into(),
+        }
+    }
+
+    fn bad_gateway(msg: impl Into<String>) -> Self {
+        Self {
+            status: StatusCode::BAD_GATEWAY,
+            message: msg.into(),
+        }
+    }
+
+    fn from_upstream(err: crate::upstream::UpstreamError) -> Self {
+        match err {
+            crate::upstream::UpstreamError::CircuitOpen => {
+                Self::service_unavailable("upstream circuit breaker open")
+            }
+            crate::upstream::UpstreamError::BadRequest(msg) => Self::bad_request(msg),
+            crate::upstream::UpstreamError::Request(err) => {
+                Self::bad_gateway(format!("upstream request failed: {err}"))
+            }
+            crate::upstream::UpstreamError::BuildResponse(msg) => {
+                Self::internal(format!("upstream response build failed: {msg}"))
+            }
         }
     }
 }

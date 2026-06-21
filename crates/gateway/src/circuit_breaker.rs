@@ -31,11 +31,16 @@ pub struct CircuitBreaker {
 impl CircuitBreaker {
     /// Create a new circuit breaker.
     pub fn new() -> Self {
+        Self::with_failure_threshold(5)
+    }
+
+    /// Create a breaker that opens after `failure_threshold` consecutive failures.
+    pub fn with_failure_threshold(failure_threshold: usize) -> Self {
         Self {
             state: CircuitState::Closed,
             failure_count: 0,
             success_count: 0,
-            failure_threshold: 5, // Open after 5 consecutive failures
+            failure_threshold,
             success_threshold: 2, // Close after 2 successes in Half-Open
             timeout: Duration::from_secs(60), // Wait 60s before transitioning to Half-Open
             last_failure_time: None,

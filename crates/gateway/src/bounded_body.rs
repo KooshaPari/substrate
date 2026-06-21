@@ -1,7 +1,12 @@
 //! Request body size limiting layer — rejects requests exceeding max_body_size with 413 Payload Too Large.
 //! Scans only a configurable prefix for prompt detection, never buffers full body (O(prefix) memory).
 
-use axum::{extract::Request, http::StatusCode, middleware::Next, response::Response};
+use axum::{
+    extract::{Request, State},
+    http::StatusCode,
+    middleware::Next,
+    response::Response,
+};
 
 /// Bounded body layer configuration.
 #[derive(Debug, Clone)]
@@ -28,7 +33,7 @@ impl Default for BoundedBodyConfig {
 /// Returns 413 Payload Too Large if body exceeds limit.
 /// Keeps memory O(prefix_size), never O(body_size).
 pub async fn bounded_body_middleware(
-    config: BoundedBodyConfig,
+    State(config): State<BoundedBodyConfig>,
     request: Request,
     next: Next,
 ) -> Result<Response, StatusCode> {
