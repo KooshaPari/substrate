@@ -63,7 +63,7 @@ dotenvy = "0.15"
 chrono = { version = "0.4", features = ["serde"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
-croner = "2.1"
+croner = "3.0"
 petgraph = "0.7"
 strsim = "0.11"
 command-group = { version = "5.0", features = ["with-tokio"] }
