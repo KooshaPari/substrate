@@ -22,8 +22,8 @@ use axum::{
 };
 use engine_forge::ForgeEngine;
 use engine_spec::TaskSpec;
-use omniroute_adapter::OmniRouteAdapter;
 use plan::{engine_catalog, enrich_plan_argv};
+use routing_phenotype_router::PhenotypeRouterAdapter;
 use serde::{Deserialize, Serialize};
 use store_file::FileStore;
 use store_sqlite::SqliteMailboxStore;
@@ -55,7 +55,7 @@ impl AppState {
         let forge = Arc::new(ForgeEngine::new());
         let dispatch: Arc<dyn DispatchApi> =
             Arc::new(DispatchService::new(forge, store, transport));
-        let routing: Arc<dyn RoutingPort> = Arc::new(OmniRouteAdapter::new());
+        let routing: Arc<dyn RoutingPort> = Arc::new(PhenotypeRouterAdapter::new());
         let mailbox_db = state_dir.join("mailbox.db");
         let mailbox =
             Arc::new(SqliteMailboxStore::open(mailbox_db.to_str().ok_or_else(
@@ -87,7 +87,7 @@ pub fn test_state(state_dir: &Path, forge_bin: Option<&Path>) -> anyhow::Result<
         None => Arc::new(ForgeEngine::new()),
     };
     let dispatch: Arc<dyn DispatchApi> = Arc::new(DispatchService::new(forge, store, transport));
-    let routing: Arc<dyn RoutingPort> = Arc::new(OmniRouteAdapter::new());
+    let routing: Arc<dyn RoutingPort> = Arc::new(PhenotypeRouterAdapter::new());
     let mailbox = Arc::new(SqliteMailboxStore::open_in_memory()?);
     Ok(AppState {
         dispatch,

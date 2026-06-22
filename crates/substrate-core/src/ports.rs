@@ -57,8 +57,8 @@ pub trait RoutingPort: Send + Sync {
     /// Return a full [`RoutingDecision`] (engine + model + rationale).
     ///
     /// Phase 1 introduces the structured decision so adapters (e.g. the
-    /// `omniroute-adapter`) can route to a specific model/provider while
-    /// preserving the engine target.
+    /// `routing-phenotype-router` adapter) can route to a specific
+    /// model/provider while preserving the engine target.
     async fn route_decision(&self, task: &Task) -> Result<RoutingDecision>;
 }
 

@@ -13,7 +13,7 @@ path = "src/main.rs"
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
-omniroute-adapter = { path = "../omniroute-adapter" }
+routing-phenotype-router = { path = "../routing-phenotype-router" }
 a2a = { path = "../a2a" }
 store-sqlite = { path = "../store-sqlite" }
 axum.workspace = true

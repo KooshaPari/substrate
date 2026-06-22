@@ -22,7 +22,7 @@ engine-agentapi = { path = "../engine-agentapi" }
 transport-file = { path = "../transport-file" }
 store-file = { path = "../store-file" }
 store-sqlite = { path = "../store-sqlite" }
-omniroute-adapter = { path = "../omniroute-adapter" }
+routing-phenotype-router = { path = "../routing-phenotype-router" }
 a2a = { path = "../a2a" }
 axum.workspace = true
 tower.workspace = true
