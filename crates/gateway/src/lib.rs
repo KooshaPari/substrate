@@ -27,8 +27,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use serde::{Deserialize, Serialize};
 use routing_phenotype_router::PhenotypeRouterAdapter;
+use serde::{Deserialize, Serialize};
 use store_sqlite::{ConfigEntry, SqliteConfigStore, SqliteMailboxStore};
 use substrate_core::domain::Task;
 use substrate_core::mailbox_port::MailboxStore;

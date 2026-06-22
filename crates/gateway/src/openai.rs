@@ -227,20 +227,19 @@ async fn forward_to_provider(
     }
 
     // Parse the upstream response as an OpenAI completion
-    let upstream: serde_json::Value = http_resp
-        .json()
-        .await
-        .map_err(|e| format!("failed to parse upstream response from {}: {e}", provider.name))?;
+    let upstream: serde_json::Value = http_resp.json().await.map_err(|e| {
+        format!(
+            "failed to parse upstream response from {}: {e}",
+            provider.name
+        )
+    })?;
 
     // Extract content from the response
     let content = upstream["choices"][0]["message"]["content"]
         .as_str()
         .unwrap_or("")
         .to_string();
-    let resp_model = upstream["model"]
-        .as_str()
-        .unwrap_or(model)
-        .to_string();
+    let resp_model = upstream["model"].as_str().unwrap_or(model).to_string();
 
     Ok(ChatCompletionResponse {
         id: format!("chatcmpl-{}", Uuid::new_v4()),
@@ -317,10 +316,7 @@ mod tests {
         let opencode = providers.iter().find(|p| p.name == "opencode-go").unwrap();
         assert_eq!(opencode.base_url, "https://opencode.ai/zen/go/v1");
         assert_eq!(opencode.api_key_env, "OPENCODE_API_KEY");
-        assert_eq!(
-            opencode.default_model.as_deref(),
-            Some("deepseek-v4-flash")
-        );
+        assert_eq!(opencode.default_model.as_deref(), Some("deepseek-v4-flash"));
 
         let deepseek = providers.iter().find(|p| p.name == "deepseek").unwrap();
         assert_eq!(deepseek.base_url, "https://api.deepseek.com/v1");
@@ -351,7 +347,10 @@ mod tests {
 
         // plain model with no prefix → no match
         let result3 = resolve_provider(&providers, "gpt-4o");
-        assert!(result3.is_none(), "plain model should not match any provider");
+        assert!(
+            result3.is_none(),
+            "plain model should not match any provider"
+        );
 
         // unknown prefix → no match
         let result4 = resolve_provider(&providers, "openai/gpt-4o");
