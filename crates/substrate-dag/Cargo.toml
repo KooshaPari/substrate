@@ -9,6 +9,6 @@ description = "WorkflowPort DAG orchestration via petgraph."
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
-petgraph = "0.7"
+petgraph = "0.8"
 
 [dev-dependencies]
