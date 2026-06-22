@@ -1,4 +1,5 @@
 //! FR-001 — Stop filter behavior
+//! FR: FR-001
 //!
 //! Covers AC-001.4, AC-001.5.
 
@@ -12,10 +13,7 @@ async fn fr001_stop_all_terminates_everything() {
 
     #[cfg(unix)]
     for _ in 0..2 {
-        let _ = pool
-            .spawn("sleep", &["1".to_string()], None, None, None)
-            .await
-            .expect("spawn ok");
+        let _ = pool.spawn("sleep", &["1".to_string()], None, None, None).await.expect("spawn ok");
     }
     #[cfg(windows)]
     for _ in 0..2 {
