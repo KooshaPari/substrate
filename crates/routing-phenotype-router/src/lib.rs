@@ -221,8 +221,8 @@ mod tests {
             decision: Decision::Deny("blocked".to_string()),
             trace: vec![("router.id".to_string(), "deny-case".to_string())],
         });
-        let adapter = PhenotypeRouterAdapter::with_decision_layer(layer)
-            .with_target("inert", "model-z");
+        let adapter =
+            PhenotypeRouterAdapter::with_decision_layer(layer).with_target("inert", "model-z");
         let task = Task::new("anything", "/tmp");
 
         let decision = adapter.route_decision(&task).await.unwrap();
@@ -246,8 +246,9 @@ mod tests {
 
     #[test]
     fn serialize_failure_maps_at_adapter_boundary() {
-        let err = PhenotypeRouterAdapter::build_request("task-1".to_string(), &FailingSerializeTask)
-            .unwrap_err();
+        let err =
+            PhenotypeRouterAdapter::build_request("task-1".to_string(), &FailingSerializeTask)
+                .unwrap_err();
         match err {
             SubstrateError::Routing(msg) => {
                 assert!(msg.contains("routing-phenotype-router"));

@@ -91,7 +91,11 @@ pub fn builtin_providers() -> Vec<ProviderConfig> {
             "OPENCODE_API_KEY",
         )
         .with_default_model("deepseek-v4-flash"),
-        ProviderConfig::new("deepseek", "https://api.deepseek.com/v1", "DEEPSEEK_API_KEY"),
+        ProviderConfig::new(
+            "deepseek",
+            "https://api.deepseek.com/v1",
+            "DEEPSEEK_API_KEY",
+        ),
         ProviderConfig::new(
             "kilocode",
             "https://api.kilo.ai/api/gateway/v1",
