@@ -27,8 +27,8 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
-use omniroute_adapter::OmniRouteAdapter;
 use serde::{Deserialize, Serialize};
+use routing_phenotype_router::PhenotypeRouterAdapter;
 use store_sqlite::{ConfigEntry, SqliteConfigStore, SqliteMailboxStore};
 use substrate_core::domain::Task;
 use substrate_core::mailbox_port::MailboxStore;
@@ -55,7 +55,7 @@ impl AppState {
     /// Wire concrete adapters under `state_dir` (creates subdirs as needed).
     pub fn new(state_dir: &Path) -> anyhow::Result<Self> {
         std::fs::create_dir_all(state_dir)?;
-        let routing: Arc<dyn RoutingPort> = Arc::new(OmniRouteAdapter::new());
+        let routing: Arc<dyn RoutingPort> = Arc::new(PhenotypeRouterAdapter::new());
         let mailbox_db = state_dir.join("mailbox.db");
         let config_db = state_dir.join("gateway.db");
         let mailbox =

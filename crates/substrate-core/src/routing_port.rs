@@ -1,7 +1,8 @@
 //! Routing superset — load-balancing strategies, circuit breakers, weighted fallback.
 //!
 //! Pure types and selection logic live here (no I/O). Adapters such as
-//! `omniroute-adapter` wire these primitives to real providers.
+//! `routing-phenotype-router` and the legacy `omniroute-adapter` wire these
+//! primitives to real providers.
 
 use std::collections::HashMap;
 

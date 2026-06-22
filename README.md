@@ -7,7 +7,7 @@ Orchestration superset (2026-06): `SchedulePort` + `substrate-schedule` (cron/in
 
 Skills + memory superset (2026-06): `SkillPort` + `ToolRegistry` + `substrate-skills` (named invokable skills with JSON schema input validation), `MemoryPort` + `substrate-memory` (bounded ring buffer + `store-sqlite` persistent history, two-tier compose).
 
-Routing superset (2026-06): `routing_port` in `substrate-core` (round-robin / weighted / least-used / power-of-two-choices, per-target circuit breaker Closed/Open/HalfOpen, weighted fallback chain) + `omniroute-adapter` wiring to OmniRoute providers.
+Routing superset (2026-06): `routing_port` in `substrate-core` (round-robin / weighted / least-used / power-of-two-choices, per-target circuit breaker Closed/Open/HalfOpen, weighted fallback chain) + `routing-phenotype-router` wiring to phenotype-router's decision layer.
 
 Process superset (2026-06): `ProcessPort` + `runtime-process` (cross-platform managed subprocess via `command-group`: spawn in process group, status poll, wait-with-timeout, kill-group-on-timeout), `WatcherPort` + `file-watcher` (debounced filesystem events via `notify` + `notify-debouncer-mini`).
 
@@ -39,7 +39,7 @@ concrete engines, transports, and stores into those contracts; the
                                              │ depends on
     ┌───────────────┐  DispatchApi           ▼
     │  driver-mcp    │ ───────────────▶ ┌────────────────┐   RoutingPort    ┌──────────────────┐
-    │  (FastMCP)     │                  │ substrate-core  │ ◀───────────────── │ omniroute-adapter │
+    │  (FastMCP)     │                  │ substrate-core  │ ◀───────────────── │ routing-phenotype-router │
     └───────────────┘                  │ domain + ports  │                    └──────────────────┘
                                        │ (no adapter dep)│   engine-spec: TaskSpec -> argv
                                        └────────────────┘
@@ -72,6 +72,7 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `driver-http` | inbound adapter | `substrate-http` REST server (axum): `/v1/dispatch`, `/v1/plan`, `/v1/route`, `/v1/mailbox/*`, `/healthz`. |
 | `driver-mcp` | inbound adapter | FastMCP servers (`substrate_server.py`): `substrate_dispatch` / `substrate_plan` / `substrate_route` over HTTP + team mailbox tools. |
 | `omniroute-adapter` | adapter | `RoutingPort`: OmniRoute proxy config + optional routing superset (load-balance, circuit breaker, fallback). |
+| `routing-phenotype-router` | adapter | `RoutingPort`: delegates substrate routing to phenotype-router's decision layer and maps the decision back into `RoutingDecision`. |
 | `arch-test` | test-only | Architecture conformance (dependency direction). |
 | `substrate-schedule` | adapter | `SchedulePort`: cron/interval/daily/weekly `next_run` via croner. |
 | `substrate-dag` | adapter | `WorkflowPort`: petgraph DAG topo order, ready-set, cycle detection. |

@@ -14,6 +14,7 @@ members = [
     "crates/gateway",
     "crates/arch-test",
     "crates/omniroute-adapter",
+    "crates/routing-phenotype-router",
     "tools/fake-forge",
     "crates/a2a",
     "crates/store-sqlite",
