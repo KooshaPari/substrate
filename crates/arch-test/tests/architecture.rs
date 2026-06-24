@@ -34,7 +34,11 @@ fn substrate_core_has_no_adapter_dependencies() {
     let path = core_manifest_path();
     let text =
         std::fs::read_to_string(&path).unwrap_or_else(|e| panic!("read {}: {e}", path.display()));
-    let manifest: toml::Value = text.parse().expect("parse substrate-core Cargo.toml");
+    // `toml` 1.1 dropped support for `text.parse::<toml::Value>()` on a
+    // top-level table (returns "unexpected content, expected nothing").
+    // `toml::Table` is the correct deserializer for Cargo manifests, which
+    // are always a top-level table.
+    let manifest: toml::Table = toml::from_str(&text).expect("parse substrate-core Cargo.toml");
 
     let mut deps = collect_dep_names(manifest.get("dependencies"));
     deps.extend(collect_dep_names(manifest.get("dev-dependencies")));

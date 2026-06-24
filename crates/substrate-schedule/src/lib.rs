@@ -96,9 +96,11 @@ impl SchedulePort for CronSchedule {
         let after_dt = from_instant(after);
         match trigger {
             ScheduleTrigger::Cron { expr } => {
-                let cron = Cron::new(expr)
-                    .with_seconds_optional()
-                    .parse()
+                // croner 3.x: `Cron::from_str` is the documented entry point and the
+                // underlying `CronParser` defaults to `Seconds::Optional`, which matches
+                // the legacy `with_seconds_optional()` behavior for 5- and 6-field patterns.
+                let cron = expr
+                    .parse::<Cron>()
                     .map_err(|e| SubstrateError::InvalidSchedule(format!("cron parse: {e}")))?;
                 let next = cron
                     .find_next_occurrence(&after_dt, false)
