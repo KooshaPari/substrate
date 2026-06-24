@@ -25,6 +25,7 @@ use crate::SUPPORTED_AGENTS;
 
 /// Engine-name prefixes that route a task to the agentapi engine.
 pub const AGENTAPI_PREFIX: &str = "agentapi-";
+/// Engine-name separator variant: `"agentapi:<agent>"`.
 pub const AGENTAPI_COLON_PREFIX: &str = "agentapi:";
 
 /// Parse a routing engine name into the agent type the agentapi server should

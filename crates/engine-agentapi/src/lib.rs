@@ -1039,6 +1039,9 @@ fn extract_pr_urls(text: &str) -> Vec<String> {
 // ---------------------------------------------------------------------------
 
 pub mod routing;
+pub mod multi_agent_router;
+
+pub use multi_agent_router::AgentApiMultiAgentRouter;
 
 #[cfg(test)]
 mod tests {
