@@ -75,7 +75,7 @@ pub fn build_argv(engine: &str, spec: &TaskSpec) -> Vec<String> {
         "agentapi" => {
             let endpoint = std::env::var("AGENTAPI_ENDPOINT")
                 .unwrap_or_else(|_| "http://localhost:3284".into());
-            let mut argv = AgentApiArgv::new(endpoint).build_start(spec);
+            let mut argv = AgentApiArgv::new(endpoint, 3284).build_start(spec);
             argv.insert(0, "agentapi".into());
             argv
         }
