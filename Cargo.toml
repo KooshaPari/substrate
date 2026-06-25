@@ -43,6 +43,8 @@ rust-version = "1.80"
 
 [workspace.dependencies]
 substrate-core = { version = "0.1.0", path = "crates/substrate-core" }
+substrate-trace = { version = "0.1.0", path = "crates/substrate-trace" }
+pheno-otel = { path = "../PhenoObservability/pheno-otel" }
 substrate-app = { version = "0.1.0", path = "crates/substrate-app" }
 engine-spec = { version = "0.1.0", path = "crates/engine-spec" }
 a2a = { version = "0.1.0", path = "crates/a2a" }
