@@ -1,0 +1,19 @@
+[package]
+name = "wave-3lane-tests"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+description = "Integration tests exercising substrate's three execution lanes (sync, fanout, tree) end-to-end against EnginePort + RoutingPort contracts."
+
+[[test]]
+name = "wave_3lane"
+path = "tests/wave_3lane.rs"
+
+[dependencies]
+substrate-core.workspace = true
+async-trait.workspace = true
+tokio = { workspace = true }
+parking_lot = "0.12"
