@@ -362,11 +362,7 @@ async fn spawn_and_wait(
         allocate_port(port_min, port_max)?
     };
 
-    let mut args: Vec<String> = vec![
-        "server".to_string(),
-        "--port".to_string(),
-        port.to_string(),
-    ];
+    let mut args: Vec<String> = vec!["server".to_string(), "--port".to_string(), port.to_string()];
     if let Some(cfg) = &argv.config {
         args.push("--config".to_string());
         args.push(cfg.to_string_lossy().into_owned());
@@ -502,7 +498,9 @@ impl CliproxyClient {
             .json(req)
             .send()
             .await
-            .map_err(|e| SubstrateError::Engine(format!("cliproxy POST /v1/chat/completions: {e}")))?;
+            .map_err(|e| {
+                SubstrateError::Engine(format!("cliproxy POST /v1/chat/completions: {e}"))
+            })?;
         if !resp.status().is_success() {
             let status = resp.status();
             let body = resp.text().await.unwrap_or_default();
@@ -510,9 +508,9 @@ impl CliproxyClient {
                 "cliproxy POST /v1/chat/completions returned {status}: {body}"
             )));
         }
-        resp.json::<ChatResponse>()
-            .await
-            .map_err(|e| SubstrateError::Engine(format!("cliproxy parse /v1/chat/completions: {e}")))
+        resp.json::<ChatResponse>().await.map_err(|e| {
+            SubstrateError::Engine(format!("cliproxy parse /v1/chat/completions: {e}"))
+        })
     }
 
     /// `POST /v1/chat/completions` with `stream=true` — open an SSE stream
@@ -648,11 +646,11 @@ impl CliproxyEngine {
     /// Construct from the environment.
     pub fn new() -> Self {
         let bin = std::env::var("CLIPROXY_BIN").unwrap_or_else(|_| DEFAULT_BIN.to_string());
-        let base_url = std::env::var("CLIPROXY_BASE_URL")
-            .unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
+        let base_url =
+            std::env::var("CLIPROXY_BASE_URL").unwrap_or_else(|_| DEFAULT_BASE_URL.to_string());
         let api_key = std::env::var("CLIPROXY_API_KEY").ok();
-        let model = std::env::var("CLIPROXY_DEFAULT_MODEL")
-            .unwrap_or_else(|_| DEFAULT_MODEL.to_string());
+        let model =
+            std::env::var("CLIPROXY_DEFAULT_MODEL").unwrap_or_else(|_| DEFAULT_MODEL.to_string());
         let port_min = std::env::var("CLIPROXY_PORT_MIN")
             .ok()
             .and_then(|s| s.parse().ok())
@@ -915,7 +913,7 @@ impl EnginePort for CliproxyEngine {
         let pr_urls: Vec<String> = messages
             .iter()
             .filter_map(|m| m.get("content")?.as_str())
-            .flat_map(|s| extract_pr_urls(s))
+            .flat_map(extract_pr_urls)
             .collect();
 
         Ok(StructuredResult {

@@ -40,10 +40,7 @@ pub fn parse_agent_target(engine: &str) -> Option<&'static str> {
     let stripped = engine
         .strip_prefix(AGENTAPI_PREFIX)
         .or_else(|| engine.strip_prefix(AGENTAPI_COLON_PREFIX))?;
-    SUPPORTED_AGENTS
-        .iter()
-        .copied()
-        .find(|a| *a == stripped)
+    SUPPORTED_AGENTS.iter().copied().find(|a| *a == stripped)
 }
 
 /// All agentapi-routable engine names (`agentapi-<agent>` for every supported

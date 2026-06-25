@@ -22,8 +22,8 @@ fn core_manifest_path() -> PathBuf {
         .join("Cargo.toml")
 }
 
-fn collect_dep_names(table: Option<&toml::Value>) -> Vec<String> {
-    match table.and_then(|t| t.as_table()) {
+fn collect_dep_names(table: Option<&toml::Table>) -> Vec<String> {
+    match table {
         Some(t) => t.keys().cloned().collect(),
         None => Vec::new(),
     }
@@ -40,9 +40,15 @@ fn substrate_core_has_no_adapter_dependencies() {
     // are always a top-level table.
     let manifest: toml::Table = toml::from_str(&text).expect("parse substrate-core Cargo.toml");
 
-    let mut deps = collect_dep_names(manifest.get("dependencies"));
-    deps.extend(collect_dep_names(manifest.get("dev-dependencies")));
-    deps.extend(collect_dep_names(manifest.get("build-dependencies")));
+    let mut deps = collect_dep_names(manifest.get("dependencies").and_then(|v| v.as_table()));
+    deps.extend(collect_dep_names(
+        manifest.get("dev-dependencies").and_then(|v| v.as_table()),
+    ));
+    deps.extend(collect_dep_names(
+        manifest
+            .get("build-dependencies")
+            .and_then(|v| v.as_table()),
+    ));
 
     let offenders: Vec<&String> = deps.iter().filter(|d| is_forbidden(d)).collect();
     assert!(

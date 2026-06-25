@@ -73,13 +73,12 @@
 //! forwards the RouterDispatch envelope as a JSON argv payload and
 //! reads the structured result from stdout.
 
-use std::sync::Arc;
-use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use substrate_core::domain::{EngineCapabilities, RoutingDecision, Task};
-use substrate_core::ports::EnginePort;
+use std::sync::Arc;
+use substrate_core::domain::{EngineCapabilities, Mailbox, RoutingDecision, Task};
 use substrate_core::error::SubstrateError;
+use substrate_core::ports::EnginePort;
 use uuid::Uuid;
 
 /// MCP protocol version advertised by this driver.
@@ -117,7 +116,9 @@ pub struct JsonRpcRequest {
     pub params: Value,
 }
 
-fn default_id() -> Value { Value::Null }
+fn default_id() -> Value {
+    Value::Null
+}
 
 /// Outbound JSON-RPC 2.0 success response.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -180,7 +181,10 @@ pub struct ContentBlock {
 
 impl ContentBlock {
     pub fn text(text: impl Into<String>) -> Self {
-        Self { block_type: "text".to_string(), text: text.into() }
+        Self {
+            block_type: "text".to_string(),
+            text: text.into(),
+        }
     }
 }
 
@@ -188,16 +192,26 @@ impl ContentBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolResult {
     pub content: Vec<ContentBlock>,
-    #[serde(rename = "isError", default)]
+    #[serde(rename = "isError", default, skip_serializing_if = "is_false")]
     pub is_error: bool,
+}
+
+fn is_false(v: &bool) -> bool {
+    !*v
 }
 
 impl ToolResult {
     pub fn ok(text: impl Into<String>) -> Self {
-        Self { content: vec![ContentBlock::text(text)], is_error: false }
+        Self {
+            content: vec![ContentBlock::text(text)],
+            is_error: false,
+        }
     }
     pub fn err(text: impl Into<String>) -> Self {
-        Self { content: vec![ContentBlock::text(text)], is_error: true }
+        Self {
+            content: vec![ContentBlock::text(text)],
+            is_error: true,
+        }
     }
 }
 
@@ -216,7 +230,10 @@ impl DriverMcpConfig {
             .unwrap_or(true);
         let live = std::env::var("MCP_LIVE_SUBSTRATE").ok();
         let live_substrate_path = if dry_run { None } else { live };
-        Self { dry_run, live_substrate_path }
+        Self {
+            dry_run,
+            live_substrate_path,
+        }
     }
 }
 
@@ -232,7 +249,10 @@ impl DriverMcp {
     /// Build a driver with a stub engine (hermetic mode).
     pub fn new_stub() -> Self {
         Self {
-            config: DriverMcpConfig { dry_run: true, live_substrate_path: None },
+            config: DriverMcpConfig {
+                dry_run: true,
+                live_substrate_path: None,
+            },
             engine: Arc::new(StubMcpEngine::default()),
             capabilities: vec![StubMcpEngine::default().capabilities()],
         }
@@ -241,7 +261,10 @@ impl DriverMcp {
     /// Build a driver with a custom engine (live mode).
     pub fn new_with_engine(engine: Arc<dyn EnginePort>) -> Self {
         Self {
-            config: DriverMcpConfig { dry_run: false, live_substrate_path: Some("<inline>".to_string()) },
+            config: DriverMcpConfig {
+                dry_run: false,
+                live_substrate_path: Some("<inline>".to_string()),
+            },
             engine,
             capabilities: vec![],
         }
@@ -255,8 +278,17 @@ impl DriverMcp {
             "resources/list" => self.handle_resources_list(req.id),
             "resources/read" => self.handle_resources_read(req.id, req.params),
             "tools/call" => self.handle_tools_call(req.id, req.params),
-            "ping" => JsonRpcResponse { jsonrpc: "2.0".to_string(), id: req.id, result: serde_json::json!({}) },
-            other => self.error_response(req.id, jsonrpc::METHOD_NOT_FOUND, format!("unknown method: {}", other), None),
+            "ping" => JsonRpcResponse {
+                jsonrpc: "2.0".to_string(),
+                id: req.id,
+                result: serde_json::json!({}),
+            },
+            other => self.error_response(
+                req.id,
+                jsonrpc::METHOD_NOT_FOUND,
+                format!("unknown method: {}", other),
+                None,
+            ),
         }
     }
 
@@ -353,13 +385,21 @@ impl DriverMcp {
                     }),
                 }
             }
-            other => self.error_response(id, jsonrpc::INVALID_PARAMS, format!("unknown resource: {}", other), None),
+            other => self.error_response(
+                id,
+                jsonrpc::INVALID_PARAMS,
+                format!("unknown resource: {}", other),
+                None,
+            ),
         }
     }
 
     fn handle_tools_call(&self, id: Value, params: Value) -> JsonRpcResponse {
         let name = params.get("name").and_then(|v| v.as_str()).unwrap_or("");
-        let args = params.get("arguments").cloned().unwrap_or(Value::Object(Default::default()));
+        let args = params
+            .get("arguments")
+            .cloned()
+            .unwrap_or(Value::Object(Default::default()));
         let tool_result = match name {
             TOOL_DISPATCH => self.dispatch(args),
             TOOL_POST_MESSAGE => self.post_message(args),
@@ -404,7 +444,9 @@ impl DriverMcp {
             Err(e) => return ToolResult::err(format!("invalid post_message params: {}", e)),
         };
         match futures_block_on(self.engine.resume(&params.conv_id, &params.prompt)) {
-            Ok(()) => ToolResult::ok(serde_json::json!({"ok": true, "status": "stable"}).to_string()),
+            Ok(_) => {
+                ToolResult::ok(serde_json::json!({"ok": true, "status": "stable"}).to_string())
+            }
             Err(e) => ToolResult::err(format!("resume failed: {}", e)),
         }
     }
@@ -420,11 +462,21 @@ impl DriverMcp {
         }
     }
 
-    fn error_response(&self, id: Value, code: i32, message: String, data: Option<Value>) -> JsonRpcResponse {
+    fn error_response(
+        &self,
+        id: Value,
+        code: i32,
+        message: String,
+        data: Option<Value>,
+    ) -> JsonRpcResponse {
         let err = JsonRpcError {
             jsonrpc: "2.0".to_string(),
             id: id.clone(),
-            error: JsonRpcErrorBody { code, message, data },
+            error: JsonRpcErrorBody {
+                code,
+                message,
+                data,
+            },
         };
         JsonRpcResponse {
             jsonrpc: "2.0".to_string(),
@@ -462,13 +514,21 @@ impl EnginePort for StubMcpEngine {
         let _ = task;
         Ok(substrate_core::domain::Session {
             conv_id,
-            pid: std::process::id(),
+            pid: Some(std::process::id()),
             logfile: None,
         })
     }
 
-    async fn resume(&self, _conv_id: &str, _prompt: &str) -> substrate_core::error::Result<()> {
-        Ok(())
+    async fn resume(
+        &self,
+        _conv_id: &str,
+        _prompt: &str,
+    ) -> substrate_core::error::Result<substrate_core::domain::Session> {
+        Ok(substrate_core::domain::Session {
+            conv_id: _conv_id.to_string(),
+            pid: Some(std::process::id()),
+            logfile: None,
+        })
     }
 
     async fn cancel(&self, _conv_id: &str) -> substrate_core::error::Result<()> {
@@ -510,17 +570,12 @@ impl EnginePort for StubMcpEngine {
         }
     }
 
-    fn wire_mailbox(
+    async fn wire_mailbox(
         &self,
         _conv_id: &str,
-    ) -> std::pin::Pin<
-        Box<
-            dyn futures_core::Stream<
-                    Item = substrate_core::error::Result<substrate_core::domain::Message>,
-                > + Send,
-        >,
-    > {
-        Box::pin(futures_core::stream::empty())
+        _mailbox: &Mailbox,
+    ) -> substrate_core::error::Result<()> {
+        Ok(())
     }
 }
 
@@ -551,7 +606,9 @@ fn futures_block_on<F: std::future::Future>(f: F) -> F::Output {
 }
 
 /// Convenience constructor for a default hermetic driver.
-pub fn driver() -> DriverMcp { DriverMcp::new_stub() }
+pub fn driver() -> DriverMcp {
+    DriverMcp::new_stub()
+}
 
 /// Version string of the phenotype-router-spec this driver targets.
 pub const ROUTER_SPEC_VERSION: &str = "v0.1.0";
@@ -563,8 +620,10 @@ fn _ensure_use(_e: &SubstrateError, _u: &Uuid) {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn config_defaults_to_dry_run() {
         std::env::remove_var("MCP_DRY_RUN");
         std::env::remove_var("MCP_LIVE_SUBSTRATE");
@@ -574,13 +633,17 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn config_respects_explicit_dry_run_flag() {
         std::env::set_var("MCP_DRY_RUN", "0");
         std::env::set_var("MCP_LIVE_SUBSTRATE", "/usr/local/bin/substrate");
         let cfg = DriverMcpConfig::from_env();
         // MCP_DRY_RUN=0 with MCP_LIVE_SUBSTRATE set => not dry run
         assert!(!cfg.dry_run);
-        assert_eq!(cfg.live_substrate_path.as_deref(), Some("/usr/local/bin/substrate"));
+        assert_eq!(
+            cfg.live_substrate_path.as_deref(),
+            Some("/usr/local/bin/substrate")
+        );
         std::env::remove_var("MCP_DRY_RUN");
         std::env::remove_var("MCP_LIVE_SUBSTRATE");
     }
@@ -608,7 +671,9 @@ mod tests {
             method: "tools/list".to_string(),
             params: serde_json::json!({}),
         });
-        let tools = resp.result["tools"].as_array().expect("tools must be array");
+        let tools = resp.result["tools"]
+            .as_array()
+            .expect("tools must be array");
         let names: Vec<&str> = tools.iter().map(|t| t["name"].as_str().unwrap()).collect();
         assert!(names.contains(&TOOL_DISPATCH));
         assert!(names.contains(&TOOL_POST_MESSAGE));
@@ -624,7 +689,9 @@ mod tests {
             method: "resources/list".to_string(),
             params: serde_json::json!({}),
         });
-        let resources = resp.result["resources"].as_array().expect("resources must be array");
+        let resources = resp.result["resources"]
+            .as_array()
+            .expect("resources must be array");
         assert_eq!(resources.len(), 1);
         assert_eq!(resources[0]["uri"], RESOURCE_CAPABILITIES);
     }
@@ -642,7 +709,9 @@ mod tests {
             }),
         });
         assert!(resp.result["isError"].is_null() || resp.result["isError"] == Value::Null);
-        let text = resp.result["content"][0]["text"].as_str().expect("content[0].text");
+        let text = resp.result["content"][0]["text"]
+            .as_str()
+            .expect("content[0].text");
         let body: Value = serde_json::from_str(text).expect("text must be JSON");
         assert_eq!(body["routing"]["engine"], "claude");
         assert!(body["conv_id"].as_str().unwrap().starts_with("stub-conv-"));
@@ -674,7 +743,10 @@ mod tests {
             params: serde_json::json!({ "name": "bogus", "arguments": {} }),
         });
         assert_eq!(resp.result["isError"], Value::Bool(true));
-        assert!(resp.result["content"][0]["text"].as_str().unwrap().contains("bogus"));
+        assert!(resp.result["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("bogus"));
     }
 
     #[test]

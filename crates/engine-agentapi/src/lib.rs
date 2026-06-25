@@ -587,11 +587,7 @@ impl AgentApiClient {
     }
 
     /// `POST /upload` — upload a file to the agent's working directory.
-    pub async fn upload(
-        &self,
-        file_name: &str,
-        contents: Vec<u8>,
-    ) -> Result<UploadResponse> {
+    pub async fn upload(&self, file_name: &str, contents: Vec<u8>) -> Result<UploadResponse> {
         let url = format!("{}/upload", self.base_url);
         let part = reqwest::multipart::Part::bytes(contents).file_name(file_name.to_string());
         let form = reqwest::multipart::Form::new().part("file", part);
@@ -680,17 +676,26 @@ fn parse_sse_record(text: &str) -> Result<Option<SseEvent>> {
         "status_change" => {
             let body: StatusChangeBody = serde_json::from_str(&data)
                 .map_err(|e| SubstrateError::Engine(format!("SSE status_change json: {e}")))?;
-            SseEvent::StatusChange { id: None, data: body }
+            SseEvent::StatusChange {
+                id: None,
+                data: body,
+            }
         }
         "message_update" => {
             let body: MessageUpdateBody = serde_json::from_str(&data)
                 .map_err(|e| SubstrateError::Engine(format!("SSE message_update json: {e}")))?;
-            SseEvent::MessageUpdate { id: None, data: body }
+            SseEvent::MessageUpdate {
+                id: None,
+                data: body,
+            }
         }
         "agent_error" => {
             let body: ErrorBody = serde_json::from_str(&data)
                 .map_err(|e| SubstrateError::Engine(format!("SSE agent_error json: {e}")))?;
-            SseEvent::AgentError { id: None, data: body }
+            SseEvent::AgentError {
+                id: None,
+                data: body,
+            }
         }
         other => {
             return Err(SubstrateError::Engine(format!(
@@ -754,8 +759,8 @@ impl AgentApiEngine {
     /// Construct from the environment.
     pub fn new() -> Self {
         let bin = std::env::var("AGENTAPI_BIN").unwrap_or_else(|_| "agentapi".to_string());
-        let base_url = std::env::var("AGENTAPI_ENDPOINT")
-            .unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
+        let base_url =
+            std::env::var("AGENTAPI_ENDPOINT").unwrap_or_else(|_| DEFAULT_ENDPOINT.to_string());
         let agent = std::env::var("AGENTAPI_AGENT").unwrap_or_else(|_| DEFAULT_AGENT.to_string());
         let port_min = std::env::var("AGENTAPI_PORT_MIN")
             .ok()
@@ -848,32 +853,25 @@ impl EnginePort for AgentApiEngine {
             // Update base_url to point at the spawned child.
             // SAFETY: we have exclusive access via the Mutex guard.
             let _ = child; // keep alive in struct
-            // Recreate self with updated base_url is impossible (no &mut self
-            // in trait method), so we mutate the inner String via a tiny
-            // unsafe-free trick: the base_url is in an Arc<String> in
-            // AgentApiClient, but here we use a plain String. We update
-            // it via interior mutability using a Mutex.
-            // For now, store the port in a separate Mutex<Option<u16>> so
-            // subsequent calls can read it. Simpler: just always use
-            // the loopback URL with the spawned port.
-            // [See `effective_base_url`.]
+                           // Recreate self with updated base_url is impossible (no &mut self
+                           // in trait method), so we mutate the inner String via a tiny
+                           // unsafe-free trick: the base_url is in an Arc<String> in
+                           // AgentApiClient, but here we use a plain String. We update
+                           // it via interior mutability using a Mutex.
+                           // For now, store the port in a separate Mutex<Option<u16>> so
+                           // subsequent calls can read it. Simpler: just always use
+                           // the loopback URL with the spawned port.
+                           // [See `effective_base_url`.]
             *guard = Some(child);
         }
-        let port = guard
-            .as_ref()
-            .and_then(|c| Some(c.port))
-            .unwrap_or(3284);
+        let port = guard.as_ref().map(|c| c.port).unwrap_or(3284);
 
         let effective_url = format!("http://localhost:{port}");
         let client = AgentApiClient::new(&effective_url);
 
         // Sanity-check that the server is alive.
         let status = client.status().await?;
-        let conv_id = format!(
-            "{}-{}",
-            status.agent_type,
-            task.id
-        );
+        let conv_id = format!("{}-{}", status.agent_type, task.id);
 
         Ok(Session {
             conv_id,
@@ -987,7 +985,7 @@ impl EnginePort for AgentApiEngine {
         let pr_urls: Vec<String> = messages
             .iter()
             .filter_map(|m| m.get("content")?.as_str())
-            .flat_map(|s| extract_pr_urls(s))
+            .flat_map(extract_pr_urls)
             .collect();
 
         Ok(StructuredResult {
@@ -1038,8 +1036,8 @@ fn extract_pr_urls(text: &str) -> Vec<String> {
 // Routing seam (see `routing.rs`)
 // ---------------------------------------------------------------------------
 
-pub mod routing;
 pub mod multi_agent_router;
+pub mod routing;
 
 pub use multi_agent_router::AgentApiMultiAgentRouter;
 
@@ -1129,7 +1127,8 @@ mod tests {
 
     #[test]
     fn sse_parse_status_change() {
-        let text = "event: status_change\ndata: {\"agent_type\":\"claude\",\"status\":\"running\"}\n\n";
+        let text =
+            "event: status_change\ndata: {\"agent_type\":\"claude\",\"status\":\"running\"}\n\n";
         let ev = parse_sse_record(text).unwrap().unwrap();
         match ev {
             SseEvent::StatusChange { data, .. } => {

@@ -90,7 +90,7 @@ impl EnginePort for MockEngine {
         Ok(())
     }
 
-    fn extract_result(&self, dump: &ConversationDump) -> Result<StructuredResult> {
+    fn extract_result(&self, _dump: &ConversationDump) -> Result<StructuredResult> {
         Ok(StructuredResult {
             text: format!("mock-engine:{}", self.suffix),
             artifacts: Vec::new(),
@@ -114,6 +114,7 @@ impl EnginePort for MockEngine {
 
 struct MockRouter {
     engines: Vec<Arc<MockEngine>>,
+    next: std::sync::atomic::AtomicUsize,
 }
 
 #[async_trait]
@@ -127,7 +128,8 @@ impl RoutingPort for MockRouter {
             "gemini"
         } else {
             // Round-robin fallback.
-            let idx = (task.id.as_u128() as usize) % self.engines.len();
+            let idx =
+                self.next.fetch_add(1, std::sync::atomic::Ordering::Relaxed) % self.engines.len();
             return Ok(RoutingDecision {
                 engine: self.engines[idx].name.to_string(),
                 model: "mock-model".to_string(),
@@ -201,8 +203,7 @@ async fn fanout_lane_runs_same_prompt_on_three_engines_in_parallel() {
     }
 
     // Three distinct conversation IDs.
-    let conv_ids: std::collections::HashSet<_> =
-        results.iter().map(|(id, _)| id.clone()).collect();
+    let conv_ids: std::collections::HashSet<_> = results.iter().map(|(id, _)| id.clone()).collect();
     assert_eq!(conv_ids.len(), 3);
 
     // Three distinct summaries prove all three engines ran.
@@ -226,6 +227,7 @@ async fn tree_lane_routes_children_to_distinct_engines() {
 
     let router = Arc::new(MockRouter {
         engines: vec![claude.clone(), codex.clone(), gemini.clone()],
+        next: std::sync::atomic::AtomicUsize::new(0),
     });
 
     // Parent task spawns 3 children, each with a different prefix.
@@ -282,6 +284,7 @@ async fn tree_lane_falls_back_to_round_robin_for_unprefixed_prompts() {
     ];
     let router = Arc::new(MockRouter {
         engines: engines.clone(),
+        next: std::sync::atomic::AtomicUsize::new(0),
     });
 
     let mut handles = Vec::new();
@@ -305,8 +308,7 @@ async fn tree_lane_falls_back_to_round_robin_for_unprefixed_prompts() {
     }
 
     // 6 tasks distributed across 3 engines => 2 each.
-    let mut counts: std::collections::HashMap<String, usize> =
-        std::collections::HashMap::new();
+    let mut counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
     for (name, _) in &routed {
         *counts.entry(name.clone()).or_insert(0) += 1;
     }
@@ -356,8 +358,14 @@ fn task_lifecycle_fsm_enforces_legal_transitions() {
     use substrate_core::domain::TaskState;
 
     // Happy path: Submitted -> Working -> Completed.
-    assert!(TaskState::can_transition(TaskState::Submitted, TaskState::Working));
-    assert!(TaskState::can_transition(TaskState::Working, TaskState::Completed));
+    assert!(TaskState::can_transition(
+        TaskState::Submitted,
+        TaskState::Working
+    ));
+    assert!(TaskState::can_transition(
+        TaskState::Working,
+        TaskState::Completed
+    ));
 
     // Working can require input.
     assert!(TaskState::can_transition(
@@ -370,8 +378,14 @@ fn task_lifecycle_fsm_enforces_legal_transitions() {
     ));
 
     // Non-terminal states may always move to Failed or Cancelled.
-    assert!(TaskState::can_transition(TaskState::Submitted, TaskState::Failed));
-    assert!(TaskState::can_transition(TaskState::Working, TaskState::Cancelled));
+    assert!(TaskState::can_transition(
+        TaskState::Submitted,
+        TaskState::Failed
+    ));
+    assert!(TaskState::can_transition(
+        TaskState::Working,
+        TaskState::Cancelled
+    ));
 
     // Terminal states have no outgoing edges.
     assert!(!TaskState::can_transition(

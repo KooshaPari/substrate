@@ -47,7 +47,7 @@
 //!     fn capabilities(&self) -> EngineCapabilities { EngineCapabilities { supports_resume: true, supports_subagents: false, supports_mcp_import: false } }
 //! }
 //!
-//! # tokio_test::block_on(async {
+//! # tokio::runtime::Runtime::new().unwrap().block_on(async {
 //! let inner = Arc::new(Echo);
 //! let budget = BudgetConfig::new(100).with_policy(OverflowPolicy::Reject);
 //! let engine = BudgetEngine::new(inner, budget);
@@ -105,20 +105,15 @@ pub fn estimate_tokens_bytes(b: &[u8]) -> usize {
 // ---------------------------------------------------------------------------
 
 /// How [`BudgetEngine`] handles prompts that exceed the remaining budget.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OverflowPolicy {
     /// Reject the call with [`SubstrateError::Engine`].
+    #[default]
     Reject,
     /// Truncate the prompt to fit the remaining budget.
     Truncate,
     /// Accept the prompt as-is and emit a tracing warning.
     Warn,
-}
-
-impl Default for OverflowPolicy {
-    fn default() -> Self {
-        OverflowPolicy::Reject
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -229,7 +224,10 @@ impl std::fmt::Debug for BudgetEngine {
         f.debug_struct("BudgetEngine")
             .field("inner", &"<dyn EnginePort>")
             .field("config", &self.config)
-            .field("ledger_count", &self.ledgers.try_read().map(|l| l.len()).unwrap_or(0))
+            .field(
+                "ledger_count",
+                &self.ledgers.try_read().map(|l| l.len()).unwrap_or(0),
+            )
             .finish()
     }
 }
@@ -357,17 +355,27 @@ impl EnginePort for BudgetEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use substrate_core::domain::{Part, TaskState};
+    use substrate_core::domain::TaskState;
 
     /// Stub engine that echoes the prompt as a dump.
+    /// Returns unique conv_ids for each `start()` call.
     #[derive(Debug)]
     struct EchoEngine {
-        conv_id: &'static str,
+        next_id: std::sync::atomic::AtomicUsize,
     }
 
     impl EchoEngine {
         fn new() -> Self {
-            EchoEngine { conv_id: "echo-conv" }
+            EchoEngine {
+                next_id: std::sync::atomic::AtomicUsize::new(0),
+            }
+        }
+
+        fn conv_id(&self, label: &str) -> String {
+            let n = self
+                .next_id
+                .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            format!("{label}-{n}")
         }
     }
 
@@ -375,7 +383,7 @@ mod tests {
     impl EnginePort for EchoEngine {
         async fn start(&self, _task: &Task) -> Result<Session> {
             Ok(Session {
-                conv_id: self.conv_id.to_string(),
+                conv_id: self.conv_id("echo-conv"),
                 pid: None,
                 logfile: None,
             })
@@ -493,9 +501,9 @@ mod tests {
         let engine = BudgetEngine::new(inner, BudgetConfig::new(100));
         let task = Task::new("hello world", "/tmp"); // ~3 tokens
         let session = engine.start(&task).await.unwrap();
-        assert_eq!(session.conv_id, "echo-conv");
+        assert!(session.conv_id.contains("echo-conv"));
 
-        let ledger = engine.ledger("echo-conv").await.unwrap();
+        let ledger = engine.ledger(&session.conv_id).await.unwrap();
         assert_eq!(ledger.used, 3);
         assert!(!ledger.overflowed);
     }
@@ -528,9 +536,9 @@ mod tests {
         );
         // 100 chars = 25 tokens, budget 2 → truncated to 8 chars.
         let task = Task::new("a".repeat(100).as_str(), "/tmp");
-        engine.start(&task).await.unwrap();
+        let session = engine.start(&task).await.unwrap();
 
-        let ledger = engine.ledger("echo-conv").await.unwrap();
+        let ledger = engine.ledger(&session.conv_id).await.unwrap();
         // 8 chars / 4 ceiling = 2 tokens used (within remaining).
         assert_eq!(ledger.used, 2);
     }
@@ -545,9 +553,9 @@ mod tests {
             BudgetConfig::new(2).with_policy(OverflowPolicy::Warn),
         );
         let task = Task::new("a".repeat(100).as_str(), "/tmp");
-        engine.start(&task).await.unwrap();
+        let session = engine.start(&task).await.unwrap();
 
-        let ledger = engine.ledger("echo-conv").await.unwrap();
+        let ledger = engine.ledger(&session.conv_id).await.unwrap();
         assert_eq!(ledger.used, 25);
         assert!(ledger.overflowed, "ledger must be marked as overflowed");
     }
@@ -558,10 +566,12 @@ mod tests {
     async fn unlimited_config_never_rejects() {
         let inner = Arc::new(EchoEngine::new());
         let engine = BudgetEngine::new(inner, BudgetConfig::unlimited());
-        let task = Task::new("a".repeat(1_000_000).as_str(), "/tmp");
-        engine.start(&task).await.unwrap();
+        let session = engine
+            .start(&Task::new("a".repeat(1_000_000).as_str(), "/tmp"))
+            .await
+            .unwrap();
         // No ledger entry created for unlimited mode.
-        assert!(engine.ledger("echo-conv").await.is_none());
+        assert!(engine.ledger(&session.conv_id).await.is_none());
     }
 
     // ── BudgetEngine: ledger lifecycle ────────────────────────────────────────
@@ -571,10 +581,11 @@ mod tests {
         let inner = Arc::new(EchoEngine::new());
         let engine = BudgetEngine::new(inner, BudgetConfig::new(100));
         let task = Task::new("hi", "/tmp");
-        engine.start(&task).await.unwrap();
-        assert!(engine.ledger("echo-conv").await.is_some());
-        engine.cancel("echo-conv").await.unwrap();
-        assert!(engine.ledger("echo-conv").await.is_none());
+        let session = engine.start(&task).await.unwrap();
+        let cid = session.conv_id.clone();
+        assert!(engine.ledger(&cid).await.is_some());
+        engine.cancel(&cid).await.unwrap();
+        assert!(engine.ledger(&cid).await.is_none());
     }
 
     #[tokio::test]
@@ -582,9 +593,10 @@ mod tests {
         let inner = Arc::new(EchoEngine::new());
         let engine = BudgetEngine::new(inner, BudgetConfig::new(100));
         let task = Task::new("hello", "/tmp"); // ~2 tokens
-        engine.start(&task).await.unwrap();
-        engine.resume("echo-conv", "world").await.unwrap(); // ~2 tokens
-        let ledger = engine.ledger("echo-conv").await.unwrap();
+        let session = engine.start(&task).await.unwrap();
+        let cid = session.conv_id.clone();
+        engine.resume(&cid, "world").await.unwrap(); // ~2 tokens
+        let ledger = engine.ledger(&cid).await.unwrap();
         assert_eq!(ledger.used, 4);
     }
 

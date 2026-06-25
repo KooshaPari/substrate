@@ -5,6 +5,7 @@
 
 use chrono::{DateTime, Datelike, Duration, Utc, Weekday as ChronoWeekday};
 use croner::Cron;
+use std::str::FromStr;
 use substrate_core::error::{Result, SubstrateError};
 use substrate_core::schedule_port::{ScheduleInstant, SchedulePort, ScheduleTrigger, Weekday};
 
@@ -99,8 +100,7 @@ impl SchedulePort for CronSchedule {
                 // croner 3.x: `Cron::from_str` is the documented entry point and the
                 // underlying `CronParser` defaults to `Seconds::Optional`, which matches
                 // the legacy `with_seconds_optional()` behavior for 5- and 6-field patterns.
-                let cron = expr
-                    .parse::<Cron>()
+                let cron = Cron::from_str(expr)
                     .map_err(|e| SubstrateError::InvalidSchedule(format!("cron parse: {e}")))?;
                 let next = cron
                     .find_next_occurrence(&after_dt, false)

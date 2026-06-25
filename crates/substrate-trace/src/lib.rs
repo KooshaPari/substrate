@@ -419,7 +419,7 @@ impl TracePort for TraceraTrace {
 ///
 /// Construct via [`PhenoOtelTrace::from_env`] (reads `PHENO_OTEL_ENDPOINT`
 /// + `PHENO_OTEL_SERVICE_NAME`) or [`PhenoOtelTrace::with_endpoint`] for
-/// tests.
+///   tests.
 #[derive(Debug, Clone)]
 pub struct PhenoOtelTrace {
     /// The OTLP/HTTP endpoint (e.g. `http://otel-collector.phenotype.svc:4318`).
@@ -444,8 +444,8 @@ impl PhenoOtelTrace {
     pub fn from_env() -> Self {
         let endpoint = std::env::var("PHENO_OTEL_ENDPOINT")
             .unwrap_or_else(|_| "http://127.0.0.1:4318".to_string());
-        let service_name = std::env::var("PHENO_OTEL_SERVICE_NAME")
-            .unwrap_or_else(|_| "substrate".to_string());
+        let service_name =
+            std::env::var("PHENO_OTEL_SERVICE_NAME").unwrap_or_else(|_| "substrate".to_string());
         PhenoOtelTrace {
             endpoint,
             service_name,
@@ -754,19 +754,13 @@ mod tests {
     async fn pheno_otel_target_url_appends_traces_path() {
         let t = PhenoOtelTrace::with_endpoint("http://otel.example.com:4318", "test-service");
         // pheno-otel HttpExporter::traces() appends /v1/traces
-        assert_eq!(
-            t.target_url(),
-            "http://otel.example.com:4318/v1/traces"
-        );
+        assert_eq!(t.target_url(), "http://otel.example.com:4318/v1/traces");
     }
 
     #[tokio::test]
     async fn pheno_otel_target_url_strips_trailing_slash() {
         let t = PhenoOtelTrace::with_endpoint("http://otel.example.com:4318/", "test");
-        assert_eq!(
-            t.target_url(),
-            "http://otel.example.com:4318/v1/traces"
-        );
+        assert_eq!(t.target_url(), "http://otel.example.com:4318/v1/traces");
     }
 
     #[tokio::test]
