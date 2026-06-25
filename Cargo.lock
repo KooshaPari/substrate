@@ -528,6 +528,8 @@ dependencies = [
  "engine-forge",
  "engine-spec",
  "futures",
+ "futures-core",
+ "parking_lot",
  "phenotype-mcp",
  "routing-phenotype-router",
  "serde",

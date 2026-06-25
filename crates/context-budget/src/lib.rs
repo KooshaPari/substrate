@@ -105,20 +105,15 @@ pub fn estimate_tokens_bytes(b: &[u8]) -> usize {
 // ---------------------------------------------------------------------------
 
 /// How [`BudgetEngine`] handles prompts that exceed the remaining budget.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OverflowPolicy {
     /// Reject the call with [`SubstrateError::Engine`].
+    #[default]
     Reject,
     /// Truncate the prompt to fit the remaining budget.
     Truncate,
     /// Accept the prompt as-is and emit a tracing warning.
     Warn,
-}
-
-impl Default for OverflowPolicy {
-    fn default() -> Self {
-        OverflowPolicy::Reject
-    }
 }
 
 // ---------------------------------------------------------------------------
@@ -229,7 +224,10 @@ impl std::fmt::Debug for BudgetEngine {
         f.debug_struct("BudgetEngine")
             .field("inner", &"<dyn EnginePort>")
             .field("config", &self.config)
-            .field("ledger_count", &self.ledgers.try_read().map(|l| l.len()).unwrap_or(0))
+            .field(
+                "ledger_count",
+                &self.ledgers.try_read().map(|l| l.len()).unwrap_or(0),
+            )
             .finish()
     }
 }
@@ -357,7 +355,7 @@ impl EnginePort for BudgetEngine {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use substrate_core::domain::{Part, TaskState};
+    use substrate_core::domain::TaskState;
 
     /// Stub engine that echoes the prompt as a dump.
     #[derive(Debug)]
@@ -367,7 +365,9 @@ mod tests {
 
     impl EchoEngine {
         fn new() -> Self {
-            EchoEngine { conv_id: "echo-conv" }
+            EchoEngine {
+                conv_id: "echo-conv",
+            }
         }
     }
 
