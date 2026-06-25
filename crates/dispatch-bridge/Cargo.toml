@@ -1,0 +1,27 @@
+[package]
+name = "dispatch-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "A2A/Wave envelope over HTTP+SSE+Unix-socket transport. Wires substrate::{a2a, wave, substrate-core} across process boundaries via three transport backends."
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+a2a = { path = "../a2a" }
+wave = { path = "../wave" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tokio-stream = { workspace = true }
+async-trait = { workspace = true }
+thiserror = { workspace = true }
+uuid = { workspace = true }
+anyhow = { workspace = true }
+futures = { workspace = true }
+parking_lot = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt-multi-thread", "net", "io-util"] }

@@ -36,6 +36,7 @@ members = [
     "crates/phenotype-mcp",
     "crates/context-budget",
     "crates/wave-3lane-tests",
+    "crates/dispatch-bridge",
 ]
 [workspace.package]
 version = "0.1.0"
