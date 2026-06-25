@@ -109,6 +109,7 @@ fn help_lists_dispatch_and_plan_subcommands() {
         .success()
         .stdout(predicate::str::contains("dispatch"))
         .stdout(predicate::str::contains("plan"))
+        .stdout(predicate::str::contains("cloud-dispatch"))
         .stdout(predicate::str::contains("--dry-run"));
 }
 

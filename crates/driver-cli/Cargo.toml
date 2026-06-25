@@ -22,6 +22,8 @@ engine-claude = { path = "../engine-claude" }
 engine-agentapi = { path = "../engine-agentapi" }
 transport-file = { path = "../transport-file" }
 store-file = { path = "../store-file" }
+cloud-cursor = { path = "../cloud-cursor" }
+cloud-kilo = { path = "../cloud-kilo" }
 clap.workspace = true
 tokio.workspace = true
 serde_json.workspace = true

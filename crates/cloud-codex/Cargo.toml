@@ -1,0 +1,15 @@
+[package]
+name = "cloud-codex"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Placeholder CloudDispatchPort adapter for OpenAI Codex Cloud (not yet implemented)."
+readme = "README.md"
+keywords = ["codex", "cloud", "dispatch", "substrate"]
+categories = ["development-tools"]
+
+[dependencies]
+substrate-core.workspace = true
+async-trait.workspace = true

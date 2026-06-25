@@ -1,0 +1,25 @@
+[package]
+name = "cloud-cursor"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CloudDispatchPort adapter for Cursor Cloud Agents (REST API v1)."
+readme = "README.md"
+keywords = ["cursor", "cloud", "dispatch", "adapter", "substrate"]
+categories = ["development-tools"]
+
+[dependencies]
+substrate-core.workspace = true
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest = { workspace = true, features = ["json"] }
+thiserror.workspace = true
+dotenvy.workspace = true
+base64 = "0.22"
+tokio = { workspace = true, features = ["rt", "macros", "time"] }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

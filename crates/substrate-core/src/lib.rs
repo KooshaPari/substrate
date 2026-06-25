@@ -10,6 +10,7 @@
 #![warn(missing_docs)]
 
 pub mod claim_port;
+pub mod cloud_dispatch_port;
 pub mod domain;
 pub mod error;
 pub mod event_store_port;
@@ -25,6 +26,7 @@ pub mod watcher_port;
 pub mod workflow_port;
 
 pub use claim_port::{ClaimPort, WorkItem, WorkItemState};
+pub use cloud_dispatch_port::{CloudDispatchPort, CloudResult, CloudTaskHandle, CloudTaskStatus};
 pub use error::{Result, SubstrateError};
 pub use event_store_port::{
     replay, replay_task_state, EventEnvelope, EventStorePort, Projection, TaskLifecycleEvent,
