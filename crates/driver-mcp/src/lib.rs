@@ -192,8 +192,12 @@ impl ContentBlock {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ToolResult {
     pub content: Vec<ContentBlock>,
-    #[serde(rename = "isError", default)]
+    #[serde(rename = "isError", default, skip_serializing_if = "is_false")]
     pub is_error: bool,
+}
+
+fn is_false(v: &bool) -> bool {
+    !*v
 }
 
 impl ToolResult {
@@ -616,8 +620,10 @@ fn _ensure_use(_e: &SubstrateError, _u: &Uuid) {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use serial_test::serial;
 
     #[test]
+    #[serial]
     fn config_defaults_to_dry_run() {
         std::env::remove_var("MCP_DRY_RUN");
         std::env::remove_var("MCP_LIVE_SUBSTRATE");
@@ -627,6 +633,7 @@ mod tests {
     }
 
     #[test]
+    #[serial]
     fn config_respects_explicit_dry_run_flag() {
         std::env::set_var("MCP_DRY_RUN", "0");
         std::env::set_var("MCP_LIVE_SUBSTRATE", "/usr/local/bin/substrate");
