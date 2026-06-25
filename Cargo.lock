@@ -515,6 +515,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "driver-mcp"
+version = "0.1.0"
+dependencies = [
+ "a2a",
+ "anyhow",
+ "async-trait",
+ "cliproxy-adapter",
+ "engine-agentapi",
+ "engine-claude",
+ "engine-codex",
+ "engine-forge",
+ "engine-spec",
+ "futures",
+ "phenotype-mcp",
+ "routing-phenotype-router",
+ "serde",
+ "serde_json",
+ "store-file",
+ "store-sqlite",
+ "substrate-app",
+ "substrate-core",
+ "tempfile",
+ "tokio",
+ "transport-file",
+ "uuid",
+]
+
+[[package]]
 name = "engine-agentapi"
 version = "0.1.0"
 dependencies = [

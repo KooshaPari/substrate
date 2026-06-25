@@ -11,6 +11,7 @@ members = [
     "crates/driver-cli",
     "crates/driver-http",
     "crates/driver-argv",
+    "crates/driver-mcp",
     "crates/gateway",
     "crates/arch-test",
     "crates/omniroute-adapter",
@@ -78,6 +79,9 @@ axum = "0.8"
 tower = "0.5"
 tower-http = { version = "0.7", features = ["trace"] }
 http-body-util = "0.1"
+futures = "0.3"
+futures-core = "0.3"
+parking_lot = "0.12"
 
 [profile.release]
 strip = true
