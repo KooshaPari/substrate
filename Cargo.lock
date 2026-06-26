@@ -1570,15 +1570,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pheno-otel"
-version = "0.1.0"
-dependencies = [
- "serde",
- "serde_json",
- "thiserror 2.0.18",
-]
-
-[[package]]
 name = "phenotype-mcp"
 version = "0.2.0"
 dependencies = [
@@ -2292,7 +2283,6 @@ dependencies = [
 name = "substrate-trace"
 version = "0.1.0"
 dependencies = [
- "pheno-otel",
  "reqwest",
  "serde",
  "serde_json",

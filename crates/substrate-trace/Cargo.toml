@@ -4,11 +4,10 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
-description = "TracePort adapters: Noop, Recording, MultiTrace, AgilePlus, Tracera, PhenoOtel (OTLP/HTTP export via the pheno-otel substrate)."
+description = "TracePort adapters: Noop, Recording, MultiTrace, AgilePlus, Tracera."
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
-pheno-otel = { workspace = true }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
 reqwest = { workspace = true }
 serde = { workspace = true }
