@@ -506,10 +506,7 @@ mod tests {
         a.send(req).await.expect("send");
         let mut s = b.recv_stream();
         let env = s.next().await.expect("recv");
-        if let DispatchEnvelope::LaneRequest {
-            engine, model, ..
-        } = env
-        {
+        if let DispatchEnvelope::LaneRequest { engine, model, .. } = env {
             assert!(engine.is_none());
             assert!(model.is_none());
         } else {
@@ -524,11 +521,8 @@ mod tests {
         let (a, b) = ChannelTransport::new(8);
         let b_arc: Arc<dyn Transport> = Arc::new(b);
         let bridge = Bridge::new(b_arc);
-        let handle = tokio::spawn(async move {
-            bridge
-                .run(|_env| Box::pin(async { Ok(()) }))
-                .await
-        });
+        let handle =
+            tokio::spawn(async move { bridge.run(|_env| Box::pin(async { Ok(()) })).await });
         for i in 0..3 {
             a.send(DispatchEnvelope::TaskUpdate {
                 lane_id: uuid::Uuid::new_v4(),
