@@ -238,12 +238,15 @@ mod tests {
         let bare = root.join("origin.git");
         std::fs::create_dir_all(&seed).unwrap();
         run_git_sync(&seed, &["init", "-b", "main"]);
+        run_git_sync(&seed, &["config", "user.email", "kilo-test@example.com"]);
+        run_git_sync(&seed, &["config", "user.name", "kilo-test"]);
         std::fs::write(seed.join("README.md"), "seed\n").unwrap();
         run_git_sync(&seed, &["add", "README.md"]);
         run_git_sync(&seed, &["commit", "-m", "seed"]);
         run_git_sync(root, &["init", "--bare", bare.to_str().unwrap()]);
         run_git_sync(&seed, &["remote", "add", "origin", bare.to_str().unwrap()]);
         run_git_sync(&seed, &["push", "-u", "origin", "main"]);
+        run_git_sync(&bare, &["symbolic-ref", "HEAD", "refs/heads/main"]);
         bare
     }
 
@@ -255,7 +258,7 @@ mod tests {
                 "clone",
                 "--depth",
                 "1",
-                bare.to_str().unwrap(),
+                bare.to_str().expect("bare path utf-8"),
                 clone.file_name().unwrap().to_str().unwrap(),
             ],
         );
