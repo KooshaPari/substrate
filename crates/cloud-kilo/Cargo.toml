@@ -21,4 +21,5 @@ uuid.workspace = true
 tokio = { workspace = true, features = ["rt", "macros", "time", "process", "fs", "sync"] }
 
 [dev-dependencies]
+tempfile.workspace = true
 tokio = { workspace = true, features = ["macros", "rt"] }

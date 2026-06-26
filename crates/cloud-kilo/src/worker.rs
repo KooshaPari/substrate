@@ -52,6 +52,12 @@ pub fn parse_llm_payload(raw: &str) -> Result<LlmDispatchPayload> {
         .map_err(|e| SubstrateError::CloudDispatch(format!("kilo llm payload parse: {e}")))
 }
 
+/// Whether `git ls-remote --heads` output contains a ref for `branch`.
+pub fn remote_branch_exists_in_ls_remote(output: &str, branch: &str) -> bool {
+    let suffix = format!("refs/heads/{branch}");
+    output.lines().any(|line| line.ends_with(&suffix))
+}
+
 /// Run the full model-backed dispatch pipeline.
 pub async fn run_dispatch(
     config: &KiloGatewayConfig,
@@ -60,7 +66,7 @@ pub async fn run_dispatch(
     prompt: &str,
 ) -> Result<CloudResult> {
     let user = format!(
-        "Repository: {repo}\nBase branch: {branch}\nTask: {prompt}\n\
+        "Repository: {repo}\nWork branch: {branch}\nTask: {prompt}\n\
          Produce JSON with file edits implementing the task."
     );
     let llm_text = config.complete(SYSTEM_PROMPT, &user).await?;
@@ -73,11 +79,8 @@ pub async fn run_dispatch(
 
     run_git(&work_dir, &["clone", "--depth", "1", repo, "repo"]).await?;
     let repo_dir = work_dir.join("repo");
-    let work_branch = format!("kilo/cloud-dispatch-{}", uuid::Uuid::new_v4());
 
-    run_git(&repo_dir, &["checkout", "-b", &work_branch]).await?;
-    run_git(&repo_dir, &["fetch", "origin", branch]).await?;
-    let _ = run_git(&repo_dir, &["merge", &format!("origin/{branch}")]).await;
+    prepare_work_branch(&repo_dir, branch).await?;
 
     for file in &payload.files {
         write_repo_file(&repo_dir, &file.path, &file.content).await?;
@@ -95,15 +98,35 @@ pub async fn run_dispatch(
 
     run_git(&repo_dir, &["add", "-A"]).await?;
     run_git(&repo_dir, &["commit", "-m", &payload.commit_message]).await?;
-    run_git(&repo_dir, &["push", "-u", "origin", &work_branch]).await?;
+    run_git(&repo_dir, &["push", "-u", "origin", branch]).await?;
 
-    let pr_url = create_pr(&repo_dir, &payload.pr_title, &payload.pr_body, &work_branch).await;
+    let pr_url = create_pr(&repo_dir, &payload.pr_title, &payload.pr_body, branch).await;
 
     Ok(CloudResult {
         pr_url,
-        branch: work_branch,
+        branch: branch.to_string(),
         diff_summary: payload.diff_summary,
     })
+}
+
+/// Check out the work branch, fetching from origin only when it already exists remotely.
+pub async fn prepare_work_branch(repo_dir: &Path, branch: &str) -> Result<()> {
+    if remote_branch_exists(repo_dir, branch).await? {
+        run_git(repo_dir, &["fetch", "origin", branch]).await?;
+        run_git(
+            repo_dir,
+            &["checkout", "-B", branch, &format!("origin/{branch}")],
+        )
+        .await?;
+    } else {
+        run_git(repo_dir, &["checkout", "-b", branch]).await?;
+    }
+    Ok(())
+}
+
+async fn remote_branch_exists(repo_dir: &Path, branch: &str) -> Result<bool> {
+    let output = run_git_output(repo_dir, &["ls-remote", "--heads", "origin", branch]).await?;
+    Ok(remote_branch_exists_in_ls_remote(&output, branch))
 }
 
 async fn write_repo_file(repo_dir: &Path, rel: &str, content: &str) -> Result<()> {
@@ -119,12 +142,7 @@ async fn write_repo_file(repo_dir: &Path, rel: &str, content: &str) -> Result<()
 }
 
 async fn run_git(cwd: &Path, args: &[&str]) -> Result<()> {
-    let output = Command::new("git")
-        .args(args)
-        .current_dir(cwd)
-        .output()
-        .await
-        .map_err(|e| SubstrateError::CloudDispatch(format!("git spawn: {e}")))?;
+    let output = git_command(cwd, args).await?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
@@ -134,6 +152,28 @@ async fn run_git(cwd: &Path, args: &[&str]) -> Result<()> {
         )));
     }
     Ok(())
+}
+
+async fn run_git_output(cwd: &Path, args: &[&str]) -> Result<String> {
+    let output = git_command(cwd, args).await?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        return Err(SubstrateError::CloudDispatch(format!(
+            "git {} failed: {stderr}",
+            args.join(" ")
+        )));
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).into_owned())
+}
+
+async fn git_command(cwd: &Path, args: &[&str]) -> Result<std::process::Output> {
+    Command::new("git")
+        .args(args)
+        .current_dir(cwd)
+        .output()
+        .await
+        .map_err(|e| SubstrateError::CloudDispatch(format!("git spawn: {e}")))
 }
 
 async fn create_pr(repo_dir: &Path, title: &str, body: &str, branch: &str) -> Option<String> {
@@ -161,4 +201,106 @@ fn tempfile_dir() -> Result<PathBuf> {
     std::env::temp_dir()
         .canonicalize()
         .map_err(|e| SubstrateError::Io(e.to_string()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command as StdCommand;
+
+    #[test]
+    fn remote_branch_exists_in_ls_remote_detects_head() {
+        let output = "abc123\trefs/heads/main\n";
+        assert!(remote_branch_exists_in_ls_remote(output, "main"));
+        assert!(!remote_branch_exists_in_ls_remote(output, "feature/new"));
+    }
+
+    #[tokio::test]
+    async fn prepare_work_branch_creates_branch_from_default_when_missing_remote() {
+        let root = tempfile::tempdir().unwrap();
+        let bare = init_seed_repo_with_main(root.path());
+        let clone = shallow_clone(root.path(), &bare);
+
+        let base_commit = git_rev_parse(&clone, "HEAD");
+        prepare_work_branch(&clone, "feature/new")
+            .await
+            .expect("prepare should create branch without fetching missing remote ref");
+
+        assert_eq!(git_current_branch(&clone), "feature/new");
+        assert_eq!(git_rev_parse(&clone, "HEAD"), base_commit);
+        assert!(!remote_branch_exists(&clone, "feature/new")
+            .await
+            .expect("ls-remote should succeed"));
+    }
+
+    fn init_seed_repo_with_main(root: &Path) -> PathBuf {
+        let seed = root.join("seed");
+        let bare = root.join("origin.git");
+        std::fs::create_dir_all(&seed).unwrap();
+        run_git_sync(&seed, &["init", "-b", "main"]);
+        std::fs::write(seed.join("README.md"), "seed\n").unwrap();
+        run_git_sync(&seed, &["add", "README.md"]);
+        run_git_sync(&seed, &["commit", "-m", "seed"]);
+        run_git_sync(root, &["init", "--bare", bare.to_str().unwrap()]);
+        run_git_sync(&seed, &["remote", "add", "origin", bare.to_str().unwrap()]);
+        run_git_sync(&seed, &["push", "-u", "origin", "main"]);
+        bare
+    }
+
+    fn shallow_clone(root: &Path, bare: &Path) -> PathBuf {
+        let clone = root.join("clone");
+        run_git_sync(
+            root,
+            &[
+                "clone",
+                "--depth",
+                "1",
+                bare.to_str().unwrap(),
+                clone.file_name().unwrap().to_str().unwrap(),
+            ],
+        );
+        clone
+    }
+
+    fn git_current_branch(repo: &Path) -> String {
+        String::from_utf8(
+            StdCommand::new("git")
+                .args(["branch", "--show-current"])
+                .current_dir(repo)
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap()
+        .trim()
+        .to_string()
+    }
+
+    fn git_rev_parse(repo: &Path, rev: &str) -> String {
+        String::from_utf8(
+            StdCommand::new("git")
+                .args(["rev-parse", rev])
+                .current_dir(repo)
+                .output()
+                .unwrap()
+                .stdout,
+        )
+        .unwrap()
+        .trim()
+        .to_string()
+    }
+
+    fn run_git_sync(cwd: &Path, args: &[&str]) {
+        let status = StdCommand::new("git")
+            .args(args)
+            .current_dir(cwd)
+            .status()
+            .unwrap_or_else(|e| panic!("git spawn in {}: {e}", cwd.display()));
+        assert!(
+            status.success(),
+            "git {} failed in {}",
+            args.join(" "),
+            cwd.display()
+        );
+    }
 }
