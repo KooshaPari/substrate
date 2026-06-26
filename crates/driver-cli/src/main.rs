@@ -4,6 +4,7 @@
 //! [`DispatchService`], and prints the [`StructuredResult`] as JSON.
 #![forbid(unsafe_code)]
 
+mod cloud_dispatch;
 mod plan;
 
 use std::path::PathBuf;
@@ -56,6 +57,8 @@ enum Command {
         #[command(flatten)]
         args: ArgvCli,
     },
+    /// Submit a remote cloud-agent task and harvest the PR result as JSON.
+    CloudDispatch(CloudDispatchArgs),
 }
 
 /// Flags shared by `dispatch` and `plan`.
@@ -93,6 +96,23 @@ struct DispatchOptions {
     /// Named agent/persona (`subagent` requires `supports_subagents`).
     #[arg(long, value_name = "NAME")]
     agent: Option<String>,
+}
+
+#[derive(Parser)]
+#[command(next_help_heading = "CLOUD DISPATCH")]
+struct CloudDispatchArgs {
+    /// Cloud platform: `cursor` (Cursor Cloud Agents) or `kilo` (gateway + local git).
+    #[arg(long, value_enum, value_name = "PLATFORM")]
+    platform: cloud_dispatch::CloudPlatform,
+    /// Repository URL (for example `https://github.com/org/repo`).
+    #[arg(long, value_name = "REPO")]
+    repo: String,
+    /// Base branch or ref to start from.
+    #[arg(long, value_name = "BRANCH")]
+    branch: String,
+    /// Task prompt for the remote agent.
+    #[arg(long, value_name = "PROMPT")]
+    task: String,
 }
 
 impl DispatchArgs {
@@ -202,5 +222,8 @@ async fn main() -> anyhow::Result<()> {
             print_plan(&plan)
         }
         Command::Argv { args } => driver_argv::dispatch::run(args),
+        Command::CloudDispatch(args) => {
+            cloud_dispatch::run(args.platform, &args.repo, &args.branch, &args.task).await
+        }
     }
 }

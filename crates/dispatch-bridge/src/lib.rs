@@ -406,7 +406,7 @@ mod tests {
     async fn channel_transport_buffered_send_does_not_block() {
         let (a, b) = ChannelTransport::new(16);
         for i in 0..10 {
-            let id = uuid::Uuid::new_v4();
+            let _id = uuid::Uuid::new_v4();
             a.send(DispatchEnvelope::Heartbeat {
                 from: format!("sender-{i}"),
                 seq: i as u64,

@@ -37,6 +37,10 @@ members = [
     "crates/context-budget",
     "crates/wave-3lane-tests",
     "crates/dispatch-bridge",
+    "crates/cloud-dispatch-conformance",
+    "crates/cloud-cursor",
+    "crates/cloud-kilo",
+    "crates/cloud-codex",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -83,6 +87,8 @@ http-body-util = "0.1"
 futures = "0.3"
 futures-core = "0.3"
 parking_lot = "0.12"
+tokio-stream = "0.1"
+tracing = "0.1"
 
 [profile.release]
 strip = true

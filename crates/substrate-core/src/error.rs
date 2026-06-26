@@ -78,6 +78,10 @@ pub enum SubstrateError {
     #[error("watcher error: {0}")]
     Watcher(String),
 
+    /// A cloud-dispatch adapter operation failed.
+    #[error("cloud dispatch error: {0}")]
+    CloudDispatch(String),
+
     /// A catch-all for adapter-specific failures that do not fit above.
     #[error("{0}")]
     Other(String),
