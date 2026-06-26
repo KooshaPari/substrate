@@ -1,5 +1,6 @@
 //! Integration tests for the substrate HTTP driver (offline, fake-forge).
 
+use std::net::SocketAddr;
 use std::path::PathBuf;
 use std::process::Command as StdCommand;
 
@@ -30,6 +31,75 @@ async fn body_json(resp: axum::response::Response) -> serde_json::Value {
     let bytes = resp.into_body().collect().await.unwrap().to_bytes();
     serde_json::from_slice(&bytes)
         .unwrap_or_else(|_| serde_json::Value::String(String::from_utf8_lossy(&bytes).into_owned()))
+}
+
+/// Bind an ephemeral TCP listener and serve `router` in the background.
+async fn spawn_server(router: axum::Router) -> SocketAddr {
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+        .await
+        .expect("bind ephemeral port");
+    let addr = listener.local_addr().expect("local_addr");
+    tokio::spawn(async move {
+        axum::serve(listener, router)
+            .await
+            .expect("serve driver-http");
+    });
+    addr
+}
+
+#[tokio::test]
+async fn plan_over_bound_server_returns_dispatch_plan() {
+    let tmp = tempfile::tempdir().unwrap();
+    let state = test_state(tmp.path(), None).unwrap();
+    let addr = spawn_server(build_router(state)).await;
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("http://{addr}/v1/plan"))
+        .json(&serde_json::json!({
+            "engine": "forge",
+            "cwd": "/tmp",
+            "prompt": "echo hi"
+        }))
+        .send()
+        .await
+        .expect("POST /v1/plan");
+
+    assert_eq!(resp.status(), reqwest::StatusCode::OK);
+    let json: serde_json::Value = resp.json().await.expect("plan json");
+    assert_eq!(json["engine"], "forge");
+    assert_eq!(json["session_mode"], "foreground");
+    assert!(json["argv"].as_array().is_some());
+    assert_eq!(json["spec"]["prompt"], "echo hi");
+    assert_eq!(json["spec"]["cwd"], "/tmp");
+}
+
+#[tokio::test]
+async fn dispatch_over_bound_server_returns_structured_result() {
+    let tmp = tempfile::tempdir().unwrap();
+    let fake = fake_forge_bin();
+    let state = test_state(tmp.path(), Some(&fake)).unwrap();
+    let addr = spawn_server(build_router(state)).await;
+
+    let client = reqwest::Client::new();
+    let resp = client
+        .post(format!("http://{addr}/v1/dispatch"))
+        .json(&serde_json::json!({
+            "engine": "forge",
+            "cwd": tmp.path().to_str().unwrap(),
+            "prompt": "echo hi"
+        }))
+        .send()
+        .await
+        .expect("POST /v1/dispatch");
+
+    assert_eq!(resp.status(), reqwest::StatusCode::OK);
+    let json: serde_json::Value = resp.json().await.expect("dispatch json");
+    assert_eq!(json["status"], "completed");
+    assert!(json["text"]
+        .as_str()
+        .unwrap_or("")
+        .contains("DONE: printed hi"));
 }
 
 #[tokio::test]
