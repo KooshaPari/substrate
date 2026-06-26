@@ -238,6 +238,8 @@ mod tests {
         let bare = root.join("origin.git");
         std::fs::create_dir_all(&seed).unwrap();
         run_git_sync(&seed, &["init", "-b", "main"]);
+        run_git_sync(&seed, &["config", "user.email", "test@example.com"]);
+        run_git_sync(&seed, &["config", "user.name", "test"]);
         std::fs::write(seed.join("README.md"), "seed\n").unwrap();
         run_git_sync(&seed, &["add", "README.md"]);
         run_git_sync(&seed, &["commit", "-m", "seed"]);
