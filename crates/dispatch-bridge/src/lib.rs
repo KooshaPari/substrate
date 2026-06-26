@@ -178,8 +178,8 @@ pub struct ChannelTransport {
 impl ChannelTransport {
     /// Build a connected (tx, rx) pair wrapped as `ChannelTransport`.
     pub fn new(buffer: usize) -> (Self, Self) {
-        let (tx_a, rx_a) = mpsc::channel(buffer);
-        let (tx_b, rx_b) = mpsc::channel(buffer);
+        let (tx_a, rx_b) = mpsc::channel(buffer);
+        let (tx_b, rx_a) = mpsc::channel(buffer);
         let a = Self {
             name: "channel-a",
             tx: tx_a,
@@ -471,10 +471,10 @@ mod tests {
     async fn channel_transport_recv_stream_is_consumable_once() {
         // Once a stream is taken, taking it again returns empty stream.
         let (a, b) = ChannelTransport::new(8);
-        let b_arc: Arc<dyn Transport> = Arc::new(b);
-        let _ = a; // suppress unused
-        let mut s1 = b_arc.recv_stream();
-        let mut s2 = b_arc.recv_stream();
+        let mut s1 = b.recv_stream();
+        let mut s2 = b.recv_stream();
+        drop(a);
+        drop(b);
         assert!(s1.next().await.is_none());
         assert!(s2.next().await.is_none());
     }
