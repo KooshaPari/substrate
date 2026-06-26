@@ -17,6 +17,7 @@ members = [
     "crates/omniroute-adapter",
     "crates/routing-phenotype-router",
     "tools/fake-forge",
+    "tools/fake-codex-cloud",
     "crates/a2a",
     "crates/store-sqlite",
     "crates/supervisor",

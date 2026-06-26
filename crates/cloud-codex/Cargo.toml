@@ -5,11 +5,17 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Placeholder CloudDispatchPort adapter for OpenAI Codex Cloud (not yet implemented)."
+description = "CloudDispatchPort adapter for OpenAI Codex Cloud (`codex cloud` CLI)."
 readme = "README.md"
-keywords = ["codex", "cloud", "dispatch", "substrate"]
+keywords = ["codex", "cloud", "dispatch", "adapter", "substrate"]
 categories = ["development-tools"]
 
 [dependencies]
 substrate-core.workspace = true
 async-trait.workspace = true
+dotenvy.workspace = true
+tokio = { workspace = true, features = ["process", "rt", "macros"] }
+
+[dev-dependencies]
+cloud-dispatch-conformance = { path = "../cloud-dispatch-conformance" }
+tokio = { workspace = true, features = ["macros", "rt"] }
