@@ -319,7 +319,10 @@ name = "cloud-codex"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cloud-dispatch-conformance",
+ "dotenvy",
  "substrate-core",
+ "tokio",
 ]
 
 [[package]]
@@ -342,6 +345,7 @@ name = "cloud-dispatch-conformance"
 version = "0.1.0"
 dependencies = [
  "async-trait",
+ "cloud-codex",
  "serde",
  "substrate-core",
  "tokio",
@@ -709,6 +713,10 @@ dependencies = [
  "libc",
  "windows-sys 0.61.2",
 ]
+
+[[package]]
+name = "fake-codex-cloud"
+version = "0.1.0"
 
 [[package]]
 name = "fake-forge"

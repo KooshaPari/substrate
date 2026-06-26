@@ -126,7 +126,28 @@ pub fn expect_harvest_not_ready(err: SubstrateError) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::path::PathBuf;
+    use std::process::Command as StdCommand;
+
+    use cloud_codex::{CodexCloudConfig, CodexCloudDispatch};
+
     use super::*;
+
+    /// Resolve the clean `fake-codex-cloud` binary, building it first if absent.
+    fn resolve_fake_codex_bin() -> PathBuf {
+        let exe = std::env::current_exe().expect("current_exe");
+        let debug_dir = exe.parent().unwrap().parent().unwrap().to_path_buf();
+        let suffix = if cfg!(windows) { ".exe" } else { "" };
+        let clean = debug_dir.join(format!("fake-codex-cloud{suffix}"));
+        if !clean.exists() {
+            let status = StdCommand::new(env!("CARGO"))
+                .args(["build", "-p", "fake-codex-cloud"])
+                .status()
+                .expect("spawn cargo build -p fake-codex-cloud");
+            assert!(status.success(), "cargo build -p fake-codex-cloud failed");
+        }
+        clean
+    }
 
     #[tokio::test]
     async fn fake_adapter_passes_conformance() {
@@ -144,5 +165,18 @@ mod tests {
     async fn fake_failed_path_alone() {
         let fake = FakeCloudDispatch::new();
         assert_failed_task_path(&fake).await;
+    }
+
+    #[tokio::test]
+    async fn codex_adapter_passes_conformance_with_fake_cli() {
+        let bin = resolve_fake_codex_bin()
+            .into_os_string()
+            .into_string()
+            .expect("fake-codex-cloud path");
+        let adapter = CodexCloudDispatch::new(CodexCloudConfig {
+            bin,
+            env_id: "env-test".into(),
+        });
+        assert_cloud_dispatch_conformance(&adapter).await;
     }
 }
