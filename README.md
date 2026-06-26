@@ -1,7 +1,14 @@
 # substrate
 
-**Work-state: COMPLETE ██████████ 6/6 phases + orchestration + skills/memory + routing + process + event sourcing + dispatch planner superset**
-**Status: all phases green · 150+ tests passing · clippy clean · all absorptions done**
+**Work-state: RELEASE-READY ██████████ 100% — 3 driver faces (CLI, HTTP, MCP) · 6 engines (forge/codex/claude/agentapi local + kilo/cursor/codex cloud) · dogfooded `substrate` binary · 6/6 phases + orchestration + skills/memory + routing + process + event sourcing + dispatch planner superset**
+**Status: all phases green · 150+ tests passing · clippy clean · all absorptions done · release binary on `v*` tag**
+
+Release-ready hexagonal dispatch spine for the Phenotype fleet. Three **driver faces** share one planner and
+composition root: **CLI** (`substrate`), **HTTP** (`substrate-http` REST), and **MCP** (FastMCP in
+`driver-mcp`). Six **engines** span local CLI adapters (`forge`, `codex`, `claude`, `agentapi` via
+`EnginePort`) and cloud dispatch (`kilo`, `cursor`, `codex cloud` via `CloudDispatchPort`). The repo
+**dogfoods** its own release binary (`cargo build --release -p driver-cli` → `target/release/substrate`;
+GitHub release artifacts on `v*` tags via `.github/workflows/release-binary.yml`).
 
 Orchestration superset (2026-06): `SchedulePort` + `substrate-schedule` (cron/interval/daily/weekly via croner), `WorkflowPort` + `substrate-dag` (petgraph DAG: topo order, ready-set, cycle reject), `ClaimPort` + `store-sqlite` (BEGIN IMMEDIATE atomic claim + strsim fuzzy dedup).
 
@@ -19,6 +26,44 @@ A hexagonal (ports-and-adapters) spine for dispatching agent tasks to coding
 engines such as [forge]. The **core** holds pure contracts; **adapters** plug
 concrete engines, transports, and stores into those contracts; the
 **application** wires them at a single composition root.
+
+## Usage
+
+Build the dogfooded CLI binary:
+
+```sh
+cargo build --release -p driver-cli
+# → target/release/substrate   (Windows: substrate.exe)
+```
+
+**Plan** — print the dispatch plan (engine, session mode, argv) without spawning:
+
+```sh
+substrate plan --engine forge --cwd . "fix the bug"
+# or during development:
+cargo run -p driver-cli --bin substrate -- plan --engine forge --cwd . "fix the bug"
+```
+
+**Dispatch** — run a task and emit structured JSON (`--fake` uses bundled `fake-forge`, offline):
+
+```sh
+substrate dispatch --fake --cwd /tmp "echo hi"
+substrate dispatch --dry-run --engine forge --cwd . "echo hi"   # same output as plan
+substrate dispatch --engine codex --cwd . --mode background "implement feature X"
+```
+
+**Cloud dispatch** — submit a remote agent task and harvest PR JSON (`cursor` or `kilo`; auth via
+`.env.example` / adapter READMEs):
+
+```sh
+substrate cloud-dispatch --platform cursor \
+  --repo https://github.com/org/repo --branch main --task "Add README usage section"
+
+substrate cloud-dispatch --platform kilo \
+  --repo https://github.com/org/repo --branch main --task "Add README usage section"
+```
+
+HTTP and MCP driver faces: see [HTTP API](#http-api) and [MCP SDK (`driver-mcp`)](#mcp-sdk-driver-mcp) below.
 
 ## Hexagonal architecture
 
@@ -62,13 +107,17 @@ port traits). It never depends on an adapter. `crates/arch-test` parses
 | `engine-codex` | adapter | `EnginePort` driving the `codex` CLI (`CODEX_BIN`; `CODEX_INTEGRATION=1` for real calls). |
 | `engine-claude` | adapter | `EnginePort` driving the `claude` CLI (`CLAUDE_BIN`; `CLAUDE_INTEGRATION=1` for real calls). |
 | `engine-agentapi` | adapter | `EnginePort` HTTP adapter for agentapi-plusplus (`AGENTAPI_ENDPOINT`; `AGENTAPI_INTEGRATION=1`). |
+| `cloud-cursor` | adapter | `CloudDispatchPort`: Cursor Cloud Agents REST API (`CURSOR_API_KEY`). |
+| `cloud-kilo` | adapter | `CloudDispatchPort`: Kilo gateway + local git PR workflow (`KILO_API_KEY`). |
+| `cloud-codex` | adapter | `CloudDispatchPort`: Codex Cloud via `codex cloud exec` (`CODEX_CLOUD_ENV_ID`). |
+| `cloud-dispatch-conformance` | test harness | `assert_cloud_dispatch_conformance` — contract suite + offline fake for cloud adapters. |
 | `engine-conformance` | test harness | `assert_engine_conformance<E>` — runs the harness-agnostic contract suite against any adapter, offline. |
 | `transport-file` | adapter | `TransportPort`: append-only JSONL mailboxes + lockfile-lease atomic claim. |
 | `store-file` | adapter | `StorePort`: one JSON file per task/result + lockfile-lease atomic claim. |
 | `store-sqlite` | adapter | `MailboxStore`, `ClaimPort`, `MemoryPort`, `EventStorePort` (append-only event log + global seq). |
 | `substrate-app` | application | `DispatchService` implementing `DispatchApi`, `DispatchPlanner` (engine + session-mode selection), generic over the three driven ports + optional `TracePort`. |
 | `substrate-trace` | adapter | `TracePort` adapters: `NoopTrace`, `RecordingTrace` (test double), `MultiTrace` (fan-out), `AgilePlusTrace`, `TraceraTrace`. |
-| `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters (`dispatch`, `plan`, `--dry-run`). |
+| `driver-cli` | inbound adapter | `substrate` binary; composition root wiring app + adapters (`plan`, `dispatch`, `cloud-dispatch`, `--dry-run`, `--fake`). |
 | `driver-http` | inbound adapter | `substrate-http` REST server (axum): `/v1/dispatch`, `/v1/plan`, `/v1/route`, `/v1/mailbox/*`, `/healthz`. |
 | `driver-mcp` | inbound adapter | FastMCP servers (`substrate_server.py`): `substrate_dispatch` / `substrate_plan` / `substrate_route` over HTTP + team mailbox tools. |
 | `omniroute-adapter` | adapter | `RoutingPort`: OmniRoute proxy config + optional routing superset (load-balance, circuit breaker, fallback). |
