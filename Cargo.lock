@@ -574,6 +574,7 @@ dependencies = [
  "engine-forge",
  "engine-spec",
  "http-body-util",
+ "reqwest",
  "routing-phenotype-router",
  "serde",
  "serde_json",
