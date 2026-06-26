@@ -176,19 +176,20 @@ pub struct ChannelTransport {
 }
 
 impl ChannelTransport {
-    /// Build a connected (tx, rx) pair wrapped as `ChannelTransport`.
+    /// Build a bidirectional connected pair: `a.send` is received by `b`,
+    /// and `b.send` is received by `a`.
     pub fn new(buffer: usize) -> (Self, Self) {
-        let (tx_a, rx_a) = mpsc::channel(buffer);
-        let (tx_b, rx_b) = mpsc::channel(buffer);
+        let (tx_a_to_b, rx_a_to_b) = mpsc::channel(buffer);
+        let (tx_b_to_a, rx_b_to_a) = mpsc::channel(buffer);
         let a = Self {
             name: "channel-a",
-            tx: tx_a,
-            rx: Arc::new(Mutex::new(Some(rx_a))),
+            tx: tx_a_to_b,
+            rx: Arc::new(Mutex::new(Some(rx_b_to_a))),
         };
         let b = Self {
             name: "channel-b",
-            tx: tx_b,
-            rx: Arc::new(Mutex::new(Some(rx_b))),
+            tx: tx_b_to_a,
+            rx: Arc::new(Mutex::new(Some(rx_a_to_b))),
         };
         (a, b)
     }
@@ -472,7 +473,7 @@ mod tests {
         // Once a stream is taken, taking it again returns empty stream.
         let (a, b) = ChannelTransport::new(8);
         let b_arc: Arc<dyn Transport> = Arc::new(b);
-        let _ = a; // suppress unused
+        drop(a); // drop sender so an idle recv stream terminates promptly
         let mut s1 = b_arc.recv_stream();
         let mut s2 = b_arc.recv_stream();
         assert!(s1.next().await.is_none());
