@@ -3,6 +3,7 @@
 use std::time::Duration;
 
 use anyhow::{anyhow, Context};
+use cloud_codex::CodexCloudDispatch;
 use cloud_cursor::CursorCloudDispatch;
 use cloud_kilo::KiloCloudDispatch;
 use substrate_core::cloud_dispatch_port::{CloudDispatchPort, CloudTaskStatus};
@@ -12,6 +13,8 @@ use substrate_core::cloud_dispatch_port::{CloudDispatchPort, CloudTaskStatus};
 pub enum CloudPlatform {
     /// Cursor Cloud Agents (REST API).
     Cursor,
+    /// OpenAI Codex Cloud (`codex cloud` CLI).
+    Codex,
     /// Kilo gateway + local git PR workflow.
     Kilo,
 }
@@ -27,6 +30,11 @@ pub async fn run(
         CloudPlatform::Cursor => {
             let adapter =
                 CursorCloudDispatch::from_env().map_err(|e| anyhow!("cursor adapter: {e}"))?;
+            run_with_adapter(&adapter, repo, branch, task).await
+        }
+        CloudPlatform::Codex => {
+            let adapter =
+                CodexCloudDispatch::from_env().map_err(|e| anyhow!("codex adapter: {e}"))?;
             run_with_adapter(&adapter, repo, branch, task).await
         }
         CloudPlatform::Kilo => {

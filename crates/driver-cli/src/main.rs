@@ -101,7 +101,7 @@ struct DispatchOptions {
 #[derive(Parser)]
 #[command(next_help_heading = "CLOUD DISPATCH")]
 struct CloudDispatchArgs {
-    /// Cloud platform: `cursor` (Cursor Cloud Agents) or `kilo` (gateway + local git).
+    /// Cloud platform: `cursor` (Cursor Cloud Agents), `codex` (Codex Cloud CLI), or `kilo` (gateway + local git).
     #[arg(long, value_enum, value_name = "PLATFORM")]
     platform: cloud_dispatch::CloudPlatform,
     /// Repository URL (for example `https://github.com/org/repo`).
