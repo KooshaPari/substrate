@@ -229,10 +229,16 @@ impl ForgeEngine {
     ) -> std::io::Result<(tokio::process::Child, tokio::task::JoinHandle<()>)> {
         // Detach into a fresh process group so we can signal the whole
         // subtree on timeout (Unix: setsid(1); Windows: CREATE_NEW_PROCESS_GROUP).
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "macos")))]
         let mut cmd = {
             let mut c = Command::new("setsid");
             c.arg(&self.bin).args(&args);
+            c
+        };
+        #[cfg(target_os = "macos")]
+        let mut cmd = {
+            let mut c = Command::new(&self.bin);
+            c.args(&args);
             c
         };
         #[cfg(windows)]
@@ -280,7 +286,7 @@ impl ForgeEngine {
     /// Kill the whole process group of `child`. Best-effort: returns Ok
     /// even if the kill signal could not be delivered (e.g. already exited).
     fn kill_group(&self, child: &mut tokio::process::Child) -> std::io::Result<()> {
-        #[cfg(unix)]
+        #[cfg(all(unix, not(target_os = "macos")))]
         {
             if let Some(pid) = child.id() {
                 use nix::sys::signal::{killpg, Signal};
@@ -288,6 +294,10 @@ impl ForgeEngine {
                 // After setsid(), pgid == pid.
                 let _ = killpg(Pid::from_raw(pid as i32), Signal::SIGKILL);
             }
+        }
+        #[cfg(target_os = "macos")]
+        {
+            let _ = child.start_kill();
         }
         #[cfg(windows)]
         {

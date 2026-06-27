@@ -13,14 +13,17 @@ use std::sync::Arc;
 use anyhow::{anyhow, Context};
 use clap::{Parser, Subcommand};
 use driver_argv::ArgvCli;
+use engine_codex::CodexEngine;
 use engine_forge::ForgeEngine;
 use engine_spec::TaskSpec;
 use plan::{engine_catalog, enrich_plan_argv, print_plan};
 use store_file::FileStore;
+use substrate_app::tiered_dispatch::dispatch_with_reroute_async;
 use substrate_app::DispatchService;
 use substrate_app::{DispatchPlanner, PlanRequest, SessionMode};
 use substrate_core::domain::Task;
 use substrate_core::ports::DispatchApi;
+use substrate_core::Tier;
 use transport_file::FileTransport;
 
 #[derive(Parser)]
@@ -87,6 +90,9 @@ struct DispatchOptions {
     /// Print the plan without spawning (same output as the `plan` subcommand).
     #[arg(long)]
     dry_run: bool,
+    /// Run codex through tiered dispatch (`heavy`, `main`, or `worker`) with reroute-up retries.
+    #[arg(long, value_name = "TIER")]
+    tier: Option<String>,
     /// Working directory the engine runs in.
     #[arg(long, value_name = "DIR")]
     cwd: String,
@@ -116,15 +122,26 @@ struct CloudDispatchArgs {
 }
 
 impl DispatchArgs {
-    fn task_spec(&self) -> TaskSpec {
-        let mut spec = TaskSpec::new(&self.prompt, &self.options.cwd);
+    fn prompt_text(&self) -> anyhow::Result<String> {
+        let path = PathBuf::from(&self.prompt);
+        if path.exists() && path.is_file() {
+            std::fs::read_to_string(&path)
+                .with_context(|| format!("read prompt file {}", path.display()))
+        } else {
+            Ok(self.prompt.clone())
+        }
+    }
+
+    fn task_spec(&self) -> anyhow::Result<TaskSpec> {
+        let prompt = self.prompt_text()?;
+        let mut spec = TaskSpec::new(&prompt, &self.options.cwd);
         if let Some(agent) = &self.options.agent {
             spec = spec.with_agent(agent.clone());
         }
         if let Some(resume) = &self.options.resume {
             spec.resume = Some(resume.clone());
         }
-        spec
+        Ok(spec)
     }
 
     fn session_mode(&self) -> anyhow::Result<Option<SessionMode>> {
@@ -137,7 +154,7 @@ impl DispatchArgs {
     }
 
     fn plan(&self) -> anyhow::Result<substrate_app::DispatchPlan> {
-        let spec = self.task_spec();
+        let spec = self.task_spec()?;
         let engines = engine_catalog();
         let mut plan = DispatchPlanner::plan(&PlanRequest {
             spec: &spec,
@@ -148,10 +165,28 @@ impl DispatchArgs {
         })
         .map_err(|e| anyhow!("plan failed: {e}"))?;
         enrich_plan_argv(&mut plan);
+        if let Some(tier) = self.tier()? {
+            plan.engine = "codex".to_string();
+            plan.argv = {
+                let bin = std::env::var("CODEX_BIN").unwrap_or_else(|_| "codex".into());
+                let mut argv = CodexEngine::new().with_tier(tier).argv_for(&plan.spec);
+                argv.insert(0, bin);
+                argv
+            };
+        }
         if self.options.fake {
             plan.session_mode = SessionMode::InProcess;
         }
         Ok(plan)
+    }
+
+    fn tier(&self) -> anyhow::Result<Option<Tier>> {
+        self.options
+            .tier
+            .as_deref()
+            .map(str::parse::<Tier>)
+            .transpose()
+            .map_err(anyhow::Error::msg)
     }
 }
 
@@ -201,6 +236,30 @@ async fn execute_plan(plan: &substrate_app::DispatchPlan, cwd: &str) -> anyhow::
     Ok(())
 }
 
+async fn execute_tiered_dispatch(args: &DispatchArgs, start_tier: Tier) -> anyhow::Result<()> {
+    let prompt = args.prompt_text()?;
+    let cwd = args.options.cwd.clone();
+    let outcome = dispatch_with_reroute_async(start_tier, |tier| {
+        let prompt = prompt.clone();
+        let cwd = cwd.clone();
+        async move {
+            let spec = TaskSpec::new(&prompt, &cwd);
+            CodexEngine::new().with_tier(tier).run_exec(&spec).await
+        }
+    })
+    .await
+    .map_err(|e| anyhow!("tiered dispatch failed: {e}"))?;
+
+    let payload = serde_json::json!({
+        "success": true,
+        "engine": "codex",
+        "succeeded_tier": outcome.succeeded_tier.to_string(),
+        "output": outcome.output,
+    });
+    println!("{}", serde_json::to_string_pretty(&payload)?);
+    Ok(())
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
@@ -210,10 +269,14 @@ async fn main() -> anyhow::Result<()> {
                 let path = fake_forge_path()?;
                 std::env::set_var("FORGE_BIN", path);
             }
+            let tier = args.tier()?;
             let plan = args.plan()?;
             if args.options.dry_run {
                 print_plan(&plan)?;
                 return Ok(());
+            }
+            if let Some(tier) = tier {
+                return execute_tiered_dispatch(&args, tier).await;
             }
             execute_plan(&plan, &args.options.cwd).await
         }

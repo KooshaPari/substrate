@@ -10,7 +10,10 @@
 //!
 //! ```text
 //! codex exec -m gpt-5.3-codex-spark \
+//!            -c model_reasoning_effort=medium \
+//!            -s danger-full-access \
 //!            --dangerously-bypass-approvals-and-sandbox \
+//!            --skip-git-repo-check \
 //!            -C <cwd> \
 //!            --prompt <prompt>
 //! ```
@@ -26,8 +29,10 @@ use engine_spec::{ArgvBuilder, TaskSpec};
 use substrate_core::domain::{
     ConversationDump, EngineCapabilities, Mailbox, Session, StructuredResult, Task, TaskState,
 };
-use substrate_core::error::Result;
+use substrate_core::error::{Result, SubstrateError};
 use substrate_core::ports::EnginePort;
+use substrate_core::Tier;
+use tokio::process::Command;
 
 /// Default model for the codex CLI.
 pub const DEFAULT_MODEL: &str = "gpt-5.3-codex-spark";
@@ -37,6 +42,8 @@ pub const DEFAULT_MODEL: &str = "gpt-5.3-codex-spark";
 pub struct CodexArgv {
     /// The model to invoke (default: [`DEFAULT_MODEL`]).
     pub model: String,
+    /// Codex reasoning effort passed through config.
+    pub reasoning_effort: String,
     /// Whether to pass `--dangerously-bypass-approvals-and-sandbox` (required
     /// on Windows where subprocess spawns are sandboxed by default).
     pub bypass_sandbox: bool,
@@ -46,6 +53,7 @@ impl Default for CodexArgv {
     fn default() -> Self {
         CodexArgv {
             model: DEFAULT_MODEL.to_string(),
+            reasoning_effort: substrate_core::WORKER_REASONING_EFFORT.to_string(),
             bypass_sandbox: true,
         }
     }
@@ -53,12 +61,23 @@ impl Default for CodexArgv {
 
 impl ArgvBuilder for CodexArgv {
     fn build_start(&self, spec: &TaskSpec) -> Vec<String> {
-        // codex exec -m <model> [--dangerously-bypass-approvals-and-sandbox]
-        //            -C <cwd> --prompt <prompt>
-        let mut args = vec!["exec".into(), "-m".into(), self.model.clone()];
+        // codex exec -m <model> -c model_reasoning_effort=<effort>
+        //            -s danger-full-access
+        //            [--dangerously-bypass-approvals-and-sandbox]
+        //            --skip-git-repo-check -C <cwd> --prompt <prompt>
+        let mut args = vec![
+            "exec".into(),
+            "-m".into(),
+            self.model.clone(),
+            "-c".into(),
+            format!("model_reasoning_effort={}", self.reasoning_effort),
+            "-s".into(),
+            "danger-full-access".into(),
+        ];
         if self.bypass_sandbox {
             args.push("--dangerously-bypass-approvals-and-sandbox".into());
         }
+        args.push("--skip-git-repo-check".into());
         args.push("-C".into());
         args.push(spec.cwd.clone());
         args.push("--prompt".into());
@@ -111,9 +130,50 @@ impl CodexEngine {
         self
     }
 
+    /// Override the reasoning effort.
+    pub fn with_reasoning_effort(mut self, effort: impl Into<String>) -> Self {
+        self.argv.reasoning_effort = effort.into();
+        self
+    }
+
+    /// Configure the adapter from a tier.
+    pub fn with_tier(mut self, tier: Tier) -> Self {
+        let spec = tier.spec();
+        self.argv.model = spec.model_id.to_string();
+        self.argv.reasoning_effort = spec.reasoning_effort.to_string();
+        self
+    }
+
     /// Expose the built argv for a spec (useful in golden tests).
     pub fn argv_for(&self, spec: &TaskSpec) -> Vec<String> {
         self.argv.build_start(spec)
+    }
+
+    /// Run `codex exec` and return stdout when it exits successfully with output.
+    pub async fn run_exec(&self, spec: &TaskSpec) -> Result<String> {
+        let args = self.argv.build_start(spec);
+        let output = Command::new(&self.bin)
+            .args(&args)
+            .output()
+            .await
+            .map_err(|e| SubstrateError::Engine(format!("spawn {}: {e}", self.bin)))?;
+        let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        if !output.status.success() {
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            return Err(SubstrateError::Engine(format!(
+                "{} exited with status {:?}: {}",
+                self.bin,
+                output.status.code(),
+                stderr.trim()
+            )));
+        }
+        if stdout.trim().is_empty() {
+            return Err(SubstrateError::Engine(format!(
+                "{} returned empty output",
+                self.bin
+            )));
+        }
+        Ok(stdout)
     }
 }
 
@@ -198,7 +258,12 @@ mod tests {
         assert_eq!(args[0], "exec");
         assert!(args.contains(&"-m".to_string()));
         assert!(args.contains(&DEFAULT_MODEL.to_string()));
+        assert!(args.contains(&"-c".to_string()));
+        assert!(args.contains(&"model_reasoning_effort=medium".to_string()));
+        assert!(args.contains(&"-s".to_string()));
+        assert!(args.contains(&"danger-full-access".to_string()));
         assert!(args.contains(&"--dangerously-bypass-approvals-and-sandbox".to_string()));
+        assert!(args.contains(&"--skip-git-repo-check".to_string()));
         assert!(args.contains(&"--prompt".to_string()));
         assert!(args.contains(&"fix the bug".to_string()));
         assert!(args.contains(&"-C".to_string()));
@@ -212,6 +277,15 @@ mod tests {
         let args = engine.argv_for(&spec);
         assert!(args.contains(&"gpt-5.4-mini".to_string()));
         assert!(!args.contains(&DEFAULT_MODEL.to_string()));
+    }
+
+    #[test]
+    fn argv_start_tier_sets_model_and_reasoning_effort() {
+        let engine = CodexEngine::new().with_tier(Tier::Main);
+        let spec = TaskSpec::new("p", "/x");
+        let args = engine.argv_for(&spec);
+        assert!(args.contains(&"gpt-5.4-mini".to_string()));
+        assert!(args.contains(&"model_reasoning_effort=low".to_string()));
     }
 
     #[test]

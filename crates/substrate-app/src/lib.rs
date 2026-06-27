@@ -12,6 +12,7 @@
 #![warn(missing_docs)]
 
 mod dispatch_planner;
+pub mod tiered_dispatch;
 
 pub use dispatch_planner::{
     DispatchPlan, DispatchPlanner, EngineCandidate, PlanRequest, SessionMode,

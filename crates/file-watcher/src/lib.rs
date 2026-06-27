@@ -8,7 +8,7 @@
 //! FSEvents, ReadDirectoryChangesW) are selected by `notify`.
 
 use std::collections::{HashMap, HashSet};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex as StdMutex};
 use std::time::Duration;
 
@@ -30,6 +30,29 @@ fn classify_event(path: &Path, known: &mut HashSet<std::path::PathBuf>) -> Watch
     } else {
         known.remove(path);
         WatchEventKind::Remove
+    }
+}
+
+fn remap_event_path(event_path: PathBuf, watched_path: &Path, canonical_watched: &Path) -> PathBuf {
+    event_path
+        .strip_prefix(canonical_watched)
+        .map(|suffix| watched_path.join(suffix))
+        .unwrap_or(event_path)
+}
+
+fn event_paths(event_path: &Path, watched_path: &Path, canonical_watched: &Path) -> Vec<PathBuf> {
+    let remapped = remap_event_path(event_path.to_path_buf(), watched_path, canonical_watched);
+    if remapped == watched_path && event_path.is_dir() {
+        std::fs::read_dir(event_path)
+            .map(|entries| {
+                entries
+                    .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+                    .map(|path| remap_event_path(path, watched_path, canonical_watched))
+                    .collect()
+            })
+            .unwrap_or_else(|_| vec![remapped])
+    } else {
+        vec![remapped]
     }
 }
 
@@ -72,20 +95,25 @@ impl WatcherPort for NotifyWatcher {
         let (tx, rx) = mpsc::channel(64);
         let debounce = Duration::from_millis(debounce_ms);
         let known_paths = Arc::new(StdMutex::new(HashSet::<std::path::PathBuf>::new()));
+        let watched_path = path.to_path_buf();
+        let canonical_watched = path.canonicalize().map_err(|e| {
+            SubstrateError::Watcher(format!("canonicalize {}: {e}", path.display()))
+        })?;
 
         let debouncer = new_debouncer(debounce, {
             let tx = tx.clone();
             let known_paths = Arc::clone(&known_paths);
+            let watched_path = watched_path.clone();
+            let canonical_watched = canonical_watched.clone();
             move |res: DebounceEventResult| {
                 if let Ok(events) = res {
                     for event in events {
-                        let mut known = known_paths.lock().expect("known_paths lock");
-                        let kind = classify_event(&event.path, &mut known);
-                        let mapped = WatchEvent {
-                            path: event.path,
-                            kind,
-                        };
-                        let _ = tx.blocking_send(mapped);
+                        for path in event_paths(&event.path, &watched_path, &canonical_watched) {
+                            let mut known = known_paths.lock().expect("known_paths lock");
+                            let kind = classify_event(&path, &mut known);
+                            let mapped = WatchEvent { path, kind };
+                            let _ = tx.blocking_send(mapped);
+                        }
                     }
                 }
             }
