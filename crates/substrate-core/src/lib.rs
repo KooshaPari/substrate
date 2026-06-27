@@ -21,6 +21,7 @@ pub mod process_port;
 pub mod routing_port;
 pub mod schedule_port;
 pub mod skill_port;
+pub mod tiers;
 pub mod trace;
 pub mod watcher_port;
 pub mod workflow_port;
@@ -43,6 +44,10 @@ pub use routing_port::{
 pub use schedule_port::{ScheduleInstant, SchedulePort, ScheduleTrigger, Weekday};
 pub use skill_port::{
     validate_json_schema, SkillDescriptor, SkillHandler, SkillPort, ToolRegistry,
+};
+pub use tiers::{
+    Tier, TierSpec, HEAVY_MODEL, HEAVY_REASONING_EFFORT, MAIN_MODEL, MAIN_REASONING_EFFORT,
+    WORKER_MODEL, WORKER_REASONING_EFFORT,
 };
 pub use trace::{TaskCompleted, TaskFailed, TaskRegistered, TracePort};
 pub use watcher_port::{WatchEvent, WatchEventKind, WatchHandle, WatcherPort};
