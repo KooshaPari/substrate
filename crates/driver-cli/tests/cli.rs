@@ -133,3 +133,25 @@ fn argv_forge_dry_run_json_emit() {
         .stdout(predicate::str::contains("\"dry_run\": true"))
         .stdout(predicate::str::contains("\"forge\""));
 }
+
+#[test]
+fn cloud_dispatch_platform_values_resolve() {
+    for platform in ["cursor", "codex", "kilo"] {
+        let mut cmd = Command::cargo_bin("substrate").unwrap();
+        cmd.args([
+            "cloud-dispatch",
+            "--platform",
+            platform,
+            "--repo",
+            "https://github.com/org/repo",
+            "--branch",
+            "main",
+            "--task",
+            "echo hi",
+        ]);
+
+        cmd.assert()
+            .failure()
+            .stderr(predicate::str::contains("invalid value").not());
+    }
+}

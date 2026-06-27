@@ -541,6 +541,7 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "clap",
+ "cloud-codex",
  "cloud-cursor",
  "cloud-kilo",
  "driver-argv",
