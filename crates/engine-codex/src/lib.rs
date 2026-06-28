@@ -15,8 +15,11 @@
 //!            --dangerously-bypass-approvals-and-sandbox \
 //!            --skip-git-repo-check \
 //!            -C <cwd> \
-//!            --prompt <prompt>
+//!            <prompt>
 //! ```
+//!
+//! Note: the prompt is passed as a trailing positional argument (not `--prompt`)
+//! because `codex exec` accepts `[PROMPT]` positionally and rejects `--prompt`.
 //!
 //! Resume is not natively supported by the codex CLI surface; the adapter
 //! re-invokes with the prompt and echoes the same conv_id so the caller can
@@ -64,7 +67,8 @@ impl ArgvBuilder for CodexArgv {
         // codex exec -m <model> -c model_reasoning_effort=<effort>
         //            -s danger-full-access
         //            [--dangerously-bypass-approvals-and-sandbox]
-        //            --skip-git-repo-check -C <cwd> --prompt <prompt>
+        //            --skip-git-repo-check -C <cwd> <prompt>
+        // The prompt is the trailing positional arg; codex rejects --prompt.
         let mut args = vec![
             "exec".into(),
             "-m".into(),
@@ -80,7 +84,7 @@ impl ArgvBuilder for CodexArgv {
         args.push("--skip-git-repo-check".into());
         args.push("-C".into());
         args.push(spec.cwd.clone());
-        args.push("--prompt".into());
+        // Prompt is positional — codex exec [OPTIONS] [PROMPT]
         args.push(spec.prompt.clone());
         args
     }
@@ -264,8 +268,9 @@ mod tests {
         assert!(args.contains(&"danger-full-access".to_string()));
         assert!(args.contains(&"--dangerously-bypass-approvals-and-sandbox".to_string()));
         assert!(args.contains(&"--skip-git-repo-check".to_string()));
-        assert!(args.contains(&"--prompt".to_string()));
+        // Prompt is positional (no --prompt flag)
         assert!(args.contains(&"fix the bug".to_string()));
+        assert!(!args.contains(&"--prompt".to_string()));
         assert!(args.contains(&"-C".to_string()));
         assert!(args.contains(&"/repo".to_string()));
     }
