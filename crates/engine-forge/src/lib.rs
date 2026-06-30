@@ -189,6 +189,16 @@ impl ForgeEngine {
     /// `list()`, both of which are expected to be short-lived and
     /// side-effect-free.
     async fn run_simple(&self, args: Vec<String>) -> Result<(String, Option<i32>)> {
+        // F5 (2026-06-30): opt-in fast path through forge-daemon when the
+        // `forge_daemon` feature is enabled AND `FORGE_DAEMON=1` is set AND
+        // the daemon is alive. Avoids the dyld+tokio init cost per spawn.
+        // Falls back to direct `Command::spawn` otherwise.
+        #[cfg(feature = "forge_daemon")]
+        if std::env::var("FORGE_DAEMON").ok().as_deref() == Some("1")
+            && forge_daemon::ffi_is_running()
+        {
+            return self.run_simple_via_daemon(&args).await;
+        }
         let output = Command::new(&self.bin)
             .args(&args)
             .output()
@@ -196,6 +206,55 @@ impl ForgeEngine {
             .map_err(|e| SubstrateError::Engine(format!("spawn {}: {e}", self.bin)))?;
         let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
         Ok((stdout, output.status.code()))
+    }
+
+    /// F5 (2026-06-30): dispatch via forge_daemon (in-process C-ABI posix_spawn).
+    /// Returns `Ok((stdout, exit_code))` on success; on daemon-side error
+    /// transparently falls back to direct spawn so the existing path stays
+    /// the source of truth.
+    #[cfg(feature = "forge_daemon")]
+    async fn run_simple_via_daemon(&self, args: &[String]) -> Result<(String, Option<i32>)> {
+        use forge_daemon::DaemonDispatch;
+        // forge_daemon_dispatch takes (forge_bin, prompt, model, cwd). For
+        // `list`/`dump` we have no semantic prompt/model — pass the first
+        // argv element as a synthetic prompt (the daemon forwards it to the
+        // forge binary as a passthrough string), and cwd inherits the
+        // current process working directory.
+        let prompt = args.first().cloned().unwrap_or_default();
+        let model = String::new();
+        let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+        // DaemonDispatch is blocking — move it off the executor thread so we
+        // don't starve the tokio runtime.
+        let bin = self.bin.clone();
+        let result = tokio::task::spawn_blocking(move || {
+            DaemonDispatch::dispatch(&bin, &prompt, &model, &cwd)
+        })
+        .await
+        .map_err(|e| SubstrateError::Engine(format!("forge_daemon join: {e}")))?;
+
+        match result {
+            Ok((exit_code, out_bytes)) => {
+                let stdout = String::from_utf8_lossy(&out_bytes).into_owned();
+                eprintln!(
+                    "[engine-forge] run_simple_via_daemon ok exit={} bytes={}",
+                    exit_code,
+                    out_bytes.len()
+                );
+                Ok((stdout, Some(exit_code)))
+            }
+            Err(e) => {
+                eprintln!("[engine-forge] forge_daemon dispatch failed; falling back: {e}");
+                let output = Command::new(&self.bin)
+                    .args(args)
+                    .output()
+                    .await
+                    .map_err(|e2| {
+                        SubstrateError::Engine(format!("spawn {}: {e2}", self.bin))
+                    })?;
+                let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+                Ok((stdout, output.status.code()))
+            }
+        }
     }
 
     /// Resolve the logfile path for a given task id.
