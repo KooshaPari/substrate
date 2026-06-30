@@ -23,7 +23,7 @@ transport-file = { path = "../transport-file" }
 store-file = { path = "../store-file" }
 store-sqlite = { path = "../store-sqlite" }
 routing-phenotype-router = { path = "../routing-phenotype-router" }
-a2a = { path = "../a2a", version = { workspace = true } }
+a2a = { path = "../a2a", version = "0.1.0" }
 cliproxy-adapter = { path = "../cliproxy-adapter" }
 phenotype-mcp = { path = "../phenotype-mcp" }
 serde.workspace = true
