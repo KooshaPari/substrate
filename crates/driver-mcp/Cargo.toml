@@ -1,1 +1,43 @@
+[package]
+name = "driver-mcp"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "MCP (Model Context Protocol) inbound driver for substrate dispatch. Bridges substrate::{EnginePort, RoutingPort, ToolPort} to PhenoFastMCP-rust server implementations via stdio JSON-RPC + the phenotype-router-spec RouterDispatch envelope."
 
+[lib]
+name = "driver_mcp"
+path = "src/lib.rs"
+
+[dependencies]
+substrate-core = { path = "../substrate-core", version = "0.1.0" }
+substrate-app = { path = "../substrate-app", version = "0.1.0" }
+engine-spec = { path = "../engine-spec", version = "0.1.0" }
+engine-forge = { path = "../engine-forge", version = "0.1.0" }
+engine-codex = { path = "../engine-codex", version = "0.1.0" }
+engine-claude = { path = "../engine-claude", version = "0.1.0" }
+engine-agentapi = { path = "../engine-agentapi", version = "0.1.0" }
+transport-file = { path = "../transport-file", version = "0.1.0" }
+store-file = { path = "../store-file", version = "0.1.0" }
+store-sqlite = { path = "../store-sqlite", version = "0.1.0" }
+routing-phenotype-router = { path = "../routing-phenotype-router", version = "0.1.0" }
+a2a = { path = "../a2a", version = "0.1.0" }
+cliproxy-adapter = { path = "../cliproxy-adapter", version = "0.1.0" }
+phenotype-mcp = { path = "../phenotype-mcp", version = "0.1.0" }
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+async-trait.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+futures.workspace = true
+futures-core.workspace = true
+parking_lot.workspace = true
+
+[dev-dependencies]
+serde_json.workspace = true
+serial_test = "3"
+tempfile.workspace = true
+tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
