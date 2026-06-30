@@ -15,8 +15,12 @@
 //!            --dangerously-bypass-approvals-and-sandbox \
 //!            --skip-git-repo-check \
 //!            -C <cwd> \
-//!            --prompt <prompt>
+//!            "<prompt>"
 //! ```
+//!
+//! Note: the prompt is passed as a **positional argument** (the last arg), NOT
+//! via `--prompt`. The `codex exec` CLI surface expects a positional prompt and
+//! rejects `--prompt` with `unexpected argument '--prompt' found` (exit 2).
 //!
 //! Resume is not natively supported by the codex CLI surface; the adapter
 //! re-invokes with the prompt and echoes the same conv_id so the caller can
@@ -64,7 +68,10 @@ impl ArgvBuilder for CodexArgv {
         // codex exec -m <model> -c model_reasoning_effort=<effort>
         //            -s danger-full-access
         //            [--dangerously-bypass-approvals-and-sandbox]
-        //            --skip-git-repo-check -C <cwd> --prompt <prompt>
+        //            --skip-git-repo-check -C <cwd> <prompt>
+        //
+        // The prompt MUST be the final positional arg. `--prompt <p>` is NOT a
+        // valid codex exec flag and causes exit 2: "unexpected argument '--prompt'".
         let mut args = vec![
             "exec".into(),
             "-m".into(),
@@ -80,7 +87,7 @@ impl ArgvBuilder for CodexArgv {
         args.push("--skip-git-repo-check".into());
         args.push("-C".into());
         args.push(spec.cwd.clone());
-        args.push("--prompt".into());
+        // positional prompt — must come after all flags
         args.push(spec.prompt.clone());
         args
     }
@@ -264,10 +271,12 @@ mod tests {
         assert!(args.contains(&"danger-full-access".to_string()));
         assert!(args.contains(&"--dangerously-bypass-approvals-and-sandbox".to_string()));
         assert!(args.contains(&"--skip-git-repo-check".to_string()));
-        assert!(args.contains(&"--prompt".to_string()));
-        assert!(args.contains(&"fix the bug".to_string()));
         assert!(args.contains(&"-C".to_string()));
         assert!(args.contains(&"/repo".to_string()));
+        // prompt is POSITIONAL (last arg), not --prompt <p>
+        assert_eq!(args.last().unwrap(), "fix the bug");
+        assert!(!args.contains(&"--prompt".to_string()),
+            "codex exec does not accept --prompt; prompt must be the positional last arg");
     }
 
     #[test]
