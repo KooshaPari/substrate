@@ -114,9 +114,23 @@ impl Default for CodexEngine {
 }
 
 impl CodexEngine {
-    /// Construct from the `CODEX_BIN` env var (default `"codex"`).
+    /// Construct from the `CODEX_BIN` env var, probing the standalone bundle path
+    /// (`~/.local/share/codex/standalone/bin/codex`) before falling back to `"codex"`.
+    /// The standalone binary ships its own zsh fork and works in non-login shells;
+    /// plain `codex` on PATH may point to an older build without the fork.
     pub fn new() -> Self {
-        let bin = std::env::var("CODEX_BIN").unwrap_or_else(|_| "codex".to_string());
+        let bin = std::env::var("CODEX_BIN").unwrap_or_else(|_| {
+            // Probe the well-known standalone bundle path first.
+            // The standalone binary ships its own zsh fork and works in non-login
+            // shells; plain `codex` on PATH may point to an older build without it.
+            let standalone = std::env::var("HOME").ok().map(|h| {
+                std::path::PathBuf::from(h).join(".local/share/codex/standalone/bin/codex")
+            });
+            match standalone.filter(|p| p.exists()) {
+                Some(p) => p.to_string_lossy().into_owned(),
+                None => "codex".to_string(),
+            }
+        });
         CodexEngine {
             bin,
             argv: CodexArgv::default(),
