@@ -1,0 +1,45 @@
+name: Release Crates
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Perform a dry run without publishing'
+        required: false
+        default: 'false'
+
+env:
+  CARGO_TERM_COLOR: always
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Dry run — check publish (PR only)
+        if: github.event_name == 'pull_request' || github.event.inputs.dry_run == 'true'
+        run: |
+          cargo publish --dry-run -p driver-mcp
+          cargo publish --dry-run -p phenotype-mcp
+
+      - name: Publish to crates.io
+        if: startsWith(github.ref, 'refs/tags/v') && github.event.inputs.dry_run != 'true'
+        run: |
+          # Publish in topological order (no dependencies between these two)
+          cargo publish -p driver-mcp --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+          sleep 15  # Rate limit between publishes
+          cargo publish -p phenotype-mcp --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
