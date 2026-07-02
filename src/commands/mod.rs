@@ -1,19 +1,22 @@
 //! CLI commands for sharecli
 
-pub mod config;
-
-use crate::config::{Config, ConfigCmd, ProjectCmd};
+use crate::config::{self, Config, ConfigCmd, ProjectCmd};
 use crate::runtime::{
     ProcessFilter, ProcessInfo, ProcessPool, ProjectLimits, ProjectResources, SharedRuntime,
 };
+use crate::spawn_policy::SpawnPolicy;
 use anyhow::Result;
 use std::path::PathBuf;
+use std::sync::Arc;
 
 /// Shared runtime instance
 static SHARED_RUNTIME: std::sync::OnceLock<SharedRuntime> = std::sync::OnceLock::new();
 
 fn get_shared_runtime() -> &'static SharedRuntime {
-    SHARED_RUNTIME.get_or_init(|| SharedRuntime::new(5))
+    SHARED_RUNTIME.get_or_init(|| {
+        let max = config::global().pool.max_per_type;
+        SharedRuntime::new(max)
+    })
 }
 
 /// Project resources instance
@@ -37,10 +40,7 @@ pub async fn ps(project: Option<&str>, harness: Option<&str>, all: bool) -> Resu
 
     let processes: Vec<ProcessInfo> = pool.find(filter).await;
 
-    println!(
-        "{:<8} {:<20} {:<12} {:<15} HARNESS",
-        "PID", "NAME", "MEM(MB)", "PROJECT"
-    );
+    println!("{:<8} {:<20} {:<12} {:<15} HARNESS", "PID", "NAME", "MEM(MB)", "PROJECT");
     println!("{}", "-".repeat(70));
 
     for proc in &processes {
@@ -53,11 +53,7 @@ pub async fn ps(project: Option<&str>, harness: Option<&str>, all: bool) -> Resu
     }
 
     let total_mem: u64 = processes.iter().map(|p| p.memory_mb).sum();
-    println!(
-        "\nTotal: {} processes, {} MB memory",
-        processes.len(),
-        total_mem
-    );
+    println!("\nTotal: {} processes, {} MB memory", processes.len(), total_mem);
 
     Ok(())
 }
@@ -67,7 +63,7 @@ pub async fn start(
     project: &str,
     harness: &str,
     cwd: Option<&str>,
-    _args: &[String],
+    args: &[String],
 ) -> Result<()> {
     let cfg = Config::load()?;
 
@@ -86,13 +82,18 @@ pub async fn start(
         anyhow::bail!("Project path does not exist: {:?}", project_path);
     }
 
-    let pool = ProcessPool::new();
+    // Apply the spawn-policy throttle when the harness is a build harness (cargo/rustc/…).
+    // The policy is constructed from the global config's [spawn_policy] section.
+    let pool = {
+        let policy = SpawnPolicy::new(cfg.spawn_policy.clone());
+        ProcessPool::with_spawn_policy(Arc::new(policy))
+    };
     println!("Starting {} harness for project '{}'...", harness, project);
 
     let info = pool
         .spawn(
             harness,
-            &[],
+            args,
             Some(project_path.clone()),
             Some(project.to_string()),
             Some(harness.to_string()),
@@ -134,7 +135,7 @@ pub async fn stop(
     } else if let Some(h) = harness {
         ProcessFilter::ByHarness(h.to_string())
     } else {
-        anyhow::bail!("Specify --pid, --project, --harness, or --all");
+        anyhow::bail!("Specify --pid, --project, --harness, or --all to select what to stop");
     };
 
     let processes = pool.find(filter).await;
@@ -177,33 +178,19 @@ pub async fn status(verbose: bool) -> Result<()> {
     println!("\n=== Shared Runtime Pool ===\n");
     println!("{:<10} {:<10} {:<10}", "TYPE", "TOTAL", "IDLE");
     println!("{}", "-".repeat(30));
-    println!(
-        "{:<10} {:<10} {:<10}",
-        "node", pool_status.node_total, pool_status.node_idle
-    );
-    println!(
-        "{:<10} {:<10} {:<10}",
-        "bun", pool_status.bun_total, pool_status.bun_idle
-    );
+    println!("{:<10} {:<10} {:<10}", "node", pool_status.node_total, pool_status.node_idle);
+    println!("{:<10} {:<10} {:<10}", "bun", pool_status.bun_total, pool_status.bun_idle);
     println!("\nMax per type: {}", pool_status.max_per_type);
 
     // Show system memory
     let (used, total) = pool.system_memory_usage().await;
     println!("\n=== System Memory ===\n");
-    println!(
-        "Used: {} MB / {} MB ({}%)",
-        used,
-        total,
-        (used * 100) / total
-    );
+    println!("Used: {} MB / {} MB ({}%)", used, total, (used * 100) / total);
 
     if verbose {
         println!("\n=== Detailed Process List ===\n");
         for proc in &processes {
-            println!(
-                "PID: {}, Name: {}, Memory: {} MB",
-                proc.pid, proc.name, proc.memory_mb
-            );
+            println!("PID: {}, Name: {}, Memory: {} MB", proc.pid, proc.name, proc.memory_mb);
             if !proc.cmd.is_empty() {
                 println!("  Cmd: {}", proc.cmd.join(" "));
             }
@@ -280,9 +267,9 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
             }
         }
         ProjectCmd::Discover { path } => {
-            let base = PathBuf::from(expand_path(
-                path.as_deref().unwrap_or("~/CodeProjects/Phenotype/repos"),
-            ));
+            let cfg = config::global();
+            let base =
+                PathBuf::from(expand_path(path.as_deref().unwrap_or(&cfg.paths.discovery_path)));
             println!("Scanning {:?} for projects...", base);
 
             let mut found = Vec::new();
@@ -290,11 +277,8 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
                 for entry in entries.flatten() {
                     let p = entry.path();
                     if p.is_dir() && p.join(".git").exists() {
-                        let name = p
-                            .file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or("unknown")
-                            .to_string();
+                        let name =
+                            p.file_name().and_then(|n| n.to_str()).unwrap_or("unknown").to_string();
                         found.push((name, p.to_string_lossy().to_string()));
                     }
                 }
@@ -306,12 +290,13 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
             }
         }
         ProjectCmd::Generate { output } => {
-            let cfg = Config::load()?;
+            let cfg = config::global();
             let out_path = PathBuf::from(expand_path(
-                output.as_deref().unwrap_or("process-compose.yml"),
+                output.as_deref().unwrap_or(&cfg.paths.default_compose_output),
             ));
 
-            let mut yaml = String::from("# Generated by sharecli\nversion: \"0.5\"\n\nenv:\n  - SHAREWEI_PORT=3100\n\nservices:\n");
+            let sharewei_port = cfg.port.sharewei_port;
+            let mut yaml = format!("# Generated by sharecli\nversion: \"0.5\"\n\nenv:\n  - SHAREWEI_PORT={}\n\nservices:\n", sharewei_port);
 
             for name in cfg.projects.keys() {
                 yaml.push_str(&format!(
@@ -332,10 +317,7 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
             }
 
             std::fs::write(&out_path, &yaml)?;
-            println!(
-                "Generated process-compose.yml with {} services",
-                cfg.projects.len()
-            );
+            println!("Generated process-compose.yml with {} services", cfg.projects.len());
             println!("Written to: {:?}", out_path);
         }
     }
@@ -346,10 +328,7 @@ pub fn project(proj_cmd: &ProjectCmd) -> Result<()> {
 pub async fn run_pool(harness_type: &str, project: &str) -> Result<()> {
     let runtime = get_shared_runtime();
     let result = runtime.run_with_pool(harness_type, project, "").await?;
-    println!(
-        "Pooled {} process {} for project {}",
-        harness_type, result.0, project
-    );
+    println!("Pooled {} process {} for project {}", harness_type, result.0, project);
     println!("Output: {}", result.1);
     Ok(())
 }
@@ -360,10 +339,7 @@ pub async fn pool_status() -> Result<()> {
     let status = runtime.status().await;
 
     println!("=== Shared Runtime Pool Status ===\n");
-    println!(
-        "{:<10} {:<10} {:<10} {:<10}",
-        "TYPE", "TOTAL", "IDLE", "MAX"
-    );
+    println!("{:<10} {:<10} {:<10} {:<10}", "TYPE", "TOTAL", "IDLE", "MAX");
     println!("{}", "-".repeat(40));
     println!(
         "{:<10} {:<10} {:<10} {:<10}",
@@ -406,14 +382,7 @@ pub async fn health(harness: Option<&str>) -> Result<()> {
     let pool_status = runtime.status().await;
     let health = runtime.health_check().await;
 
-    println!(
-        "\nShared runtime health: {}",
-        if health.healthy {
-            "HEALTHY"
-        } else {
-            "DEGRADED"
-        }
-    );
+    println!("\nShared runtime health: {}", if health.healthy { "HEALTHY" } else { "DEGRADED" });
 
     if !health.issues.is_empty() {
         println!("\nIssues detected:");
@@ -470,40 +439,21 @@ pub async fn check_limits(project: &str) -> Result<()> {
 
     println!("=== Resource Limits for '{}' ===\n", project);
 
-    println!(
-        "Memory: {} MB / {} MB",
-        check.memory_mb, check.memory_limit_mb
-    );
+    println!("Memory: {} MB / {} MB", check.memory_mb, check.memory_limit_mb);
     if check.memory_ok {
         println!("  Status: OK");
     } else {
-        println!(
-            "  Status: EXCEEDED (over by {} MB)",
-            check.memory_mb - check.memory_limit_mb
-        );
+        println!("  Status: EXCEEDED (over by {} MB)", check.memory_mb - check.memory_limit_mb);
     }
 
-    println!(
-        "\nProcesses: {} / {}",
-        check.process_count, check.max_processes
-    );
+    println!("\nProcesses: {} / {}", check.process_count, check.max_processes);
     if check.processes_ok {
         println!("  Status: OK");
     } else {
-        println!(
-            "  Status: EXCEEDED (over by {})",
-            check.process_count - check.max_processes
-        );
+        println!("  Status: EXCEEDED (over by {})", check.process_count - check.max_processes);
     }
 
-    println!(
-        "\nOverall: {}",
-        if check.overall_ok {
-            "OK"
-        } else {
-            "LIMIT EXCEEDED"
-        }
-    );
+    println!("\nOverall: {}", if check.overall_ok { "OK" } else { "LIMIT EXCEEDED" });
 
     Ok(())
 }

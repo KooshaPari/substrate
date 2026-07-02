@@ -5,7 +5,9 @@ use clap::{Parser, Subcommand};
 
 mod commands;
 mod config;
+mod monitoring;
 mod runtime;
+mod spawn_policy;
 
 use commands::{
     check_limits, config as config_cmd, health, pool_status, project as project_cmd, ps, run_pool,
@@ -125,9 +127,9 @@ enum Commands {
 
     /// Prune idle processes
     Prune {
-        /// Idle time threshold in seconds
-        #[arg(short, long, default_value = "300")]
-        idle_seconds: u64,
+        /// Idle time threshold in seconds (default from config if omitted)
+        #[arg(short, long)]
+        idle_seconds: Option<u64>,
 
         /// Actually kill processes (dry run by default)
         #[arg(short, long)]
@@ -175,55 +177,56 @@ enum Commands {
     },
 }
 
+/// Returns true when the NO_COLOR environment variable is set (per https://no-color.org).
+fn is_no_color() -> bool {
+    std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty())
+}
+
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
 
+    // Initialise global config (must happen before any command handler)
+    config::init_global();
+
     if !cli.quiet {
-        tracing_subscriber::fmt()
-            .with_max_level(if cli.verbose {
-                tracing::Level::DEBUG
-            } else {
-                tracing::Level::INFO
-            })
-            .init();
+        let builder = tracing_subscriber::fmt().with_max_level(if cli.verbose {
+            tracing::Level::DEBUG
+        } else {
+            tracing::Level::INFO
+        });
+
+        // Respect NO_COLOR (audit L36)
+        if is_no_color() {
+            builder.with_ansi(false).init();
+        } else {
+            builder.init();
+        }
     }
 
     match &cli.command {
-        Commands::Ps {
-            project,
-            harness,
-            all,
-        } => ps(project.as_deref(), harness.as_deref(), *all).await?,
-        Commands::Start {
-            project,
-            harness,
-            cwd,
-            args,
-        } => start(project, harness, cwd.as_deref(), args).await?,
-        Commands::Stop {
-            pid,
-            project,
-            harness,
-            all,
-            force,
-        } => stop(*pid, project.as_deref(), harness.as_deref(), *all, *force).await?,
+        Commands::Ps { project, harness, all } => {
+            ps(project.as_deref(), harness.as_deref(), *all).await?
+        }
+        Commands::Start { project, harness, cwd, args } => {
+            start(project, harness, cwd.as_deref(), args).await?
+        }
+        Commands::Stop { pid, project, harness, all, force } => {
+            stop(*pid, project.as_deref(), harness.as_deref(), *all, *force).await?
+        }
         Commands::Status { verbose } => status(*verbose).await?,
         Commands::Config { cmd } => config_cmd(cmd)?,
         Commands::Project { cmd } => project_cmd(cmd)?,
         Commands::Optimize { apply } => optimize(*apply).await?,
-        Commands::Prune {
-            idle_seconds,
-            force,
-        } => prune(*idle_seconds, *force).await?,
+        Commands::Prune { idle_seconds, force } => {
+            prune(idle_seconds.unwrap_or(config::global().spawn.prune_idle_seconds), *force).await?
+        }
         Commands::Pool { harness: _ } => pool_status().await?,
         Commands::Health { harness } => health(harness.as_deref()).await?,
         Commands::Run { harness, project } => run_pool(harness, project).await?,
-        Commands::Limits {
-            project,
-            memory,
-            processes,
-        } => set_limits(project, *memory, *processes).await?,
+        Commands::Limits { project, memory, processes } => {
+            set_limits(project, *memory, *processes).await?
+        }
         Commands::Check { project } => check_limits(project).await?,
     }
 
@@ -265,10 +268,7 @@ async fn optimize(apply: bool) -> Result<()> {
         println!("- Consider reducing max instances per harness");
     }
     if total_mem > 4096 {
-        println!(
-            "- Memory usage is high ({} MB). Consider pruning idle processes.",
-            total_mem
-        );
+        println!("- Memory usage is high ({} MB). Consider pruning idle processes.", total_mem);
     }
 
     if apply {
@@ -288,10 +288,7 @@ async fn prune(idle_seconds: u64, force: bool) -> Result<()> {
 
     let processes = pool.list().await;
     let mut pruned = 0;
-    let now = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap()
-        .as_secs();
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
 
     for proc in processes {
         if proc.start_time > 0 && (now - proc.start_time) > idle_seconds {
@@ -312,4 +309,27 @@ async fn prune(idle_seconds: u64, force: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_no_color_respects_env_var() {
+        // When NO_COLOR is unset, is_no_color should return false
+        unsafe { std::env::remove_var("NO_COLOR") };
+        assert!(!is_no_color());
+
+        // When NO_COLOR is set to empty string, should return false
+        unsafe { std::env::set_var("NO_COLOR", "") };
+        assert!(!is_no_color());
+
+        // When NO_COLOR is set to non-empty, should return true
+        unsafe { std::env::set_var("NO_COLOR", "1") };
+        assert!(is_no_color());
+
+        // Clean up
+        unsafe { std::env::remove_var("NO_COLOR") };
+    }
 }
