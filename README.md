@@ -224,29 +224,38 @@ Enable as a library: `driver-http = { git = "https://github.com/KooshaPari/subst
 > Per [ADR-019](https://github.com/KooshaPari/PhenoSpecs/blob/main/adrs/019-mcp-runtime-implementation-deps.md),
 > long-term wiring imports from PhenoMCPServers — do not fork tool definitions in substrate.
 
-Python [FastMCP](https://github.com/jlowin/fastmcp) servers expose substrate to MCP clients (forge, codex, claude, OmniRoute A2A). The primary entrypoint is `substrate_server.py`, which proxies dispatch/plan/route to `driver-http` and keeps team mailbox tools local.
+Python [FastMCP](https://github.com/jlowin/fastmcp) servers expose substrate to MCP clients (forge, codex, claude, OmniRoute A2A). Three server entry points:
 
+**`substrate_server.py`** — Generic dispatch + team collaboration:
 ```sh
-# Start substrate HTTP (required for dispatch/plan/route tools)
-export SUBSTRATE_HTTP_URL=http://127.0.0.1:8080   # default
-export SUBSTRATE_HTTP_AUTH_TOKEN=                # optional bearer
+export SUBSTRATE_HTTP_URL=http://127.0.0.1:8080
 cargo run -p driver-http --bin substrate-http
-
-# Run the MCP server (stdio)
 pip install -r driver-mcp/requirements.txt
 python driver-mcp/substrate_server.py
 ```
 
-| MCP tool | HTTP / backend | Description |
-|----------|----------------|-------------|
-| `substrate_dispatch` | `POST /v1/dispatch` | Run a prompt through substrate (spawns engine). Args: `prompt`, optional `engine`, `cwd`, `mode`. |
-| `substrate_plan` | `POST /v1/plan` | Dry-run dispatch plan (no spawn). Args: `prompt`, optional `engine`, `cwd`. |
-| `substrate_route` | `POST /v1/route` | Route a `task` object via OmniRoute adapter. |
-| `team_send` | local SQLite | Send a message to another agent. |
-| `team_inbox` | local SQLite | Fetch unread messages for this agent. |
-| `task_list` | local SQLite | List team tasks. |
+**`dispatch_server.py`** (Phase 2 / F3) — Per-tier model routing (heavy/main/worker):
+```sh
+export OMNIROUTE_URL=http://localhost:20128   # OmniRoute base URL
+python driver-mcp/dispatch_server.py
+```
 
-Phase 2 servers remain available: `lead_server.py` (lead inbox + `task_list`), `team_mailbox_server.py` (teammate inbox + `task_create` / `task_update`). Responses pass through `_sanitize_response` allowlist before returning to MCP clients.
+| Server | Tool | Backend | Description |
+|--------|------|---------|-------------|
+| substrate_server.py | `substrate_dispatch` | `POST /v1/dispatch` | Generic dispatch (spawns engine). Args: `prompt`, optional `engine`, `cwd`, `mode`. |
+| | `substrate_plan` | `POST /v1/plan` | Dry-run plan (no spawn). Args: `prompt`, optional `engine`, `cwd`. |
+| | `substrate_route` | `POST /v1/route` | Route task via OmniRoute. |
+| | `team_send` | local SQLite | Send message to agent. |
+| | `team_inbox` | local SQLite | Fetch unread messages. |
+| | `task_list` | local SQLite | List team tasks. |
+| dispatch_server.py | `dispatch_worker` | OmniRoute MCP | Dispatch to worker tier (gpt-5.3-codex-spark). |
+| | `dispatch_main` | OmniRoute MCP | Dispatch to main tier (gpt-5.4-mini). |
+| | `dispatch_heavy` | OmniRoute MCP | Dispatch to heavy tier (gpt-5.5). |
+| | `dispatch_custom` | OmniRoute MCP | Custom tier selection + message. |
+| | `dispatch_health` | OmniRoute HTTP | Health check of OmniRoute. |
+| | `dispatch_liveness` | internal | Liveness probe (no OmniRoute). |
+
+Phase 2 servers: `lead_server.py` (lead inbox + task_list), `team_mailbox_server.py` (teammate inbox + task_create/update). All responses sanitized via `_sanitize_response` allowlist.
 
 Config: `SUBSTRATE_HTTP_URL` (default `http://127.0.0.1:8080`), `SUBSTRATE_HTTP_AUTH_TOKEN`, `SUBSTRATE_TEAM_ID`, `SUBSTRATE_AGENT_NAME`, `SUBSTRATE_DB`.
 
