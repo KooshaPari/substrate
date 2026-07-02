@@ -93,4 +93,7 @@ tokio-stream = "0.1"
 tracing = "0.1"
 
 [profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
 strip = true
