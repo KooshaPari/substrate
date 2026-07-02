@@ -10,9 +10,10 @@ name = "f5-bench"
 path = "src/main.rs"
 
 [dependencies]
-engine-forge = { path = "../../crates/engine-forge", features = ["forge_daemon"] }
+engine-forge = { path = "../../crates/engine-forge", features = ["forge_daemon", "throttle"] }
 substrate-core = { path = "../../crates/substrate-core" }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "process", "fs"] }
 uuid = { version = "1", features = ["v4"] }
 anyhow = "1"
 forge_daemon = { path = "../../crates/forge_daemon" }
+substrate-throttle = { path = "../../crates/substrate-throttle" }
