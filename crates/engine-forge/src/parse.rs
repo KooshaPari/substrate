@@ -1,5 +1,6 @@
 //! Pure parsing helpers (no IO) so they can be unit-tested directly.
 
+use std::collections::HashSet;
 use std::sync::OnceLock;
 
 use regex::Regex;
@@ -38,14 +39,15 @@ pub fn extract_conversation_id(stdout: &str) -> Option<String> {
 
 /// Find every GitHub pull-request URL in `text`, de-duplicated, in order.
 pub fn extract_pr_urls(text: &str) -> Vec<String> {
-    let mut seen = Vec::new();
+    let mut seen = HashSet::new();
+    let mut urls = Vec::new();
     for m in pr_url_re().find_iter(text) {
-        let s = m.as_str().to_string();
-        if !seen.contains(&s) {
-            seen.push(s);
+        let s = m.as_str();
+        if seen.insert(s) {
+            urls.push(s.to_string());
         }
     }
-    seen
+    urls
 }
 
 /// Shape of a `forge conversation dump` JSON payload (tolerant subset).
