@@ -19,6 +19,7 @@ members = [
     "tools/fake-forge",
     "tools/fake-codex-cloud",
     "tools/f5-bench",
+    "crates/substrate-throttle",
     "crates/a2a",
     "crates/store-sqlite",
     "crates/supervisor",

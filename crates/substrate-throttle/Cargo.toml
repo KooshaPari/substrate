@@ -1,0 +1,16 @@
+[package]
+name = "substrate-throttle"
+version = "0.1.0"
+edition = "2021"
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "G3: vendored mirror of sharecli/spawn-core. Semaphore + throttled posix_spawn (nice_delta + macOS background_qos). Opt-in via SUBSTRATE_THROTTLE_MAX=N."
+publish = false
+links = "spawn_core"
+
+[build-dependencies]
+anyhow = "1"
+
+[dependencies]
+anyhow = "1"
