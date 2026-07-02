@@ -9,7 +9,7 @@
 //! ## Argv mapping
 //!
 //! ```text
-//! codex exec -m gpt-5.3-codex-spark \
+//! codex exec -m gpt-5.5 \
 //!            -c model_reasoning_effort=medium \
 //!            -s danger-full-access \
 //!            --dangerously-bypass-approvals-and-sandbox \
@@ -39,7 +39,7 @@ use substrate_core::Tier;
 use tokio::process::Command;
 
 /// Default model for the codex CLI.
-pub const DEFAULT_MODEL: &str = "gpt-5.3-codex-spark";
+pub const DEFAULT_MODEL: &str = "gpt-5.5";
 
 /// Argv builder for the codex CLI surface.
 #[derive(Debug, Clone)]
