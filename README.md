@@ -27,6 +27,18 @@ engines such as [forge]. The **core** holds pure contracts; **adapters** plug
 concrete engines, transports, and stores into those contracts; the
 **application** wires them at a single composition root.
 
+## Integration Status
+
+| Phase | Goal | Status | Docs |
+|-------|------|--------|------|
+| F1 | Substrate CLI + forge/codex engines + argv fix | ✅ Complete | [Phase 1 Commit](https://github.com/KooshaPari/substrate/commit/3b107cc) |
+| F2 | Substrate HTTP + MCP servers + pilot validation | ✅ Complete | [Pilot Results](docs/PILOT_RESULTS.md) |
+| **F3** | **Integrate into OmniRoute MCP** | 🔄 **In Progress** | [F3 Integration Guide](docs/F3_OMNIROUTE_INTEGRATION.md) |
+| Phase 3 | Full cutover (phenofleet + OmniRoute workflows) | 📋 Planned | TBD |
+| Phase 4 | Perf optimization + sharecli integration | 📋 Planned | TBD |
+
+**F3 status:** Design complete, reference implementation ready. Awaiting OmniRoute worktree availability for final integration. See [F3_OMNIROUTE_INTEGRATION.md](docs/F3_OMNIROUTE_INTEGRATION.md) for deployment instructions.
+
 ## Usage
 
 Build the dogfooded CLI binary:
