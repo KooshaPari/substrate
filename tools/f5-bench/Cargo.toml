@@ -1,0 +1,18 @@
+[package]
+name = "f5-bench"
+version = "0.0.1"
+edition = "2021"
+publish = false
+description = "F5 forge-daemon micro-bench (PERF-D1)"
+
+[[bin]]
+name = "f5-bench"
+path = "src/main.rs"
+
+[dependencies]
+engine-forge = { path = "../../crates/engine-forge", features = ["forge_daemon"] }
+substrate-core = { path = "../../crates/substrate-core" }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "process", "fs"] }
+uuid = { version = "1", features = ["v4"] }
+anyhow = "1"
+forge_daemon = { path = "../../crates/forge_daemon" }

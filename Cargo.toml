@@ -18,6 +18,7 @@ members = [
     "crates/routing-phenotype-router",
     "tools/fake-forge",
     "tools/fake-codex-cloud",
+    "tools/f5-bench",
     "crates/a2a",
     "crates/store-sqlite",
     "crates/supervisor",
