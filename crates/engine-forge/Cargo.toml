@@ -24,10 +24,14 @@ thiserror.workspace = true
 # (list/dump). Avoids dyld+tokio init cost per spawn. Falls back to direct
 # Command::spawn when FORGE_DAEMON env is unset or daemon is not running.
 forge_daemon = { workspace = true, optional = true }
+# G3 (2026-07-01): build-contention throttle. When SUBSTRATE_THROTTLE_MAX is set,
+# process_throttle() caps concurrent dispatches; default = usize::MAX (no-op).
+substrate-throttle = { workspace = true, optional = true }
 
 [features]
 default = []
 forge_daemon = ["dep:forge_daemon"]
+throttle = ["dep:substrate-throttle"]
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.31", features = ["signal"] }

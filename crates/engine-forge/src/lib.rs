@@ -189,6 +189,13 @@ impl ForgeEngine {
     /// `list()`, both of which are expected to be short-lived and
     /// side-effect-free.
     async fn run_simple(&self, args: Vec<String>) -> Result<(String, Option<i32>)> {
+        // G3 (2026-07-01): optional build-contention throttle. When the
+        // `throttle` feature is on AND `SUBSTRATE_THROTTLE_MAX` is set in
+        // the environment, block here until a permit is available. Default
+        // is `usize::MAX` (no blocking), so this is a no-op unless opted in.
+        #[cfg(feature = "throttle")]
+        let _throttle_guard = substrate_throttle::ThrottleGuard::acquire();
+
         // F5 (2026-06-30): opt-in fast path through forge-daemon when the
         // `forge_daemon` feature is enabled AND `FORGE_DAEMON=1` is set AND
         // the daemon is alive. Avoids the dyld+tokio init cost per spawn.
@@ -227,19 +234,13 @@ impl ForgeEngine {
         // don't starve the tokio runtime.
         let bin = self.bin.clone();
         let result = tokio::task::spawn_blocking(move || {
-            DaemonDispatch::dispatch(&bin, &prompt, &model, &cwd)
+            DaemonDispatch::dispatch_string(&bin, &prompt, &model, &cwd)
         })
         .await
         .map_err(|e| SubstrateError::Engine(format!("forge_daemon join: {e}")))?;
 
         match result {
-            Ok((exit_code, out_bytes)) => {
-                let stdout = String::from_utf8_lossy(&out_bytes).into_owned();
-                eprintln!(
-                    "[engine-forge] run_simple_via_daemon ok exit={} bytes={}",
-                    exit_code,
-                    out_bytes.len()
-                );
+            Ok((exit_code, stdout)) => {
                 Ok((stdout, Some(exit_code)))
             }
             Err(e) => {
