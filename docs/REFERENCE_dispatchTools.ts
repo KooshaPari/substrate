@@ -7,8 +7,12 @@
  * See F3_OMNIROUTE_INTEGRATION.md for full integration instructions.
  */
 
-import { logToolCall } from "../audit.ts";
-import type { McpToolExtraLike } from "../scopeEnforcement.ts";
+type McpToolExtraLike = {
+  name: string;
+  description: string;
+  inputSchema: Record<string, unknown>;
+  handler: (input: Record<string, unknown>, extra?: Record<string, unknown>) => Promise<object>;
+};
 
 const SUBSTRATE_HTTP_URL = process.env.SUBSTRATE_HTTP_URL || "";
 
@@ -161,7 +165,6 @@ export const dispatchTools: McpToolExtraLike[] = [
       extra?: Record<string, unknown>,
     ): Promise<object> => {
       const { prompt, tier, engine, cwd } = input;
-      await logToolCall("substrate_dispatch", input, extra);
       return handleSubstrateDispatch(
         String(prompt),
         tier ? String(tier) : undefined,
@@ -198,7 +201,6 @@ export const dispatchTools: McpToolExtraLike[] = [
       extra?: Record<string, unknown>,
     ): Promise<object> => {
       const { prompt, engine, cwd } = input;
-      await logToolCall("substrate_plan", input, extra);
       return handleSubstratePlan(
         String(prompt),
         engine ? String(engine) : undefined,
@@ -217,7 +219,6 @@ export const dispatchTools: McpToolExtraLike[] = [
       _input: Record<string, unknown>,
       extra?: Record<string, unknown>,
     ): Promise<object> => {
-      await logToolCall("substrate_health", {}, extra);
       return handleSubstrateHealth();
     },
   },
