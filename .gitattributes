@@ -1,0 +1,84 @@
+# .gitattributes — normalize line endings & enable linguist overrides
+# https://git-scm.com/docs/gitattributes
+
+# Default: LF everywhere, no CRLF contamination
+*               text=auto eol=lf
+
+# Shell scripts must stay LF
+*.sh            text eol=lf
+*.bash          text eol=lf
+*.zsh           text eol=lf
+
+# Windows-friendly line endings only for documented Windows-targeted files
+*.bat           text eol=crlf
+*.cmd           text eol=crlf
+*.ps1           text eol=crlf
+
+# Source
+*.rs            text eol=lf
+*.py            text eol=lf
+*.go            text eol=lf
+*.ts            text eol=lf
+*.tsx           text eol=lf
+*.js            text eol=lf
+*.jsx           text eol=lf
+*.c             text eol=lf
+*.cpp           text eol=lf
+*.h             text eol=lf
+*.hpp           text eol=lf
+*.java          text eol=lf
+*.rb            text eol=lf
+*.swift         text eol=lf
+*.kt            text eol=lf
+
+# Config / data
+*.toml          text eol=lf
+*.yaml          text eol=lf
+*.yml           text eol=lf
+*.json          text eol=lf
+*.md            text eol=lf
+*.txt           text eol=lf
+*.ini           text eol=lf
+*.cfg           text eol=lf
+
+# Binaries — keep them out of diff noise
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.ico           binary
+*.webp          binary
+*.pdf           binary
+*.zip           binary
+*.tar.gz        binary
+*.tgz           binary
+*.gz            binary
+*.bz2           binary
+*.xz            binary
+*.7z            binary
+*.rar           binary
+*.exe           binary
+*.dll           binary
+*.so            binary
+*.dylib         binary
+
+# Lock files — large, regenerated, never hand-diffs
+/Cargo.lock     linguist-generated=true
+package-lock.json linguist-generated=true
+yarn.lock       linguist-generated=true
+pnpm-lock.yaml  linguist-generated=true
+composer.lock   linguist-generated=true
+Gemfile.lock    linguist-generated=true
+poetry.lock     linguist-generated=true
+
+# Generated / vendored — exclude from stats and blame
+/api/           linguist-generated=true
+/dist/          linguist-generated=true
+/build/         linguist-generated=true
+/target/        linguist-generated=true linguist-vendored=true
+/node_modules/  linguist-vendored=true
+/vendor/        linguist-vendored=true
+
+# Markdown — set Markdown for .md, not Liquid
+*.md            linguist-detectable=true
+*.md            linguist-language=Markdown
