@@ -623,6 +623,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "engine-a2a"
+version = "0.1.0"
+dependencies = [
+ "a2a",
+ "async-trait",
+ "axum",
+ "bytes",
+ "engine-conformance",
+ "engine-spec",
+ "futures-util",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "substrate-core",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "engine-agentapi"
 version = "0.1.0"
 dependencies = [
