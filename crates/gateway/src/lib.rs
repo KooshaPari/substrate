@@ -34,7 +34,8 @@ use substrate_core::domain::Task;
 use substrate_core::mailbox_port::MailboxStore;
 use substrate_core::ports::RoutingPort;
 
-use openai::{complete_chat, models_from_decision, ChatCompletionRequest};
+use openai::{complete_chat, complete_chat_stream, models_from_decision, ChatCompletionRequest};
+use streaming::StreamingResponseBuilder;
 
 // ---------------------------------------------------------------------------
 // App state
@@ -178,14 +179,27 @@ async fn models_handler(
     Ok(Json(models_from_decision(&decision)))
 }
 
+/// Unified `/v1/chat/completions` handler.
+///
+/// When `body.stream == true`, returns `text/event-stream` SSE chunks ending
+/// with `data: [DONE]\n\n`.  Otherwise returns a single JSON completion object.
+///
+/// Errors are surfaced as HTTP 400/500 — never swallowed silently.
 async fn chat_completions_handler(
     State(state): State<AppState>,
     Json(body): Json<ChatCompletionRequest>,
-) -> Result<Json<openai::ChatCompletionResponse>, ApiError> {
-    let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
-        .await
-        .map_err(ApiError::bad_request)?;
-    Ok(Json(response))
+) -> Result<Response, ApiError> {
+    if body.stream {
+        let stream = complete_chat_stream(state.routing.as_ref(), &body, &state.providers)
+            .await
+            .map_err(ApiError::bad_request)?;
+        Ok(StreamingResponseBuilder::sse_stream(stream))
+    } else {
+        let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
+            .await
+            .map_err(ApiError::bad_request)?;
+        Ok(Json(response).into_response())
+    }
 }
 
 // ---------------------------------------------------------------------------
