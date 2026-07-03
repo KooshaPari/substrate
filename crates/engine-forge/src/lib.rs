@@ -248,9 +248,7 @@ impl ForgeEngine {
                     .args(args)
                     .output()
                     .await
-                    .map_err(|e2| {
-                        SubstrateError::Engine(format!("spawn {}: {e2}", self.bin))
-                    })?;
+                    .map_err(|e2| SubstrateError::Engine(format!("spawn {}: {e2}", self.bin)))?;
                 let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
                 Ok((stdout, output.status.code()))
             }

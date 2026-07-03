@@ -289,8 +289,10 @@ mod tests {
         assert!(args.contains(&"/repo".to_string()));
         // prompt is POSITIONAL (last arg), not --prompt <p>
         assert_eq!(args.last().unwrap(), "fix the bug");
-        assert!(!args.contains(&"--prompt".to_string()),
-            "codex exec does not accept --prompt; prompt must be the positional last arg");
+        assert!(
+            !args.contains(&"--prompt".to_string()),
+            "codex exec does not accept --prompt; prompt must be the positional last arg"
+        );
     }
 
     #[test]
