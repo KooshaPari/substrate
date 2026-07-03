@@ -20,16 +20,16 @@ tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "proc
 regex.workspace = true
 uuid.workspace = true
 thiserror.workspace = true
-# F5 (2026-06-30): forge-daemon opt-in drop-in for short, bounded forge CLI calls
-# (list/dump). Avoids dyld+tokio init cost per spawn. Falls back to direct
-# Command::spawn when FORGE_DAEMON env is unset or daemon is not running.
-forge_daemon = { workspace = true, optional = true }
 
 [features]
 default = []
 forge_daemon = ["dep:forge_daemon"]
 
 [target.'cfg(unix)'.dependencies]
+# F5 (2026-06-30): forge-daemon opt-in drop-in for short, bounded forge CLI calls
+# (list/dump). Avoids dyld+tokio init cost per spawn. Falls back to direct
+# Command::spawn when FORGE_DAEMON env is unset or daemon is not running.
+forge_daemon = { workspace = true, optional = true }
 nix = { version = "0.31", features = ["signal"] }
 
 [dev-dependencies]

@@ -193,7 +193,7 @@ impl ForgeEngine {
         // `forge_daemon` feature is enabled AND `FORGE_DAEMON=1` is set AND
         // the daemon is alive. Avoids the dyld+tokio init cost per spawn.
         // Falls back to direct `Command::spawn` otherwise.
-        #[cfg(feature = "forge_daemon")]
+        #[cfg(all(unix, feature = "forge_daemon"))]
         if std::env::var("FORGE_DAEMON").ok().as_deref() == Some("1")
             && forge_daemon::ffi_is_running()
         {
@@ -212,7 +212,7 @@ impl ForgeEngine {
     /// Returns `Ok((stdout, exit_code))` on success; on daemon-side error
     /// transparently falls back to direct spawn so the existing path stays
     /// the source of truth.
-    #[cfg(feature = "forge_daemon")]
+    #[cfg(all(unix, feature = "forge_daemon"))]
     async fn run_simple_via_daemon(&self, args: &[String]) -> Result<(String, Option<i32>)> {
         use forge_daemon::DaemonDispatch;
         // forge_daemon_dispatch takes (forge_bin, prompt, model, cwd). For

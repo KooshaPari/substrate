@@ -43,8 +43,8 @@ members = [
     "crates/cloud-cursor",
     "crates/cloud-kilo",
     "crates/cloud-codex",
-    "crates/forge_daemon",
 ]
+exclude = ["crates/forge_daemon"]
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
