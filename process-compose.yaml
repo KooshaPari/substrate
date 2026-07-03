@@ -1,0 +1,63 @@
+# process-compose.yaml — substrate service definitions
+#
+# Manages the substrate daemon stack as long-lived services.
+# Launch the full stack:  process-compose up
+# Launch one service:     process-compose up substrate-gateway
+# View logs:              process-compose logs substrate-gateway
+# Stop all:               process-compose down
+#
+# OSS tool: https://github.com/F1bonacc1/process-compose
+# Install:  brew install f1bonacc1/tap/process-compose  (macOS)
+#           or: go install github.com/F1bonacc1/process-compose@latest
+
+version: "0.5"
+
+log_location: /tmp/substrate-pc.log
+log_level: info
+
+processes:
+  # ── Gateway (OpenAI-compatible HTTP + A2A mailbox) ──────────────────────
+  substrate-gateway:
+    description: "Substrate gateway — OpenAI-compatible HTTP + A2A mailbox (port 8010)"
+    command: "cargo run -p gateway --release"
+    working_dir: "."
+    environment:
+      - "SUBSTRATE_STATE_DIR=${SUBSTRATE_STATE_DIR:-${HOME}/.substrate/state}"
+      - "SUBSTRATE_BIND=${SUBSTRATE_BIND:-127.0.0.1:8010}"
+      - "SUBSTRATE_AUTH_TOKEN=${SUBSTRATE_AUTH_TOKEN:-}"
+    readiness_probe:
+      http_get:
+        host: "127.0.0.1"
+        port: 8010
+        path: "/healthz"
+      initial_delay_seconds: 3
+      period_seconds: 2
+      failure_threshold: 10
+    restart:
+      on_failure:
+        enabled: true
+        delay_seconds: 5
+        max_retries: 5
+    shutdown:
+      signal: 15   # SIGTERM
+      timeout_seconds: 10
+    availability:
+      restart: on_failure
+      max_restarts: 5
+
+  # ── TUI Dashboard (interactive, optional — launch separately) ────────────
+  substrate-dash:
+    description: "Substrate live TUI dashboard (requires a TTY — launch manually)"
+    command: "cargo run -p substrate-tui -- --gateway http://127.0.0.1:8010"
+    working_dir: "."
+    environment:
+      - "SUBSTRATE_GATEWAY_URL=${SUBSTRATE_GATEWAY_URL:-http://127.0.0.1:8010}"
+      - "SUBSTRATE_AUTH_TOKEN=${SUBSTRATE_AUTH_TOKEN:-}"
+    depends_on:
+      substrate-gateway:
+        condition: process_healthy
+    # The TUI is interactive; mark it as disabled so `process-compose up` skips it
+    # but `process-compose up substrate-dash` launches it explicitly.
+    availability:
+      restart: "no"
+    disabled: true
