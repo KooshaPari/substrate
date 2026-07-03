@@ -24,6 +24,8 @@ use substrate_app::{DispatchPlanner, PlanRequest, SessionMode};
 use substrate_core::domain::Task;
 use substrate_core::ports::DispatchApi;
 use substrate_core::Tier;
+use substrate_tui::config::TuiConfig;
+use substrate_tui::runner::run_dashboard;
 use transport_file::FileTransport;
 
 #[derive(Parser)]
@@ -62,6 +64,25 @@ enum Command {
     },
     /// Submit a remote cloud-agent task and harvest the PR result as JSON.
     CloudDispatch(CloudDispatchArgs),
+    /// Launch the live TUI dashboard (dispatch lanes, A2A tasks, engine health).
+    Dash(DashArgs),
+}
+
+/// Options for the `substrate dash` TUI subcommand.
+#[derive(Parser)]
+#[command(next_help_heading = "DASHBOARD")]
+struct DashArgs {
+    /// Gateway base URL (overrides $SUBSTRATE_GATEWAY_URL, default: http://127.0.0.1:8010).
+    #[arg(long, value_name = "URL")]
+    gateway: Option<String>,
+
+    /// Poll interval in seconds (default: 2).
+    #[arg(long, value_name = "SECS")]
+    poll: Option<u64>,
+
+    /// Team name for A2A task queries (default: empty string = all teams).
+    #[arg(long, value_name = "TEAM", default_value = "")]
+    team: String,
 }
 
 /// Flags shared by `dispatch` and `plan`.
@@ -287,6 +308,16 @@ async fn main() -> anyhow::Result<()> {
         Command::Argv { args } => driver_argv::dispatch::run(args),
         Command::CloudDispatch(args) => {
             cloud_dispatch::run(args.platform, &args.repo, &args.branch, &args.task).await
+        }
+        Command::Dash(args) => {
+            let mut cfg = TuiConfig::default();
+            if let Some(url) = args.gateway {
+                cfg.gateway_url = url;
+            }
+            if let Some(secs) = args.poll {
+                cfg.poll_interval = std::time::Duration::from_secs(secs);
+            }
+            run_dashboard(cfg, args.team).await
         }
     }
 }

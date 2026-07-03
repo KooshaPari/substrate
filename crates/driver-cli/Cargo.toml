@@ -25,6 +25,7 @@ store-file = { path = "../store-file" }
 cloud-cursor = { path = "../cloud-cursor" }
 cloud-kilo = { path = "../cloud-kilo" }
 cloud-codex = { path = "../cloud-codex" }
+substrate-tui = { path = "../substrate-tui" }
 clap.workspace = true
 tokio.workspace = true
 serde_json.workspace = true
