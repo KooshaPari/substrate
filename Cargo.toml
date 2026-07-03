@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+exclude = ["crates/forge_daemon"]
 members = [
     "crates/substrate",
     "crates/substrate-core",
@@ -43,7 +44,6 @@ members = [
     "crates/cloud-cursor",
     "crates/cloud-kilo",
     "crates/cloud-codex",
-    "crates/forge_daemon",
 ]
 [workspace.package]
 version = "0.1.0"
