@@ -25,6 +25,7 @@ members = [
     "crates/engine-conformance",
     "crates/engine-codex",
     "crates/engine-claude",
+    "crates/engine-a2a",
     "crates/engine-agentapi",
     "crates/cliproxy-adapter",
     "crates/substrate-trace",
