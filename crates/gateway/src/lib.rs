@@ -9,6 +9,7 @@ pub mod circuit_breaker;
 mod config;
 pub mod metrics;
 mod openai;
+pub mod rate_limit;
 pub mod streaming;
 pub mod upstream;
 
@@ -16,6 +17,7 @@ pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
 pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
 pub use metrics::MetricsStore;
+pub use rate_limit::{RateLimiterConfig, RateLimiterStore};
 pub use upstream::UpstreamClient;
 
 use std::path::Path;
@@ -29,6 +31,7 @@ use axum::{
     routing::{get, post},
     Json, Router,
 };
+use rate_limit::RateLimitError;
 use routing_phenotype_router::PhenotypeRouterAdapter;
 use serde::{Deserialize, Serialize};
 use store_sqlite::{ConfigEntry, SqliteConfigStore, SqliteMailboxStore};
@@ -54,6 +57,8 @@ pub struct AppState {
     providers: Arc<Vec<ProviderConfig>>,
     /// In-memory request metrics (shared across all clones via interior `Arc`s).
     pub metrics: MetricsStore,
+    /// Per-provider token-bucket rate limiter.
+    pub rate_limiter: RateLimiterStore,
 }
 
 impl AppState {
@@ -78,6 +83,7 @@ impl AppState {
             auth_token: None,
             providers: Arc::new(crate::config::builtin_providers()),
             metrics: MetricsStore::new(),
+            rate_limiter: RateLimiterStore::new(),
         })
     }
 
@@ -91,6 +97,12 @@ impl AppState {
     /// If not called, `AppState::new` falls back to `builtin_providers()`.
     pub fn with_providers(mut self, providers: Vec<ProviderConfig>) -> Self {
         self.providers = Arc::new(providers);
+        self
+    }
+
+    /// Override the rate limiter (e.g. with pre-seeded buckets in tests).
+    pub fn with_rate_limiter(mut self, rl: RateLimiterStore) -> Self {
+        self.rate_limiter = rl;
         self
     }
 }
@@ -108,6 +120,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         auth_token: None,
         providers: Arc::new(crate::config::builtin_providers()),
         metrics: MetricsStore::new(),
+        rate_limiter: RateLimiterStore::new(),
     })
 }
 
@@ -283,6 +296,31 @@ async fn chat_completions_handler(
     State(state): State<AppState>,
     Json(body): Json<ChatCompletionRequest>,
 ) -> Result<Response, ApiError> {
+    // Resolve provider name for rate-limiting from the model field (e.g. "openai/gpt-4").
+    let rl_provider = body
+        .model
+        .split('/')
+        .next()
+        .unwrap_or("unknown")
+        .to_string();
+    if let Err(RateLimitError {
+        provider: _,
+        retry_after_secs,
+    }) = state.rate_limiter.check_and_consume(&rl_provider)
+    {
+        let retry_str = format!("{:.0}", retry_after_secs.ceil());
+        let body_json = serde_json::json!({
+            "error": format!("rate limit exceeded for provider '{rl_provider}'; retry after {retry_str}s")
+        });
+        let response = axum::response::Response::builder()
+            .status(StatusCode::TOO_MANY_REQUESTS)
+            .header("Content-Type", "application/json")
+            .header("Retry-After", retry_str)
+            .body(axum::body::Body::from(body_json.to_string()))
+            .expect("static 429 response construction must succeed");
+        return Ok(response);
+    }
+
     let t0 = std::time::Instant::now();
     if body.stream {
         let stream = complete_chat_stream(state.routing.as_ref(), &body, &state.providers)
@@ -323,9 +361,11 @@ async fn chat_completions_handler(
 // Metrics handlers
 // ---------------------------------------------------------------------------
 
-/// `GET /metrics` — point-in-time snapshot of request counters.
+/// `GET /metrics` — point-in-time snapshot of request counters plus rate-limit hits.
 async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
-    Json(state.metrics.snapshot())
+    let mut snap = state.metrics.snapshot();
+    snap.rate_limit_hits = state.rate_limiter.hits_snapshot();
+    Json(snap)
 }
 
 /// `POST /metrics/reset` — zero all counters and return empty snapshot.
