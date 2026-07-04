@@ -7,6 +7,7 @@ mod config;
 mod dispatch_client;
 mod help;
 pub mod log_panel;
+pub mod provider_panel;
 mod proccompose;
 mod sparkline;
 mod statusbar;
