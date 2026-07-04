@@ -1,3 +1,6 @@
+// Scaffolding WIP: dashboard widget functions are defined but not yet wired
+// into the event loop.  Suppress until the caller side is connected.
+#![allow(dead_code, unused_imports)]
 //! Dashboard — main dispatch overview and process composition monitor.
 //!
 //! Shows:

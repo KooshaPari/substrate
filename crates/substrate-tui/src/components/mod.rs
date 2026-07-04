@@ -1,3 +1,5 @@
+// Scaffolding WIP: Screen trait is not yet consumed by the event loop.
+#![allow(dead_code, unused_imports)]
 //! Tab-index and shared traits for TUI widgets.
 
 pub mod dashboard;

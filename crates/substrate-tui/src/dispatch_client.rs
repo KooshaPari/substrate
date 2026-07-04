@@ -1,3 +1,6 @@
+// Scaffolding WIP: many items are defined for future integration but not yet
+// called from the event loop.  Suppress until the caller side is wired up.
+#![allow(dead_code, unused_imports)]
 //! HTTP client for the gateway API.
 //!
 //! Queries the substrate gateway for health, A2A tasks, and management config.
