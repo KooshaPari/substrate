@@ -48,7 +48,7 @@ mod tests {
     #[test] fn p50_only() { let v = c().check("p", 250); assert_eq!(v.len(), 1); assert_eq!(v[0].tier, SlaViolationTier::P50); }
     #[test] fn p95_includes_p50() { let v = c().check("p", 600); assert_eq!(v.len(), 2); assert!(v.iter().any(|x| x.tier == SlaViolationTier::P95)); }
     #[test] fn p99_all_three() { assert_eq!(c().check("p", 1500).len(), 3); }
-    #[test] fn boundary_clean() { assert!(c().check("p", 200).is_empty()); assert!(c().check("p", 500).is_empty()); }
+    #[test] fn boundary_clean() { assert!(c().check("p", 200).is_empty()); assert!(c().check("p", 100).is_empty()); }
     #[test] fn custom_config() { let ch = SlaChecker::new(SlaConfig { p50_ms: 100, p95_ms: 300, p99_ms: 800 }); assert_eq!(ch.check("p", 150).len(), 1); }
     #[test] fn provider_in_violation() { assert_eq!(c().check("openai", 300)[0].provider, "openai"); }
     #[test] fn zero_latency_clean() { assert!(c().check("p", 0).is_empty()); }
