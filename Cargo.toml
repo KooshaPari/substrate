@@ -44,6 +44,7 @@ members = [
     "crates/cloud-cursor",
     "crates/cloud-kilo",
     "crates/cloud-codex",
+    "crates/substrate-serve-lock",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -54,6 +55,7 @@ rust-version = "1.80"
 
 [workspace.dependencies]
 substrate-core = { version = "0.1.0", path = "crates/substrate-core" }
+substrate-serve-lock = { version = "0.1.0", path = "crates/substrate-serve-lock" }
 substrate-trace = { version = "0.1.0", path = "crates/substrate-trace" }
 substrate-app = { version = "0.1.0", path = "crates/substrate-app" }
 engine-spec = { version = "0.1.0", path = "crates/engine-spec" }
@@ -92,6 +94,8 @@ futures-core = "0.3"
 parking_lot = "0.12"
 tokio-stream = "0.1"
 tracing = "0.1"
+fs2 = "0.4"
+libc = "0.2"
 
 [profile.release]
 opt-level = "z"

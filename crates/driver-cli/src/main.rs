@@ -6,6 +6,7 @@
 
 mod cloud_dispatch;
 mod plan;
+mod serve;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -62,6 +63,8 @@ enum Command {
     },
     /// Submit a remote cloud-agent task and harvest the PR result as JSON.
     CloudDispatch(CloudDispatchArgs),
+    /// Start the substrate HTTP server with a lock-based single-instance guard.
+    Serve(serve::ServeArgs),
 }
 
 /// Flags shared by `dispatch` and `plan`.
@@ -288,5 +291,6 @@ async fn main() -> anyhow::Result<()> {
         Command::CloudDispatch(args) => {
             cloud_dispatch::run(args.platform, &args.repo, &args.branch, &args.task).await
         }
+        Command::Serve(args) => serve::run(args).await,
     }
 }
