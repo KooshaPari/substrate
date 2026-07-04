@@ -1,14 +1,13 @@
-
 //! Substrate TUI — terminal UI dashboard for the substrate dispatch surface.
 
-mod boot;
-mod sparkline;
 mod app;
+mod boot;
 mod components;
 mod config;
 mod dispatch_client;
 mod help;
 mod proccompose;
+mod sparkline;
 mod statusbar;
 
 use std::io;
