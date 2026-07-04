@@ -1,0 +1,6 @@
+[toolchain]
+# Pin to stable; MSRV (1.80) is enforced separately via workspace Cargo.toml
+# `rust-version`. Using `stable` avoids forcing an old compiler that could reject
+# newer-edition code while still giving reproducible rustfmt/clippy components.
+channel = "stable"
+components = ["rustfmt", "clippy"]
