@@ -3,6 +3,7 @@
 use std::time::Instant;
 
 use crate::config::TuiConfig;
+use crate::dispatch_client::{GatewayClient, ServiceStatus};
 use crate::proccompose::{load_compositions, Composition};
 
 /// Top-level application state.
@@ -13,6 +14,10 @@ pub struct App {
     pub connected: bool,
     /// Live compositions loaded from the compose directory.
     pub compositions: Vec<Composition>,
+    /// Most-recently polled HTTP health status for each service.
+    ///
+    /// Refreshed every 5 s via [`App::refresh_service_statuses`].
+    pub service_statuses: Vec<ServiceStatus>,
     /// A2A tasks tracked by the gateway.
     pub tasks: Vec<Task>,
     /// Instant the dashboard started (for uptime calculation).
@@ -30,6 +35,7 @@ impl App {
             config,
             connected: false,
             compositions,
+            service_statuses: Vec::new(),
             tasks: Vec::new(),
             startup: Instant::now(),
         }
@@ -40,6 +46,14 @@ impl App {
     /// Call this on a poll tick to pick up changes to the compose manifests.
     pub fn refresh_compositions(&mut self) {
         self.compositions = load_compositions(&self.config.compose_dir);
+    }
+
+    /// Probe every service in `self.compositions` and update `service_statuses`.
+    ///
+    /// Should be called every 5 s from the TUI event loop to provide fresh
+    /// Running/Stopped/Unknown indicators without blocking the render thread.
+    pub async fn refresh_service_statuses(&mut self) {
+        self.service_statuses = GatewayClient::get_status(&self.compositions).await;
     }
 
     /// Number of running dispatch lanes across all compositions.

@@ -82,10 +82,7 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
 
     let uptime = Paragraph::new(Line::from(vec![
         Span::styled("UPTIME ", Style::default().fg(Color::DarkGray)),
-        Span::styled(
-            app.formatted_uptime(),
-            Style::default().fg(Color::Yellow),
-        ),
+        Span::styled(app.formatted_uptime(), Style::default().fg(Color::Yellow)),
     ]));
     frame.render_widget(uptime, cols[3]);
 }
@@ -93,50 +90,62 @@ fn draw_header(frame: &mut Frame, area: Rect, app: &App) {
 // ── dispatch lanes table ─────────────────────────────────────────────
 
 fn draw_lanes_table(frame: &mut Frame, area: Rect, app: &App) {
-    let header_cells = [
-        "LANE ID",
-        "STATE",
-        "ENGINE",
-        "MODEL",
-        "UPTIME",
-        "PROMPT",
-    ]
-    .iter()
-    .map(|h| Cell::from(Line::from(Span::styled(*h, Style::default().bold().fg(Color::White)))));
+    let header_cells = ["LANE ID", "STATE", "ENGINE", "MODEL", "UPTIME", "PROMPT"]
+        .iter()
+        .map(|h| {
+            Cell::from(Line::from(Span::styled(
+                *h,
+                Style::default().bold().fg(Color::White),
+            )))
+        });
     let header = Row::new(header_cells)
         .style(Style::default().bg(Color::Rgb(40, 40, 40)))
         .height(1);
 
-    let rows: Vec<Row> = app.compositions.iter().flat_map(|comp| {
-        let comp_style = Style::default().fg(Color::Cyan).bold();
-        let comp_row = Row::new(vec![
-            Cell::from(format!("[{}]", comp.name)),
-            Cell::from("─"),
-            Cell::from(format!("{} members", comp.members.len())),
-            Cell::from("─"),
-            Cell::from(comp.formatted_uptime()),
-            Cell::from(comp.status.to_string()),
-        ])
-        .style(comp_style);
-
-        let member_rows: Vec<Row> = comp.members.iter().map(|m| {
-            let state_style = m.state_style();
-            let cell = |s: String| {
-                if s.is_empty() { Cell::from("─") } else { Cell::from(s) }
-            };
-            Row::new(vec![
-                cell(m.short_id()),
-                Cell::from(Line::from(Span::styled(&m.state, state_style))),
-                cell(m.engine.clone()),
-                cell(m.model.clone()),
-                cell(m.formatted_uptime()),
-                cell(m.prompt_preview().to_owned()),
+    let rows: Vec<Row> = app
+        .compositions
+        .iter()
+        .flat_map(|comp| {
+            let comp_style = Style::default().fg(Color::Cyan).bold();
+            let comp_row = Row::new(vec![
+                Cell::from(format!("[{}]", comp.name)),
+                Cell::from("─"),
+                Cell::from(format!("{} members", comp.members.len())),
+                Cell::from("─"),
+                Cell::from(comp.formatted_uptime()),
+                Cell::from(comp.status.to_string()),
             ])
-            .style(Style::default().fg(Color::White))
-        }).collect();
+            .style(comp_style);
 
-        std::iter::once(comp_row).chain(member_rows).collect::<Vec<_>>()
-    }).collect();
+            let member_rows: Vec<Row> = comp
+                .members
+                .iter()
+                .map(|m| {
+                    let state_style = m.state_style();
+                    let cell = |s: String| {
+                        if s.is_empty() {
+                            Cell::from("─")
+                        } else {
+                            Cell::from(s)
+                        }
+                    };
+                    Row::new(vec![
+                        cell(m.short_id()),
+                        Cell::from(Line::from(Span::styled(&m.state, state_style))),
+                        cell(m.engine.clone()),
+                        cell(m.model.clone()),
+                        cell(m.formatted_uptime()),
+                        cell(m.prompt_preview().to_owned()),
+                    ])
+                    .style(Style::default().fg(Color::White))
+                })
+                .collect();
+
+            std::iter::once(comp_row)
+                .chain(member_rows)
+                .collect::<Vec<_>>()
+        })
+        .collect();
 
     let table = Table::new(
         rows,
@@ -165,19 +174,14 @@ fn draw_lanes_table(frame: &mut Frame, area: Rect, app: &App) {
 fn draw_compose_summary(frame: &mut Frame, area: Rect, app: &App) {
     let cols = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Percentage(50),
-            Constraint::Percentage(50),
-        ])
+        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
         .split(area);
 
     // Compositions count
-    let comps = Paragraph::new(Line::from(vec![
-        Span::styled(
-            format!("COMPOSITIONS  {}", app.compositions.len()),
-            Style::default().fg(Color::Green).bold(),
-        ),
-    ]))
+    let comps = Paragraph::new(Line::from(vec![Span::styled(
+        format!("COMPOSITIONS  {}", app.compositions.len()),
+        Style::default().fg(Color::Green).bold(),
+    )]))
     .block(
         Block::default()
             .borders(Borders::ALL)
@@ -187,11 +191,23 @@ fn draw_compose_summary(frame: &mut Frame, area: Rect, app: &App) {
 
     // Per-composition mini gauge
     if let Some(comp) = app.compositions.first() {
-        let running = comp.members.iter().filter(|m| m.state == "working" || m.state == "running").count();
+        let running = comp
+            .members
+            .iter()
+            .filter(|m| m.state == "working" || m.state == "running")
+            .count();
         let total = comp.members.len();
-        let ratio = if total > 0 { running as f64 / total as f64 } else { 0.0 };
+        let ratio = if total > 0 {
+            running as f64 / total as f64
+        } else {
+            0.0
+        };
         let gauge = Gauge::default()
-            .block(Block::default().borders(Borders::ALL).title(format!(" {} ", comp.name)))
+            .block(
+                Block::default()
+                    .borders(Borders::ALL)
+                    .title(format!(" {} ", comp.name)),
+            )
             .gauge_style(Style::default().fg(Color::Green).bg(Color::DarkGray))
             .ratio(ratio)
             .label(format!("{}/{} lanes active", running, total));
