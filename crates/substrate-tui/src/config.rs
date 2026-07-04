@@ -23,7 +23,9 @@ impl Default for TuiConfig {
         Self {
             gateway_url: std::env::var("SUBSTRATE_GATEWAY_URL")
                 .unwrap_or_else(|_| "http://127.0.0.1:8010".into()),
-            auth_token: std::env::var("SUBSTRATE_AUTH_TOKEN").ok().filter(|s| !s.is_empty()),
+            auth_token: std::env::var("SUBSTRATE_AUTH_TOKEN")
+                .ok()
+                .filter(|s| !s.is_empty()),
             poll_interval: Duration::from_secs(
                 std::env::var("SUBSTRATE_TUI_POLL_SECS")
                     .ok()

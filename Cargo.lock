@@ -3270,6 +3270,7 @@ dependencies = [
  "serde_json",
  "store-sqlite",
  "substrate-core",
+ "tempfile",
  "thiserror 2.0.18",
  "tokio",
  "uuid",

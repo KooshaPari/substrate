@@ -187,3 +187,51 @@ async fn test_resume_400_fallback() {
     // 1 for spawn start + 2 for pump_one (400 + retry) = 3.
     assert_eq!(calls, 3, "expected 1 start + 2 resume calls, got {calls}");
 }
+
+// ── 6. Crash/restart recovery ────────────────────────────────────────────────
+
+/// A restarted supervisor can rehydrate its active task from the SQLite tasklist
+/// and continue pumping mailbox messages without calling spawn again.
+#[tokio::test]
+async fn test_restart_recovers_active_task_from_sqlite() {
+    let tmp = tempfile::NamedTempFile::new().unwrap();
+    let db_path = tmp.path().to_string_lossy().to_string();
+    let engine = Arc::new(FakeEngine::new());
+
+    let recovered_conv_id = {
+        let store = Arc::new(SqliteMailboxStore::open(&db_path).unwrap());
+        let config = LaneConfig::new("team-recover", "agent-r");
+        let mut sup = Supervisor::new(Arc::clone(&engine), Arc::clone(&store), config);
+
+        sup.spawn("long running task").await.unwrap();
+        let conv_id = sup.conv_id().unwrap().to_string();
+
+        let msg = make_msg(
+            "team-recover",
+            "agent-r",
+            MessageKind::Task,
+            "continue after restart",
+        );
+        store.post(&msg).unwrap();
+
+        conv_id
+    };
+
+    let store = Arc::new(SqliteMailboxStore::open(&db_path).unwrap());
+    let config = LaneConfig::new("team-recover", "agent-r");
+    let mut restarted = Supervisor::new(Arc::clone(&engine), Arc::clone(&store), config);
+
+    assert!(
+        restarted.recover_active().unwrap(),
+        "active task should be recovered from sqlite"
+    );
+    assert_eq!(restarted.conv_id(), Some(recovered_conv_id.as_str()));
+
+    restarted.pump_one().await.unwrap();
+
+    assert_eq!(store.inbox("team-recover", "agent-r").unwrap().len(), 0);
+
+    let tasks = store.task_list("team-recover").unwrap();
+    assert_eq!(tasks.len(), 1);
+    assert_eq!(tasks[0].owner, "agent-r");
+}
