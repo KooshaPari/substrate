@@ -134,6 +134,7 @@ impl MetricsStore {
             error_rate,
             avg_latency_ms,
             per_provider,
+            rate_limit_hits: HashMap::new(),
         }
     }
 }
@@ -147,6 +148,8 @@ pub struct MetricsSnapshot {
     pub error_rate: f64,
     pub avg_latency_ms: u64,
     pub per_provider: HashMap<String, ProviderMetricsSnapshot>,
+    /// Cumulative HTTP 429 rate-limit hits per provider.
+    pub rate_limit_hits: HashMap<String, u64>,
 }
 
 // ---------------------------------------------------------------------------
