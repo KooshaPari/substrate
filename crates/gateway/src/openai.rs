@@ -8,6 +8,7 @@ use substrate_core::ports::RoutingPort;
 use uuid::Uuid;
 
 use crate::config::ProviderConfig;
+use crate::retry::{with_retry, RetryPolicy, RetryableError};
 
 /// OpenAI chat message role.
 #[derive(Debug, Clone, Deserialize)]
@@ -188,6 +189,11 @@ pub async fn complete_chat(
 }
 
 /// Forward the request to an OpenAI-compatible upstream provider and stream back the response.
+///
+/// The HTTP call is wrapped with exponential back-off retry (policy from
+/// [`RetryPolicy::default_policy`], overrideable via `SUBSTRATE_RETRY_ATTEMPTS`
+/// and `SUBSTRATE_RETRY_BASE_MS` env vars).  5xx and 429 responses trigger a
+/// retry; all other 4xx responses abort immediately.
 async fn forward_to_provider(
     provider: &ProviderConfig,
     model: &str,
@@ -195,6 +201,7 @@ async fn forward_to_provider(
     api_key: &str,
 ) -> Result<ChatCompletionResponse, String> {
     let url = format!("{}/chat/completions", provider.base_url);
+    let provider_name = provider.name.clone();
 
     // Build forwarded request body with the stripped model name
     let forward_body = serde_json::json!({
@@ -211,40 +218,56 @@ async fn forward_to_provider(
         }).collect::<Vec<_>>(),
     });
 
+    let policy = RetryPolicy::default_policy();
     let client = reqwest::Client::new();
-    let http_resp = client
-        .post(&url)
-        .header("Authorization", format!("Bearer {api_key}"))
-        .header("Content-Type", "application/json")
-        .header("User-Agent", "substrate-gateway")
-        .json(&forward_body)
-        .send()
-        .await
-        .map_err(|e| format!("upstream request to {} failed: {e}", provider.name))?;
 
-    let status = http_resp.status();
-    if !status.is_success() {
-        let body = http_resp.text().await.unwrap_or_default();
-        return Err(format!(
-            "upstream provider {} returned {}: {}",
-            provider.name, status, body
-        ));
-    }
+    let result = with_retry(&policy, || {
+        let client = client.clone();
+        let url = url.clone();
+        let api_key = api_key.to_owned();
+        let body = forward_body.clone();
+        let pname = provider_name.clone();
+        async move {
+            let http_resp = client
+                .post(&url)
+                .header("Authorization", format!("Bearer {api_key}"))
+                .header("Content-Type", "application/json")
+                .header("User-Agent", "substrate-gateway")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| {
+                    RetryableError::retryable(format!("upstream request to {pname} failed: {e}"))
+                })?;
 
-    // Parse the upstream response as an OpenAI completion
-    let upstream: serde_json::Value = http_resp.json().await.map_err(|e| {
-        format!(
-            "failed to parse upstream response from {}: {e}",
-            provider.name
-        )
-    })?;
+            let status = http_resp.status();
+            if !status.is_success() {
+                let body_txt = http_resp.text().await.unwrap_or_default();
+                return Err(RetryableError::from_status(
+                    status.as_u16(),
+                    &body_txt,
+                    &pname,
+                ));
+            }
 
-    // Extract content from the response
-    let content = upstream["choices"][0]["message"]["content"]
+            // Parse the upstream response as an OpenAI completion.
+            let upstream: serde_json::Value = http_resp.json().await.map_err(|e| {
+                RetryableError::permanent(format!(
+                    "failed to parse upstream response from {pname}: {e}"
+                ))
+            })?;
+
+            Ok(upstream)
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?;
+
+    let content = result["choices"][0]["message"]["content"]
         .as_str()
         .unwrap_or("")
         .to_string();
-    let resp_model = upstream["model"].as_str().unwrap_or(model).to_string();
+    let resp_model = result["model"].as_str().unwrap_or(model).to_string();
 
     Ok(ChatCompletionResponse {
         id: format!("chatcmpl-{}", Uuid::new_v4()),
@@ -467,9 +490,10 @@ pub async fn complete_chat_stream(
 /// Forward a streaming chat request to an OpenAI-compatible upstream and proxy
 /// the raw SSE bytes back to the caller.
 ///
-/// The upstream is expected to emit `text/event-stream` data.  We pass the raw
-/// byte chunks through without re-parsing them, which gives us zero-copy
-/// passthrough and correct behaviour for any upstream that speaks the protocol.
+/// The initial HTTP connection attempt is wrapped with retry back-off
+/// (same [`RetryPolicy::default_policy`] as the non-streaming path).
+/// Once the connection is established, the raw byte stream is proxied
+/// zero-copy; mid-stream errors surface as `Err` items in the stream.
 ///
 /// # Errors
 /// Returns `Err(String)` when the upstream HTTP request fails or returns a
@@ -482,6 +506,7 @@ async fn stream_from_provider(
     api_key: &str,
 ) -> Result<BoxStream<'static, Result<Bytes, std::io::Error>>, String> {
     let url = format!("{}/chat/completions", provider.base_url);
+    let provider_name = provider.name.clone();
 
     let forward_body = serde_json::json!({
         "model": model,
@@ -498,32 +523,45 @@ async fn stream_from_provider(
         }).collect::<Vec<_>>(),
     });
 
+    let policy = RetryPolicy::default_policy();
     let client = reqwest::Client::new();
-    let http_resp = client
-        .post(&url)
-        .header("Authorization", format!("Bearer {api_key}"))
-        .header("Content-Type", "application/json")
-        .header("Accept", "text/event-stream")
-        .header("User-Agent", "substrate-gateway")
-        .json(&forward_body)
-        .send()
-        .await
-        .map_err(|e| {
-            format!(
-                "upstream streaming request to {} failed: {e}",
-                provider.name
-            )
-        })?;
 
-    let status = http_resp.status();
-    if !status.is_success() {
-        // Read the error body eagerly — the connection is bad, buffering is fine.
-        let body = http_resp.text().await.unwrap_or_default();
-        return Err(format!(
-            "upstream provider {} returned {}: {}",
-            provider.name, status, body
-        ));
-    }
+    let http_resp = with_retry(&policy, || {
+        let client = client.clone();
+        let url = url.clone();
+        let api_key = api_key.to_owned();
+        let body = forward_body.clone();
+        let pname = provider_name.clone();
+        async move {
+            let resp = client
+                .post(&url)
+                .header("Authorization", format!("Bearer {api_key}"))
+                .header("Content-Type", "application/json")
+                .header("Accept", "text/event-stream")
+                .header("User-Agent", "substrate-gateway")
+                .json(&body)
+                .send()
+                .await
+                .map_err(|e| {
+                    RetryableError::retryable(format!(
+                        "upstream streaming request to {pname} failed: {e}"
+                    ))
+                })?;
+
+            let status = resp.status();
+            if !status.is_success() {
+                let body_txt = resp.text().await.unwrap_or_default();
+                return Err(RetryableError::from_status(
+                    status.as_u16(),
+                    &body_txt,
+                    &pname,
+                ));
+            }
+            Ok(resp)
+        }
+    })
+    .await
+    .map_err(|e| e.to_string())?;
 
     // Pass the upstream SSE byte stream through directly.
     // `map_err` converts reqwest errors to io::Error so they appear as Err items
