@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex, OnceLock};
 
-use prometheus::{register_histogram_vec, exponential_buckets, HistogramOpts, HistogramVec};
+use prometheus::{exponential_buckets, register_histogram_vec, HistogramOpts, HistogramVec};
 use serde::Serialize;
 
 // ---------------------------------------------------------------------------

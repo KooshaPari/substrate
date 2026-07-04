@@ -23,12 +23,17 @@ pub struct ProviderRouter {
 
 impl ProviderRouter {
     pub fn new(providers: Vec<ProviderEntry>) -> Self {
-        Self { providers, cursor: Arc::new(AtomicUsize::new(0)) }
+        Self {
+            providers,
+            cursor: Arc::new(AtomicUsize::new(0)),
+        }
     }
 
     pub fn next(&self) -> Option<&ProviderEntry> {
         let healthy: Vec<&ProviderEntry> = self.providers.iter().filter(|p| p.healthy).collect();
-        if healthy.is_empty() { return None; }
+        if healthy.is_empty() {
+            return None;
+        }
         let idx = self.cursor.fetch_add(1, Ordering::Relaxed) % healthy.len();
         Some(healthy[idx])
     }
@@ -56,8 +61,16 @@ mod tests {
 
     fn router() -> ProviderRouter {
         ProviderRouter::new(vec![
-            ProviderEntry { name: "a".into(), url: "http://a".into(), healthy: true },
-            ProviderEntry { name: "b".into(), url: "http://b".into(), healthy: true },
+            ProviderEntry {
+                name: "a".into(),
+                url: "http://a".into(),
+                healthy: true,
+            },
+            ProviderEntry {
+                name: "b".into(),
+                url: "http://b".into(),
+                healthy: true,
+            },
         ])
     }
 
@@ -72,20 +85,26 @@ mod tests {
     fn next_skips_unhealthy() {
         let mut r = router();
         r.mark_unhealthy("a");
-        for _ in 0..4 { assert_eq!(r.next().unwrap().name, "b"); }
+        for _ in 0..4 {
+            assert_eq!(r.next().unwrap().name, "b");
+        }
     }
     #[test]
     fn next_none_when_all_unhealthy() {
         let mut r = router();
-        r.mark_unhealthy("a"); r.mark_unhealthy("b");
+        r.mark_unhealthy("a");
+        r.mark_unhealthy("b");
         assert!(r.next().is_none());
     }
     #[test]
     fn mark_healthy_recovers() {
         let mut r = router();
-        r.mark_unhealthy("a"); r.mark_healthy("a");
+        r.mark_unhealthy("a");
+        r.mark_healthy("a");
         assert_eq!(r.healthy_count(), 2);
     }
     #[test]
-    fn healthy_count() { assert_eq!(router().healthy_count(), 2); }
+    fn healthy_count() {
+        assert_eq!(router().healthy_count(), 2);
+    }
 }
