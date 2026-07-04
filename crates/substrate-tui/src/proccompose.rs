@@ -104,22 +104,85 @@ impl Composition {
 
 // ── Manifest format (JSON on disk) ──────────────────────────────────────
 
-/// Raw compose-manifest JSON file format.
-#[derive(Debug, Deserialize)]
-struct ComposeManifest {
-    name: String,
+/// Readiness / health probe for a compose service.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ReadinessProbe {
+    /// Shell command or HTTP URL used to check readiness.
+    pub command: String,
+}
+
+/// Typed representation of a single process-compose JSON config file.
+///
+/// Use [`load_config`] to parse one file, or [`load_compositions`] to scan a
+/// whole directory.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProcessComposeConfig {
+    /// Service name (must be unique within a compose dir).
+    pub name: String,
+    /// Path to the compiled binary (relative to workspace root).
     #[serde(default)]
-    binary: Option<String>,
+    pub binary: Option<String>,
+    /// Command used to start the service (e.g. `cargo run -p foo`).
     #[serde(default)]
-    run_command: Option<String>,
+    pub command: Option<String>,
+    /// Working directory override; `None` means inherit from the launcher.
     #[serde(default)]
-    health_check: Option<String>,
+    pub working_dir: Option<String>,
+    /// Optional readiness probe derived from the `health_check` string.
+    #[serde(default, deserialize_with = "deserialize_probe")]
+    pub readiness_probe: Option<ReadinessProbe>,
+    /// TCP port the service listens on, if applicable.
     #[serde(default)]
-    port: Option<u16>,
+    pub port: Option<u16>,
+    /// Restart policy (`always`, `unless-stopped`, `on-failure`, …).
     #[serde(default)]
-    restart: Option<String>,
+    pub restart: Option<String>,
+    /// Services that must start before this one.
     #[serde(default)]
-    depends_on: Vec<String>,
+    pub depends_on: Vec<String>,
+}
+
+/// Deserialise a plain `health_check` string into a [`ReadinessProbe`].
+fn deserialize_probe<'de, D>(de: D) -> Result<Option<ReadinessProbe>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let opt: Option<String> = Option::deserialize(de)?;
+    Ok(opt.map(|command| ReadinessProbe { command }))
+}
+
+// Alias kept for internal use so the existing `load_compositions` logic can
+// reference the same struct without a separate private type.
+type ComposeManifest = ProcessComposeConfig;
+
+// ── Single-file loader ───────────────────────────────────────────────────
+
+/// Parse a single compose JSON file into a [`ProcessComposeConfig`].
+///
+/// # Errors
+/// Returns an error if the file cannot be read or if the JSON is malformed.
+pub fn load_config(path: &Path) -> anyhow::Result<ProcessComposeConfig> {
+    let content = std::fs::read_to_string(path)
+        .map_err(|e| anyhow::anyhow!("reading {}: {e}", path.display()))?;
+    // The on-disk format uses `run_command`; normalise it to `command`.
+    let mut value: serde_json::Value = serde_json::from_str(&content)
+        .map_err(|e| anyhow::anyhow!("parsing {}: {e}", path.display()))?;
+    if let Some(obj) = value.as_object_mut() {
+        if !obj.contains_key("command") {
+            if let Some(rc) = obj.remove("run_command") {
+                obj.insert("command".into(), rc);
+            }
+        }
+        // Expose `health_check` as `readiness_probe` expected by the struct.
+        if !obj.contains_key("readiness_probe") {
+            if let Some(hc) = obj.remove("health_check") {
+                obj.insert("readiness_probe".into(), hc);
+            }
+        }
+    }
+    let cfg: ProcessComposeConfig = serde_json::from_value(value)
+        .map_err(|e| anyhow::anyhow!("deserialising {}: {e}", path.display()))?;
+    Ok(cfg)
 }
 
 // ── Loading ─────────────────────────────────────────────────────────────
@@ -137,11 +200,7 @@ pub fn load_compositions(compose_dir: &Path) -> Vec<Composition> {
         if path.extension().and_then(|e| e.to_str()) != Some("json") {
             continue;
         }
-        let content = match std::fs::read_to_string(&path) {
-            Ok(c) => c,
-            Err(_) => continue,
-        };
-        let manifest: ComposeManifest = match serde_json::from_str(&content) {
+        let manifest: ComposeManifest = match load_config(&path) {
             Ok(m) => m,
             Err(_) => continue,
         };
@@ -155,7 +214,7 @@ pub fn load_compositions(compose_dir: &Path) -> Vec<Composition> {
                 _ => "unknown".into(),
             },
             engine: manifest.binary.clone().unwrap_or_default(),
-            model: manifest.run_command.clone().unwrap_or_default(),
+            model: manifest.command.clone().unwrap_or_default(),
             uptime: Duration::ZERO,
             prompt_preview: String::new(),
         }];
