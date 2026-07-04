@@ -53,7 +53,7 @@ pub struct Member {
     pub engine: String,
     pub model: String,
     pub uptime: Duration,
-    prompt_preview: String,
+    pub(crate) prompt_preview: String,
 }
 
 impl Member {
@@ -93,6 +93,8 @@ pub struct Composition {
     pub status: CompositionStatus,
     pub members: Vec<Member>,
     pub uptime: Duration,
+    /// TCP port the service listens on (derived from the compose manifest).
+    pub port: Option<u16>,
 }
 
 impl Composition {
@@ -224,6 +226,7 @@ pub fn load_compositions(compose_dir: &Path) -> Vec<Composition> {
             status,
             members,
             uptime: Duration::ZERO,
+            port: manifest.port,
         });
     }
     comps
