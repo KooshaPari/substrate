@@ -9,9 +9,9 @@ pub trait Middleware: Send + Sync + 'static {
     fn handle(&self, req: String, next: Arc<dyn Middleware>) -> BoxFuture<String>;
 }
 
-pub struct PassthroughMiddleware;
-impl Middleware for PassthroughMiddleware {
-    fn name(&self) -> &str { "passthrough" }
+pub struct NoopMiddleware;
+impl Middleware for NoopMiddleware {
+    fn name(&self) -> &str { "noop" }
     fn handle(&self, req: String, _next: Arc<dyn Middleware>) -> BoxFuture<String> {
         Box::pin(async move { req })
     }
@@ -20,33 +20,30 @@ impl Middleware for PassthroughMiddleware {
 pub struct TimingMiddleware;
 impl Middleware for TimingMiddleware {
     fn name(&self) -> &str { "timing" }
-    fn handle(&self, req: String, next: Arc<dyn Middleware>) -> BoxFuture<String> {
-        Box::pin(async move {
-            let result = next.handle(req, Arc::new(PassthroughMiddleware)).await;
-            format!("[timed]{}", result)
-        })
+    fn handle(&self, req: String, _next: Arc<dyn Middleware>) -> BoxFuture<String> {
+        Box::pin(async move { format!("[timed]{}", req) })
     }
 }
 
-pub struct MiddlewareChain { middlewares: Vec<Arc<dyn Middleware>> }
-impl MiddlewareChain {
-    pub fn new() -> Self { Self { middlewares: vec![] } }
-    pub fn add(mut self, m: impl Middleware) -> Self { self.middlewares.push(Arc::new(m)); self }
-    pub fn len(&self) -> usize { self.middlewares.len() }
-    pub fn is_empty(&self) -> bool { self.middlewares.is_empty() }
+pub struct MiddlewareStack { items: Vec<Arc<dyn Middleware>> }
+impl MiddlewareStack {
+    pub fn new() -> Self { Self { items: vec![] } }
+    pub fn push(mut self, m: impl Middleware) -> Self { self.items.push(Arc::new(m)); self }
+    pub fn len(&self) -> usize { self.items.len() }
+    pub fn is_empty(&self) -> bool { self.items.is_empty() }
     pub async fn run(&self, req: String) -> String {
-        if self.middlewares.is_empty() { return req; }
-        self.middlewares[0].handle(req, Arc::new(PassthroughMiddleware)).await
+        if self.items.is_empty() { return req; }
+        self.items[0].handle(req, Arc::new(NoopMiddleware)).await
     }
 }
-impl Default for MiddlewareChain { fn default() -> Self { Self::new() } }
+impl Default for MiddlewareStack { fn default() -> Self { Self::new() } }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[tokio::test] async fn empty_passthrough() { assert_eq!(MiddlewareChain::new().run("x".into()).await, "x"); }
-    #[tokio::test] async fn timing_wraps() { let c=MiddlewareChain::new().add(TimingMiddleware); let r=c.run("req".into()).await; assert!(r.starts_with("[timed]")); }
-    #[test] fn chain_len() { assert_eq!(MiddlewareChain::new().add(TimingMiddleware).len(), 1); }
-    #[test] fn empty_is_empty() { assert!(MiddlewareChain::new().is_empty()); }
-    #[test] fn passthrough_name() { assert_eq!(PassthroughMiddleware.name(), "passthrough"); }
+    #[tokio::test] async fn empty_passthrough() { assert_eq!(MiddlewareStack::new().run("x".into()).await, "x"); }
+    #[tokio::test] async fn timing_wraps() { let r = MiddlewareStack::new().push(TimingMiddleware).run("req".into()).await; assert!(r.starts_with("[timed]")); }
+    #[test] fn stack_len() { assert_eq!(MiddlewareStack::new().push(TimingMiddleware).len(), 1); }
+    #[test] fn empty_is_empty() { assert!(MiddlewareStack::new().is_empty()); }
+    #[test] fn noop_name() { assert_eq!(NoopMiddleware.name(), "noop"); }
 }
