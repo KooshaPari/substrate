@@ -113,6 +113,59 @@ pub struct ConfigEntry {
     pub value: String,
 }
 
+// ── Service status ──────────────────────────────────────────────────────
+
+/// Operational status of a single process-compose service.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ProcessStatus {
+    /// Service is confirmed running (future: HTTP probe succeeded).
+    Running,
+    /// Service is not running or status is unknown.
+    Stopped,
+}
+
+impl std::fmt::Display for ProcessStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Running => write!(f, "Running"),
+            Self::Stopped => write!(f, "Stopped"),
+        }
+    }
+}
+
+/// Status snapshot for a single process-compose service.
+#[derive(Debug, Clone)]
+pub struct ServiceStatus {
+    /// Service name as declared in the compose manifest.
+    pub name: String,
+    /// Current operational status.
+    pub status: ProcessStatus,
+    /// Command used to start the service (preview only).
+    pub command_preview: String,
+}
+
+impl GatewayClient {
+    /// Return a status snapshot for each service entry in `compositions`.
+    ///
+    /// Currently returns a placeholder `Stopped` status for every service;
+    /// real HTTP probing (e.g. hitting `/healthz` per service) can be layered
+    /// on top in a follow-up.
+    pub fn get_status(
+        compositions: &[crate::proccompose::Composition],
+    ) -> Vec<ServiceStatus> {
+        compositions
+            .iter()
+            .flat_map(|c| {
+                c.members.iter().map(move |m| ServiceStatus {
+                    name: format!("{}/{}", c.name, m.engine),
+                    status: ProcessStatus::Stopped,
+                    command_preview: m.model.chars().take(60).collect(),
+                })
+            })
+            .collect()
+    }
+}
+
 /// Simple URL encoding for query params.
 fn urlencode(s: &str) -> String {
     urlencoding(s)

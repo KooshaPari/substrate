@@ -1,9 +1,9 @@
 //! Application state — top-level struct shared by all TUI components.
 
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 use crate::config::TuiConfig;
-use crate::proccompose::Composition;
+use crate::proccompose::{load_compositions, Composition};
 
 /// Top-level application state.
 pub struct App {
@@ -21,14 +21,25 @@ pub struct App {
 
 impl App {
     /// Create a new app state from the given configuration.
+    ///
+    /// Compositions are loaded eagerly from `config.compose_dir`; if the
+    /// directory is missing or empty the list is simply empty (no panic).
     pub fn new(config: TuiConfig) -> Self {
+        let compositions = load_compositions(&config.compose_dir);
         Self {
             config,
             connected: false,
-            compositions: Vec::new(),
+            compositions,
             tasks: Vec::new(),
             startup: Instant::now(),
         }
+    }
+
+    /// Reload compositions from the configured compose directory.
+    ///
+    /// Call this on a poll tick to pick up changes to the compose manifests.
+    pub fn refresh_compositions(&mut self) {
+        self.compositions = load_compositions(&self.config.compose_dir);
     }
 
     /// Number of running dispatch lanes across all compositions.
