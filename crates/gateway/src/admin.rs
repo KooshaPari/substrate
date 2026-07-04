@@ -218,13 +218,14 @@ fn err_json(status: StatusCode, msg: impl Into<String>) -> (StatusCode, Json<ser
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{budget, metrics::MetricsStore, AppState};
+    use crate::{budget, config_watcher::FileConfig, metrics::MetricsStore, AppState};
     use axum::{
         body::Body,
         http::{Request, StatusCode},
         Router,
     };
     use std::sync::{Arc, RwLock};
+    use tokio::sync::RwLock as TokioRwLock;
     use tower::ServiceExt; // for `oneshot`
 
     // Build a minimal AppState for testing without touching the filesystem.
@@ -247,6 +248,7 @@ mod tests {
                 max_cost_usd_per_session: None,
             }),
             log_store: crate::new_log_store(),
+            live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
         }
     }
 
