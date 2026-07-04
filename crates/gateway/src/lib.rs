@@ -7,6 +7,7 @@
 pub mod bounded_body;
 pub mod circuit_breaker;
 mod config;
+pub mod metrics;
 mod openai;
 pub mod streaming;
 pub mod upstream;
@@ -14,6 +15,7 @@ pub mod upstream;
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
 pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
+pub use metrics::MetricsStore;
 pub use upstream::UpstreamClient;
 
 use std::path::Path;
@@ -50,6 +52,8 @@ pub struct AppState {
     auth_token: Option<String>,
     /// Upstream provider configurations (keys resolved from env at request time).
     providers: Arc<Vec<ProviderConfig>>,
+    /// In-memory request metrics (shared across all clones via interior `Arc`s).
+    pub metrics: MetricsStore,
 }
 
 impl AppState {
@@ -73,6 +77,7 @@ impl AppState {
             config,
             auth_token: None,
             providers: Arc::new(crate::config::builtin_providers()),
+            metrics: MetricsStore::new(),
         })
     }
 
@@ -102,6 +107,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         config,
         auth_token: None,
         providers: Arc::new(crate::config::builtin_providers()),
+        metrics: MetricsStore::new(),
     })
 }
 
@@ -124,6 +130,8 @@ pub fn build_router(state: AppState) -> Router {
         .route("/healthz", get(healthz_handler))
         .route("/health", get(health_handler))
         .route("/health/providers", get(health_providers_handler))
+        .route("/metrics", get(metrics_handler))
+        .route("/metrics/reset", post(metrics_reset_handler))
         .merge(protected)
         .with_state(state)
 }
@@ -275,17 +283,55 @@ async fn chat_completions_handler(
     State(state): State<AppState>,
     Json(body): Json<ChatCompletionRequest>,
 ) -> Result<Response, ApiError> {
+    let t0 = std::time::Instant::now();
     if body.stream {
         let stream = complete_chat_stream(state.routing.as_ref(), &body, &state.providers)
             .await
-            .map_err(ApiError::bad_request)?;
+            .map_err(|e| {
+                state
+                    .metrics
+                    .record("stream", t0.elapsed().as_millis() as u64, true);
+                ApiError::bad_request(e)
+            })?;
+        state
+            .metrics
+            .record("stream", t0.elapsed().as_millis() as u64, false);
         Ok(StreamingResponseBuilder::sse_stream(stream))
     } else {
         let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
             .await
-            .map_err(ApiError::bad_request)?;
+            .map_err(|e| {
+                state
+                    .metrics
+                    .record("unknown", t0.elapsed().as_millis() as u64, true);
+                ApiError::bad_request(e)
+            })?;
+        let provider = response
+            .model
+            .split('/')
+            .next()
+            .unwrap_or("unknown")
+            .to_string();
+        state
+            .metrics
+            .record(&provider, t0.elapsed().as_millis() as u64, false);
         Ok(Json(response).into_response())
     }
+}
+
+// ---------------------------------------------------------------------------
+// Metrics handlers
+// ---------------------------------------------------------------------------
+
+/// `GET /metrics` — point-in-time snapshot of request counters.
+async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
+    Json(state.metrics.snapshot())
+}
+
+/// `POST /metrics/reset` — zero all counters and return empty snapshot.
+async fn metrics_reset_handler(State(state): State<AppState>) -> impl IntoResponse {
+    state.metrics.reset();
+    Json(state.metrics.snapshot())
 }
 
 // ---------------------------------------------------------------------------
