@@ -1,0 +1,38 @@
+[package]
+name = "substrate-tui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Terminal UI dashboard for the substrate dispatch surface"
+
+[[bin]]
+name = "substrate-tui"
+path = "src/main.rs"
+
+[dependencies]
+# workspace
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "io-util", "sync", "time", "signal"] }
+reqwest = { workspace = true }
+chrono = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+uuid = { workspace = true }
+
+# TUI stack
+ratatui = "0.30"
+crossterm = { version = "0.28", features = ["event-stream"] }
+futures = "0.3"
+tokio-stream = "0.1"
+
+# dispatch-bridge types are used for wire-format compatibility
+dispatch-bridge = { path = "../dispatch-bridge" }
+substrate-core = { path = "../substrate-core" }
+
+[target.'cfg(unix)'.dependencies]
+# Unix-specific proc-compose monitoring uses signal hooks
+signal-hook = "0.3"
+signal-hook-tokio = { version = "0.4", features = ["futures-v0_3"] }

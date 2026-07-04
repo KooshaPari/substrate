@@ -1,0 +1,9 @@
+{
+  "name": "forge-daemon",
+  "binary": "target/debug/forge-daemon",
+  "run_command": "cargo run -p forge_daemon",
+  "health_check": "test -S /tmp/forge-daemon-$(id -u).sock",
+  "port": null,
+  "restart": "always",
+  "depends_on": []
+}

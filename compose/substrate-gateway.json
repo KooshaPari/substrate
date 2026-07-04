@@ -1,0 +1,9 @@
+{
+  "name": "substrate-gateway",
+  "binary": "target/debug/substrate-gateway",
+  "run_command": "cargo run -p gateway",
+  "health_check": "curl -f http://localhost:8010/health",
+  "port": 8010,
+  "restart": "always",
+  "depends_on": []
+}
