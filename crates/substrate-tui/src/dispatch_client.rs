@@ -189,7 +189,7 @@ pub fn format_log_timestamp(ts: &str) -> String {
     // RFC 3339: "2024-01-15T14:23:45+00:00" — the time part is after 'T'.
     ts.split('T')
         .nth(1)
-        .and_then(|time_part| {
+        .map(|time_part| {
             // Strip timezone suffix (+00:00 or Z) by taking up to the first '+'/Z after hms.
             let hms = if let Some(pos) = time_part.find('+') {
                 &time_part[..pos]
@@ -199,7 +199,7 @@ pub fn format_log_timestamp(ts: &str) -> String {
                 time_part
             };
             // Keep at most HH:MM:SS (8 chars).
-            Some(hms.chars().take(8).collect::<String>())
+            hms.chars().take(8).collect::<String>()
         })
         .unwrap_or_else(|| ts.to_owned())
 }
