@@ -6,6 +6,7 @@
 
 pub mod audit_log;
 pub mod bounded_body;
+pub mod budget;
 pub mod circuit_breaker;
 mod config;
 pub mod fallback;
@@ -18,6 +19,7 @@ pub mod upstream;
 
 pub use audit_log::{AuditEntry, AuditLogger};
 pub use bounded_body::BoundedBodyConfig;
+pub use budget::{BudgetConfig, BudgetStore};
 pub use circuit_breaker::CircuitBreaker;
 pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
 pub use fallback::{try_with_fallback, FallbackChain};
@@ -30,7 +32,7 @@ use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
-    extract::{Query, State},
+    extract::{Path as AxumPath, Query, State},
     http::{Request, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
@@ -67,6 +69,10 @@ pub struct AppState {
     pub rate_limiter: RateLimiterStore,
     /// Optional structured JSONL audit logger; enabled when `SUBSTRATE_AUDIT_LOG` is set.
     pub audit_logger: Option<AuditLogger>,
+    /// Per-session token/cost budget tracker.
+    pub budget_store: BudgetStore,
+    /// Budget limits from environment variables.
+    pub budget_config: Arc<BudgetConfig>,
 }
 
 impl AppState {
@@ -98,6 +104,8 @@ impl AppState {
             metrics: MetricsStore::new(),
             rate_limiter: RateLimiterStore::new(),
             audit_logger,
+            budget_store: BudgetStore::new(),
+            budget_config: Arc::new(BudgetConfig::from_env()),
         })
     }
 
@@ -136,6 +144,11 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         metrics: MetricsStore::new(),
         rate_limiter: RateLimiterStore::new(),
         audit_logger: None,
+        budget_store: BudgetStore::new(),
+        budget_config: Arc::new(BudgetConfig {
+            max_tokens_per_session: None,
+            max_cost_usd_per_session: None,
+        }),
     })
 }
 
@@ -161,6 +174,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/metrics", get(metrics_handler))
         .route("/metrics/prometheus", get(metrics_prometheus_handler))
         .route("/metrics/reset", post(metrics_reset_handler))
+        .route("/budget/{session_id}", get(budget_handler))
         .merge(protected)
         .with_state(state)
 }
@@ -310,8 +324,29 @@ async fn models_handler(
 /// Errors are surfaced as HTTP 400/500 — never swallowed silently.
 async fn chat_completions_handler(
     State(state): State<AppState>,
+    headers: axum::http::HeaderMap,
     Json(body): Json<ChatCompletionRequest>,
 ) -> Result<Response, ApiError> {
+    // Extract or generate a session_id from the X-Session-Id header.
+    let session_id = headers
+        .get("x-session-id")
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.to_owned())
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    // Check budget before forwarding to upstream.
+    if let Err(exceeded) =
+        budget::check_budget(&state.budget_store, &session_id, &state.budget_config)
+    {
+        let body_json = serde_json::json!({ "error": exceeded.to_string() });
+        let response = axum::response::Response::builder()
+            .status(StatusCode::TOO_MANY_REQUESTS)
+            .header("Content-Type", "application/json")
+            .body(axum::body::Body::from(body_json.to_string()))
+            .expect("static 429 budget response construction must succeed");
+        return Ok(response);
+    }
+
     // Resolve provider name for rate-limiting from the model field (e.g. "openai/gpt-4").
     let rl_provider = body
         .model
@@ -410,6 +445,12 @@ async fn chat_completions_handler(
             .to_string();
         let latency_ms = t0.elapsed().as_millis() as u64;
         state.metrics.record(&provider, latency_ms, false);
+        // Record budget usage. The current ChatCompletionResponse does not carry
+        // upstream token counts; record 0 tokens / estimated 0 cost so the session
+        // is initialised and future callers can accumulate real usage once the
+        // response shape includes a `usage` field.
+        let cost = budget::estimate_cost(&response.model, 0, 0);
+        budget::record_usage(&state.budget_store, &session_id, 0, cost);
         if let Some(logger) = &state.audit_logger {
             let _ = logger.write(&AuditEntry {
                 timestamp_ms,
@@ -425,6 +466,20 @@ async fn chat_completions_handler(
         }
         Ok(Json(response).into_response())
     }
+}
+
+// ---------------------------------------------------------------------------
+// Budget handler
+// ---------------------------------------------------------------------------
+
+/// `GET /budget/:session_id` — return current token/cost usage for a session.
+async fn budget_handler(
+    State(state): State<AppState>,
+    AxumPath(session_id): AxumPath<String>,
+) -> Result<Json<budget::SessionBudgetSnapshot>, ApiError> {
+    budget::get_session(&state.budget_store, &session_id)
+        .map(Json)
+        .ok_or_else(|| ApiError::not_found(format!("session not found: {session_id}")))
 }
 
 // ---------------------------------------------------------------------------
