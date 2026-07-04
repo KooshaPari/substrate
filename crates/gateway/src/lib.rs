@@ -7,6 +7,7 @@
 pub mod bounded_body;
 pub mod circuit_breaker;
 mod config;
+pub mod fallback;
 pub mod metrics;
 mod openai;
 pub mod rate_limit;
@@ -17,6 +18,7 @@ pub mod upstream;
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
 pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
+pub use fallback::{try_with_fallback, FallbackChain};
 pub use metrics::MetricsStore;
 pub use rate_limit::{RateLimiterConfig, RateLimiterStore};
 pub use upstream::UpstreamClient;
