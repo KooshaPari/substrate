@@ -301,7 +301,10 @@ async fn health_returns_200_with_required_fields() {
         json["uptime_seconds"].as_u64().is_some(),
         "uptime_seconds must be a non-negative integer"
     );
-    assert!(json["timestamp"].as_str().is_some(), "timestamp field missing");
+    assert!(
+        json["timestamp"].as_str().is_some(),
+        "timestamp field missing"
+    );
     let providers = &json["providers"];
     assert!(
         providers["total"].as_u64().is_some(),
@@ -338,9 +341,134 @@ async fn health_providers_returns_list() {
     // builtin_providers() ships 3 entries
     assert_eq!(providers.len(), 3, "expected 3 builtin providers");
     for p in providers {
-        assert!(p["name"].as_str().is_some(), "each provider must have a name");
-        assert!(p["enabled"].as_bool().is_some(), "each provider must have enabled bool");
+        assert!(
+            p["name"].as_str().is_some(),
+            "each provider must have a name"
+        );
+        assert!(
+            p["enabled"].as_bool().is_some(),
+            "each provider must have enabled bool"
+        );
     }
+}
+
+// ---------------------------------------------------------------------------
+// Metrics endpoint tests
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn metrics_returns_zero_on_fresh_state() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/metrics")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let json = body_json(resp).await;
+    assert_eq!(json["total_requests"].as_u64().unwrap(), 0);
+    assert_eq!(json["total_errors"].as_u64().unwrap(), 0);
+    assert_eq!(json["error_rate"].as_f64().unwrap(), 0.0);
+    assert_eq!(json["avg_latency_ms"].as_u64().unwrap(), 0);
+    assert!(json["per_provider"].as_object().unwrap().is_empty());
+}
+
+#[tokio::test]
+async fn metrics_increments_after_chat_request() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    // Send a chat request first
+    let _ = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/v1/chat/completions")
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    r#"{"model":"auto","messages":[{"role":"user","content":"hi"}]}"#,
+                ))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/metrics")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let json = body_json(resp).await;
+    assert_eq!(json["total_requests"].as_u64().unwrap(), 1);
+    assert_eq!(json["total_errors"].as_u64().unwrap(), 0);
+}
+
+#[tokio::test]
+async fn metrics_reset_zeroes_counters() {
+    let tmp = tempfile::tempdir().unwrap();
+    let state = fake_state(&tmp);
+    // Pre-populate via the store directly
+    state.metrics.record("openai", 50, false);
+    state.metrics.record("openai", 100, true);
+    let app = build_router(state);
+
+    // Verify non-zero before reset
+    let snap_resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .uri("/metrics")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let before = body_json(snap_resp).await;
+    assert_eq!(before["total_requests"].as_u64().unwrap(), 2);
+
+    // Reset
+    let reset_resp = app
+        .clone()
+        .oneshot(
+            Request::builder()
+                .method("POST")
+                .uri("/metrics/reset")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(reset_resp.status(), StatusCode::OK);
+    let after_reset = body_json(reset_resp).await;
+    assert_eq!(after_reset["total_requests"].as_u64().unwrap(), 0);
+
+    // Confirm via GET as well
+    let get_resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/metrics")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let confirmed = body_json(get_resp).await;
+    assert_eq!(confirmed["total_requests"].as_u64().unwrap(), 0);
+    assert!(confirmed["per_provider"].as_object().unwrap().is_empty());
 }
 
 #[tokio::test]
