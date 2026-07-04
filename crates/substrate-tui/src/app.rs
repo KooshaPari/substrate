@@ -11,7 +11,7 @@ use ratatui::{
 };
 
 use crate::config::TuiConfig;
-use crate::dispatch_client::{GatewayClient, ServiceStatus};
+use crate::dispatch_client::{GatewayClient, GatewayMetrics, ServiceStatus};
 use crate::help::draw_help;
 use crate::proccompose::{load_compositions, Composition};
 use crate::statusbar::draw_statusbar;
@@ -39,6 +39,10 @@ pub struct App {
     pub selected_index: usize,
     /// Whether the help overlay is shown.
     pub show_help: bool,
+    /// Whether the metrics panel is shown.
+    pub show_metrics: bool,
+    /// Most-recently fetched gateway metrics.
+    pub metrics: Option<GatewayMetrics>,
     /// Ratatui table state for selection highlight.
     pub table_state: TableState,
 }
@@ -63,6 +67,8 @@ impl App {
             startup: Instant::now(),
             selected_index: 0,
             show_help: false,
+            show_metrics: false,
+            metrics: None,
             table_state,
         }
     }
@@ -82,6 +88,22 @@ impl App {
     /// Running/Stopped/Unknown indicators without blocking the render thread.
     pub async fn refresh_service_statuses(&mut self) {
         self.service_statuses = GatewayClient::get_status(&self.compositions).await;
+    }
+
+    /// Fetch metrics from the gateway and store them.
+    ///
+    /// On failure (gateway not reachable) the existing `metrics` value is left
+    /// unchanged so stale data continues to render.
+    pub async fn refresh_metrics(&mut self) {
+        let client = GatewayClient::new(self.config.gateway_url.clone(), None);
+        if let Ok(m) = client.get_metrics().await {
+            self.metrics = Some(m);
+        }
+    }
+
+    /// Toggle the metrics panel visibility.
+    pub fn toggle_metrics(&mut self) {
+        self.show_metrics = !self.show_metrics;
     }
 
     /// Number of running dispatch lanes across all compositions.
@@ -146,18 +168,96 @@ impl App {
     pub fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
-        // Split: main content on top, status bar at bottom (1 line).
+        // Build vertical layout: compositions table, optional metrics panel, status bar.
+        let constraints: Vec<Constraint> = if self.show_metrics {
+            vec![
+                Constraint::Min(0),
+                Constraint::Length(10),
+                Constraint::Length(1),
+            ]
+        } else {
+            vec![Constraint::Min(0), Constraint::Length(1)]
+        };
+
         let chunks = Layout::default()
             .direction(Direction::Vertical)
-            .constraints([Constraint::Min(0), Constraint::Length(1)])
+            .constraints(constraints)
             .split(area);
 
         self.render_service_table(frame, chunks[0]);
-        draw_statusbar(frame, chunks[1], self);
+
+        if self.show_metrics {
+            self.render_metrics_panel(frame, chunks[1]);
+            draw_statusbar(frame, chunks[2], self);
+        } else {
+            draw_statusbar(frame, chunks[1], self);
+        }
 
         if self.show_help {
             let help_area = centered_rect(60, 70, area);
             draw_help(frame, help_area);
+        }
+    }
+
+    fn render_metrics_panel(&self, frame: &mut Frame, area: Rect) {
+        use ratatui::text::Line;
+        use ratatui::widgets::Paragraph;
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Gateway Metrics (m to hide) ");
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        match &self.metrics {
+            None => {
+                let p = Paragraph::new("No metrics available — gateway may be unreachable.");
+                frame.render_widget(p, inner);
+            }
+            Some(m) => {
+                // Summary line
+                let summary = format!(
+                    "Requests: {} | Errors: {} | Error rate: {:.1}% | Avg latency: {:.1}ms",
+                    m.total_requests,
+                    m.total_errors,
+                    m.error_rate * 100.0,
+                    m.avg_latency_ms,
+                );
+
+                // Per-provider rows (header + data)
+                let mut lines: Vec<Line> = vec![
+                    Line::from(Span::styled(summary, Style::default().fg(Color::Yellow))),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        format!(
+                            "{:<24} {:>8} {:>8} {:>10}",
+                            "Provider", "Reqs", "Errs", "Avg ms"
+                        ),
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    )),
+                ];
+
+                let mut providers: Vec<(&String, &crate::dispatch_client::ProviderMetrics)> =
+                    m.per_provider.iter().collect();
+                providers.sort_by_key(|(k, _)| k.as_str());
+
+                for (name, pm) in providers {
+                    lines.push(Line::from(Span::raw(format!(
+                        "{:<24} {:>8} {:>8} {:>10.1}",
+                        name, pm.requests, pm.errors, pm.avg_latency_ms,
+                    ))));
+                }
+
+                if m.per_provider.is_empty() {
+                    lines.push(Line::from(Span::raw("  (no per-provider data)")));
+                }
+
+                let p = Paragraph::new(lines);
+                frame.render_widget(p, inner);
+            }
         }
     }
 

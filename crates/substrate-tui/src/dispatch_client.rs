@@ -6,6 +6,7 @@
 //! Queries the substrate gateway for health, A2A tasks, and management config.
 //! Wraps `reqwest` with auth token injection and JSON deserialisation.
 
+use std::collections::HashMap;
 use std::time::Duration;
 
 use anyhow::Context;
@@ -66,6 +67,21 @@ impl GatewayClient {
         Ok(tasks)
     }
 
+    // ── Metrics ─────────────────────────────────────────────────────────
+
+    /// GET /metrics — returns aggregate gateway metrics.
+    pub async fn get_metrics(&self) -> anyhow::Result<GatewayMetrics> {
+        let url = format!("{}/metrics", self.base_url);
+        let resp = self.client.get(&url).send().await.context("GET /metrics")?;
+        let status = resp.status();
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            anyhow::bail!("GET /metrics returned {}: {}", status, text);
+        }
+        let metrics: GatewayMetrics = resp.json().await.context("parse metrics")?;
+        Ok(metrics)
+    }
+
     // ── Management config ───────────────────────────────────────────────
 
     /// POST /management/config — list all config entries.
@@ -107,6 +123,25 @@ pub struct A2aTaskSummary {
     pub assignee: Option<String>,
     #[serde(default)]
     pub metadata: Option<serde_json::Value>,
+}
+
+/// Per-provider metrics returned by GET /metrics.
+#[derive(Debug, Clone, Deserialize)]
+pub struct ProviderMetrics {
+    pub requests: u64,
+    pub errors: u64,
+    pub avg_latency_ms: f64,
+}
+
+/// Aggregate metrics returned by GET /metrics.
+#[derive(Debug, Clone, Deserialize)]
+pub struct GatewayMetrics {
+    pub total_requests: u64,
+    pub total_errors: u64,
+    pub error_rate: f64,
+    pub avg_latency_ms: f64,
+    #[serde(default)]
+    pub per_provider: HashMap<String, ProviderMetrics>,
 }
 
 /// Config entry from the gateway.
