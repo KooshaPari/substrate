@@ -1,3 +1,6 @@
+// Scaffolding WIP: several Member methods and proccompose fields are defined
+// but not yet surfaced in the current render path.
+#![allow(dead_code, unused_imports)]
 //! Proc-compose composition monitoring for the TUI dashboard.
 //!
 //! Reads JSON compose manifests from a configured directory and builds
