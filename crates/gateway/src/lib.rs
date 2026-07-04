@@ -4,6 +4,7 @@
 //! `/a2a/*` mailbox surface, and `/management/config` backed by `store-sqlite`.
 #![forbid(unsafe_code)]
 
+pub mod admin;
 pub mod audit_log;
 pub mod bounded_body;
 pub mod budget;
@@ -29,7 +30,7 @@ pub use upstream::UpstreamClient;
 
 use std::collections::VecDeque;
 use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
@@ -37,7 +38,7 @@ use axum::{
     http::{Request, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
-    routing::{get, post},
+    routing::{get, post, put},
     Json, Router,
 };
 use rate_limit::RateLimitError;
@@ -102,8 +103,13 @@ pub struct AppState {
     mailbox: Arc<SqliteMailboxStore>,
     config: Arc<SqliteConfigStore>,
     auth_token: Option<String>,
+    /// Optional admin token; when set, `/admin/*` routes require `X-Admin-Token` to match.
+    pub admin_token: Option<String>,
     /// Upstream provider configurations (keys resolved from env at request time).
-    providers: Arc<Vec<ProviderConfig>>,
+    /// Wrapped in `RwLock` so `/admin/providers/:id/toggle` can mutate them at runtime.
+    providers: Arc<RwLock<Vec<ProviderConfig>>>,
+    /// Runtime-mutable configuration (rate limits, retry policy).
+    pub runtime_config: Arc<RwLock<admin::RuntimeConfig>>,
     /// In-memory request metrics (shared across all clones via interior `Arc`s).
     pub metrics: MetricsStore,
     /// Per-provider token-bucket rate limiter.
@@ -143,7 +149,9 @@ impl AppState {
             mailbox,
             config,
             auth_token: None,
-            providers: Arc::new(crate::config::builtin_providers()),
+            admin_token: std::env::var("SUBSTRATE_ADMIN_TOKEN").ok(),
+            providers: Arc::new(RwLock::new(crate::config::builtin_providers())),
+            runtime_config: Arc::new(RwLock::new(admin::RuntimeConfig::default())),
             metrics: MetricsStore::new(),
             rate_limiter: RateLimiterStore::new(),
             audit_logger,
@@ -159,10 +167,16 @@ impl AppState {
         self
     }
 
+    /// Attach an optional admin token for `/admin/*` routes.
+    pub fn with_admin_token(mut self, token: Option<String>) -> Self {
+        self.admin_token = token;
+        self
+    }
+
     /// Override the provider list (e.g. from `GatewayConfig.providers`).
     /// If not called, `AppState::new` falls back to `builtin_providers()`.
     pub fn with_providers(mut self, providers: Vec<ProviderConfig>) -> Self {
-        self.providers = Arc::new(providers);
+        self.providers = Arc::new(RwLock::new(providers));
         self
     }
 
@@ -184,7 +198,9 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         mailbox,
         config,
         auth_token: None,
-        providers: Arc::new(crate::config::builtin_providers()),
+        admin_token: None,
+        providers: Arc::new(RwLock::new(crate::config::builtin_providers())),
+        runtime_config: Arc::new(RwLock::new(admin::RuntimeConfig::default())),
         metrics: MetricsStore::new(),
         rate_limiter: RateLimiterStore::new(),
         audit_logger: None,
@@ -212,6 +228,25 @@ pub fn build_router(state: AppState) -> Router {
         .route("/a2a/tasks", get(a2a_tasks_handler))
         .layer(middleware::from_fn_with_state(state.clone(), require_auth));
 
+    let admin_routes = Router::new()
+        .route(
+            "/admin/providers/{id}/toggle",
+            post(admin::toggle_provider_handler),
+        )
+        .route("/admin/config", put(admin::update_config_handler))
+        .route(
+            "/admin/budget/reset/{session_id}",
+            post(admin::budget_reset_handler),
+        )
+        .route(
+            "/admin/metrics/reset",
+            post(admin::admin_metrics_reset_handler),
+        )
+        .layer(middleware::from_fn_with_state(
+            state.clone(),
+            admin::require_admin_token,
+        ));
+
     Router::new()
         .route("/healthz", get(healthz_handler))
         .route("/health", get(health_handler))
@@ -222,6 +257,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/budget/{session_id}", get(budget_handler))
         .route("/logs", get(logs_handler))
         .merge(protected)
+        .merge(admin_routes)
         .with_state(state)
 }
 
@@ -312,11 +348,11 @@ pub struct ProvidersHealthResponse {
 
 /// `GET /health` — structured liveness + provider summary.
 async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
-    let total = state.providers.len();
-    let enabled = state
-        .providers
+    let providers_snap = state.providers.read().expect("providers lock poisoned");
+    let total = providers_snap.len();
+    let enabled = providers_snap
         .iter()
-        .filter(|p| p.resolve_api_key().is_some())
+        .filter(|p| p.enabled && p.resolve_api_key().is_some())
         .count();
 
     let uptime_seconds = std::time::SystemTime::now()
@@ -335,12 +371,12 @@ async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
 
 /// `GET /health/providers` — per-provider name + enabled status.
 async fn health_providers_handler(State(state): State<AppState>) -> impl IntoResponse {
-    let providers = state
-        .providers
+    let providers_snap = state.providers.read().expect("providers lock poisoned");
+    let providers = providers_snap
         .iter()
         .map(|p| ProviderStatus {
             name: p.name.clone(),
-            enabled: p.resolve_api_key().is_some(),
+            enabled: p.enabled && p.resolve_api_key().is_some(),
         })
         .collect();
     Json(ProvidersHealthResponse { providers })
@@ -426,9 +462,17 @@ async fn chat_completions_handler(
         .as_millis() as u64;
     let req_model = body.model.clone();
     let req_provider = req_model.split('/').next().unwrap_or("unknown").to_string();
+    let providers_snap: Vec<ProviderConfig> = state
+        .providers
+        .read()
+        .expect("providers lock poisoned")
+        .iter()
+        .filter(|p| p.enabled)
+        .cloned()
+        .collect();
 
     if body.stream {
-        let stream = complete_chat_stream(state.routing.as_ref(), &body, &state.providers)
+        let stream = complete_chat_stream(state.routing.as_ref(), &body, &providers_snap)
             .await
             .map_err(|e| {
                 let latency_ms = t0.elapsed().as_millis() as u64;
@@ -485,7 +529,7 @@ async fn chat_completions_handler(
         );
         Ok(StreamingResponseBuilder::sse_stream(stream))
     } else {
-        let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
+        let response = complete_chat(state.routing.as_ref(), &body, &providers_snap)
             .await
             .map_err(|e| {
                 let latency_ms = t0.elapsed().as_millis() as u64;

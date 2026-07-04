@@ -183,6 +183,15 @@ pub fn get_session(store: &BudgetStore, session_id: &str) -> Option<SessionBudge
     map.get(session_id).map(SessionBudgetSnapshot::from)
 }
 
+/// Remove all budget state for `session_id`.
+///
+/// Returns `true` if an entry existed and was removed, `false` if the session
+/// was not found (idempotent: the session is in the "no budget" state either way).
+pub fn reset_session(store: &BudgetStore, session_id: &str) -> bool {
+    let mut map = store.inner.lock().expect("budget lock poisoned");
+    map.remove(session_id).is_some()
+}
+
 // ---------------------------------------------------------------------------
 // Cost estimation
 // ---------------------------------------------------------------------------

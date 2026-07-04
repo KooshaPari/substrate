@@ -32,6 +32,10 @@ pub struct ProviderConfig {
     ///
     /// Equivalent to the `substrate.toml` `[[providers]] fallbacks = [...]` field.
     pub fallbacks: Vec<String>,
+    /// Whether this provider is currently enabled for traffic.
+    ///
+    /// Defaults to `true`.  Toggle via `POST /admin/providers/:id/toggle`.
+    pub enabled: bool,
 }
 
 impl ProviderConfig {
@@ -48,6 +52,7 @@ impl ProviderConfig {
             auth_scheme: AuthScheme::Bearer,
             default_model: None,
             fallbacks: Vec::new(),
+            enabled: true,
         }
     }
 
