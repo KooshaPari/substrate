@@ -159,6 +159,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/health", get(health_handler))
         .route("/health/providers", get(health_providers_handler))
         .route("/metrics", get(metrics_handler))
+        .route("/metrics/prometheus", get(metrics_prometheus_handler))
         .route("/metrics/reset", post(metrics_reset_handler))
         .merge(protected)
         .with_state(state)
@@ -435,6 +436,17 @@ async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
     let mut snap = state.metrics.snapshot();
     snap.rate_limit_hits = state.rate_limiter.hits_snapshot();
     Json(snap)
+}
+
+/// `GET /metrics/prometheus` — Prometheus text exposition format (version 0.0.4).
+async fn metrics_prometheus_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let rate_limit_hits = state.rate_limiter.hits_snapshot();
+    let body = state.metrics.prometheus_text(&rate_limit_hits);
+    axum::response::Response::builder()
+        .status(StatusCode::OK)
+        .header("Content-Type", "text/plain; version=0.0.4; charset=utf-8")
+        .body(axum::body::Body::from(body))
+        .expect("static prometheus response construction must succeed")
 }
 
 /// `POST /metrics/reset` — zero all counters and return empty snapshot.

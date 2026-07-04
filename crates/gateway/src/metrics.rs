@@ -153,6 +153,84 @@ pub struct MetricsSnapshot {
 }
 
 // ---------------------------------------------------------------------------
+// Prometheus text format rendering
+// ---------------------------------------------------------------------------
+
+/// Escape a Prometheus label value per the exposition format spec:
+/// backslash → `\\`, double-quote → `\"`, newline → `\n`.
+fn escape_label_value(v: &str) -> String {
+    let mut out = String::with_capacity(v.len());
+    for ch in v.chars() {
+        match ch {
+            '\\' => out.push_str(r"\\"),
+            '"' => out.push_str("\\\""),
+            '\n' => out.push_str(r"\n"),
+            c => out.push(c),
+        }
+    }
+    out
+}
+
+impl MetricsStore {
+    /// Render metrics in Prometheus text exposition format (version 0.0.4).
+    ///
+    /// `rate_limit_hits` should come from `RateLimiterStore::hits_snapshot()`.
+    pub fn prometheus_text(&self, rate_limit_hits: &HashMap<String, u64>) -> String {
+        let map = self
+            .per_provider
+            .lock()
+            .expect("per_provider lock poisoned");
+
+        let mut out = String::new();
+
+        // substrate_requests_total
+        out.push_str("# HELP substrate_requests_total Total requests handled\n");
+        out.push_str("# TYPE substrate_requests_total counter\n");
+        for (provider, pm) in map.iter() {
+            let lv = escape_label_value(provider);
+            out.push_str(&format!(
+                "substrate_requests_total{{provider=\"{lv}\"}} {}\n",
+                pm.request_count
+            ));
+        }
+
+        // substrate_errors_total
+        out.push_str("# HELP substrate_errors_total Total error responses\n");
+        out.push_str("# TYPE substrate_errors_total counter\n");
+        for (provider, pm) in map.iter() {
+            let lv = escape_label_value(provider);
+            out.push_str(&format!(
+                "substrate_errors_total{{provider=\"{lv}\"}} {}\n",
+                pm.error_count
+            ));
+        }
+
+        // substrate_latency_ms (cumulative — gauge semantics for total)
+        out.push_str("# HELP substrate_latency_ms Cumulative latency in milliseconds\n");
+        out.push_str("# TYPE substrate_latency_ms gauge\n");
+        for (provider, pm) in map.iter() {
+            let lv = escape_label_value(provider);
+            out.push_str(&format!(
+                "substrate_latency_ms{{provider=\"{lv}\"}} {}\n",
+                pm.total_latency_ms
+            ));
+        }
+
+        // substrate_rate_limit_hits
+        out.push_str("# HELP substrate_rate_limit_hits HTTP 429 rate-limit hits per provider\n");
+        out.push_str("# TYPE substrate_rate_limit_hits counter\n");
+        for (provider, hits) in rate_limit_hits.iter() {
+            let lv = escape_label_value(provider);
+            out.push_str(&format!(
+                "substrate_rate_limit_hits{{provider=\"{lv}\"}} {hits}\n"
+            ));
+        }
+
+        out
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Unit tests
 // ---------------------------------------------------------------------------
 
@@ -230,5 +308,65 @@ mod tests {
         assert_eq!(snap.total_requests, 0);
         assert_eq!(snap.total_errors, 0);
         assert!(snap.per_provider.is_empty());
+    }
+
+    // -----------------------------------------------------------------------
+    // Prometheus text format tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn prometheus_text_contains_required_help_and_type_headers() {
+        let store = MetricsStore::new();
+        store.record("openai", 100, false);
+        let text = store.prometheus_text(&HashMap::new());
+        assert!(text.contains("# HELP substrate_requests_total"));
+        assert!(text.contains("# TYPE substrate_requests_total counter"));
+        assert!(text.contains("# HELP substrate_errors_total"));
+        assert!(text.contains("# TYPE substrate_errors_total counter"));
+        assert!(text.contains("# HELP substrate_latency_ms"));
+        assert!(text.contains("# TYPE substrate_latency_ms gauge"));
+        assert!(text.contains("# HELP substrate_rate_limit_hits"));
+        assert!(text.contains("# TYPE substrate_rate_limit_hits counter"));
+    }
+
+    #[test]
+    fn prometheus_text_counter_values_are_correct() {
+        let store = MetricsStore::new();
+        store.record("openai", 500, false);
+        store.record("openai", 300, false);
+        store.record("openai", 200, true);
+        let text = store.prometheus_text(&HashMap::new());
+        assert!(text.contains("substrate_requests_total{provider=\"openai\"} 3"));
+        assert!(text.contains("substrate_errors_total{provider=\"openai\"} 1"));
+        assert!(text.contains("substrate_latency_ms{provider=\"openai\"} 1000"));
+    }
+
+    #[test]
+    fn prometheus_text_rate_limit_hits_gauge() {
+        let store = MetricsStore::new();
+        store.record("anthropic", 100, false);
+        let mut hits = HashMap::new();
+        hits.insert("anthropic".to_string(), 7u64);
+        let text = store.prometheus_text(&hits);
+        assert!(text.contains("substrate_rate_limit_hits{provider=\"anthropic\"} 7"));
+    }
+
+    #[test]
+    fn prometheus_text_label_escaping_special_chars() {
+        // provider name with backslash, double-quote, newline
+        let store = MetricsStore::new();
+        store.record("my\\provider\"name\nnewline", 50, false);
+        let text = store.prometheus_text(&HashMap::new());
+        // backslash escaped as \\, quote as \", newline as \n
+        assert!(text.contains(r#"provider="my\\provider\"name\nnewline""#));
+    }
+
+    #[test]
+    fn prometheus_text_empty_store_has_no_label_lines() {
+        let store = MetricsStore::new();
+        let text = store.prometheus_text(&HashMap::new());
+        // headers present but no actual metric lines with labels
+        assert!(!text.contains("provider="));
+        assert!(text.contains("# HELP substrate_requests_total"));
     }
 }
