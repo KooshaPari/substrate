@@ -354,7 +354,10 @@ mod tests {
         let _env = LockEnv::new();
         let _first = ServeLock::try_acquire("svc-b", "u1").unwrap().unwrap();
         let second = ServeLock::try_acquire("svc-b", "u2").unwrap();
-        assert!(second.is_none(), "second acquire must fail while first held");
+        assert!(
+            second.is_none(),
+            "second acquire must fail while first held"
+        );
     }
 
     #[test]
