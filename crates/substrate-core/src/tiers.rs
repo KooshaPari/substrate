@@ -43,6 +43,15 @@ impl Tier {
         }
     }
 
+    /// Return the next lower tier for budget-aware retry routing.
+    pub fn downgrade(self) -> Option<Tier> {
+        match self {
+            Tier::Heavy => Some(Tier::Main),
+            Tier::Main => Some(Tier::Worker),
+            Tier::Worker => None,
+        }
+    }
+
     /// Return the model/effort pair for this tier.
     pub fn spec(self) -> TierSpec {
         match self {
