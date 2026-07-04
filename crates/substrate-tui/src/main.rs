@@ -52,9 +52,10 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyho
     let config = TuiConfig::from_args();
     let mut app = App::new(config);
 
-    // Kick off an initial status refresh and metrics fetch.
+    // Kick off an initial status refresh, metrics fetch, and log fetch.
     app.refresh_service_statuses().await;
     app.refresh_metrics().await;
+    app.refresh_logs().await;
 
     let mut last_refresh = Instant::now();
 
@@ -92,6 +93,14 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyho
                     // Toggle metrics panel
                     (KeyCode::Char('m'), _) | (KeyCode::Char('M'), _) => app.toggle_metrics(),
 
+                    // Toggle request log panel
+                    (KeyCode::Char('l'), _) | (KeyCode::Char('L'), _) => {
+                        app.toggle_logs();
+                        if app.show_logs {
+                            app.refresh_logs().await;
+                        }
+                    }
+
                     // Toggle help
                     (KeyCode::Char('?'), _) | (KeyCode::Char('h'), _) => app.toggle_help(),
 
@@ -107,6 +116,7 @@ async fn run_app(terminal: &mut Terminal<CrosstermBackend<io::Stdout>>) -> anyho
         if last_refresh.elapsed() >= POLL_INTERVAL {
             app.refresh_service_statuses().await;
             app.refresh_metrics().await;
+            app.refresh_logs().await;
             last_refresh = Instant::now();
         }
     }

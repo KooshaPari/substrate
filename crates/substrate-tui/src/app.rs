@@ -11,7 +11,10 @@ use ratatui::{
 };
 
 use crate::config::TuiConfig;
-use crate::dispatch_client::{GatewayClient, GatewayMetrics, ServiceStatus};
+use crate::dispatch_client::{
+    format_log_timestamp, log_entry_color, truncate_str, GatewayClient, GatewayMetrics, LogEntry,
+    ServiceStatus,
+};
 use crate::help::draw_help;
 use crate::proccompose::{load_compositions, Composition};
 use crate::statusbar::draw_statusbar;
@@ -43,6 +46,10 @@ pub struct App {
     pub show_metrics: bool,
     /// Most-recently fetched gateway metrics.
     pub metrics: Option<GatewayMetrics>,
+    /// Whether the request log panel is shown.
+    pub show_logs: bool,
+    /// Most-recently fetched audit log entries (up to 100).
+    pub logs: Vec<LogEntry>,
     /// Ratatui table state for selection highlight.
     pub table_state: TableState,
 }
@@ -69,6 +76,8 @@ impl App {
             show_help: false,
             show_metrics: false,
             metrics: None,
+            show_logs: false,
+            logs: Vec::new(),
             table_state,
         }
     }
@@ -104,6 +113,21 @@ impl App {
     /// Toggle the metrics panel visibility.
     pub fn toggle_metrics(&mut self) {
         self.show_metrics = !self.show_metrics;
+    }
+
+    /// Toggle the request log panel visibility.
+    pub fn toggle_logs(&mut self) {
+        self.show_logs = !self.show_logs;
+    }
+
+    /// Fetch the latest log entries from the gateway and store them.
+    ///
+    /// On failure the existing `logs` value is left unchanged.
+    pub async fn refresh_logs(&mut self) {
+        let client = GatewayClient::new(self.config.gateway_url.clone(), None);
+        if let Ok(entries) = client.refresh_logs().await {
+            self.logs = entries;
+        }
     }
 
     /// Number of running dispatch lanes across all compositions.
@@ -168,16 +192,13 @@ impl App {
     pub fn render(&mut self, frame: &mut Frame) {
         let area = frame.area();
 
-        // Build vertical layout: compositions table, optional metrics panel, status bar.
-        let constraints: Vec<Constraint> = if self.show_metrics {
-            vec![
-                Constraint::Min(0),
-                Constraint::Length(10),
-                Constraint::Length(1),
-            ]
-        } else {
-            vec![Constraint::Min(0), Constraint::Length(1)]
-        };
+        // Build vertical layout: compositions table, optional metrics/logs panels, status bar.
+        let extra_panels = usize::from(self.show_metrics) + usize::from(self.show_logs);
+        let mut constraints: Vec<Constraint> = vec![Constraint::Min(0)];
+        for _ in 0..extra_panels {
+            constraints.push(Constraint::Length(10));
+        }
+        constraints.push(Constraint::Length(1));
 
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -186,12 +207,16 @@ impl App {
 
         self.render_service_table(frame, chunks[0]);
 
+        let mut panel_idx = 1usize;
         if self.show_metrics {
-            self.render_metrics_panel(frame, chunks[1]);
-            draw_statusbar(frame, chunks[2], self);
-        } else {
-            draw_statusbar(frame, chunks[1], self);
+            self.render_metrics_panel(frame, chunks[panel_idx]);
+            panel_idx += 1;
         }
+        if self.show_logs {
+            self.render_logs_panel(frame, chunks[panel_idx]);
+            panel_idx += 1;
+        }
+        draw_statusbar(frame, chunks[panel_idx], self);
 
         if self.show_help {
             let help_area = centered_rect(60, 70, area);
@@ -259,6 +284,53 @@ impl App {
                 frame.render_widget(p, inner);
             }
         }
+    }
+
+    /// Render the last 20 request log entries as a color-coded list.
+    ///
+    /// Each row shows: `[HH:MM:SS] provider/model  status  latency_ms ms`
+    /// Color coding: green=2xx, yellow=429, red=5xx.
+    fn render_logs_panel(&self, frame: &mut Frame, area: Rect) {
+        use ratatui::text::Line;
+        use ratatui::widgets::{List, ListItem};
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Request Log (l to hide) ");
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        if self.logs.is_empty() {
+            use ratatui::widgets::Paragraph;
+            let p = Paragraph::new("No requests recorded yet.");
+            frame.render_widget(p, inner);
+            return;
+        }
+
+        // Show the last 20 entries, most-recent first.
+        let items: Vec<ListItem> = self
+            .logs
+            .iter()
+            .rev()
+            .take(20)
+            .map(|entry| {
+                let ts = format_log_timestamp(&entry.timestamp);
+                let model = truncate_str(&entry.model, 24);
+                let color = log_entry_color(entry.status_code);
+                let line = Line::from(ratatui::text::Span::styled(
+                    format!(
+                        "[{ts}] {model:<24}  {:>3}  {:>6}ms",
+                        entry.status_code, entry.latency_ms
+                    ),
+                    ratatui::style::Style::default().fg(color),
+                ));
+                ListItem::new(line)
+            })
+            .collect();
+
+        let list = List::new(items);
+        frame.render_widget(list, inner);
     }
 
     fn render_service_table(&mut self, frame: &mut Frame, area: Rect) {
