@@ -19,6 +19,7 @@ pub mod rate_limit;
 pub mod retry;
 pub mod streaming;
 pub mod upstream;
+pub mod request_rate;
 
 pub use audit_log::{AuditEntry, AuditLogger};
 pub use bounded_body::BoundedBodyConfig;
