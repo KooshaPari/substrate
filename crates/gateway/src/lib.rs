@@ -6,6 +6,7 @@
 
 pub mod admin;
 pub mod audit_log;
+pub mod banner;
 pub mod bounded_body;
 pub mod budget;
 pub mod circuit_breaker;
