@@ -14,6 +14,12 @@ pub fn print_banner(port: u16) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn escape_codes_defined() { assert!(CYAN.starts_with("\x1b")); }
-    #[test] fn dim_defined() { assert!(DIM.starts_with("\x1b")); }
+    #[test]
+    fn escape_codes_defined() {
+        assert!(CYAN.starts_with("\x1b"));
+    }
+    #[test]
+    fn dim_defined() {
+        assert!(DIM.starts_with("\x1b"));
+    }
 }
