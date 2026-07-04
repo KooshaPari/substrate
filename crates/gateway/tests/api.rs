@@ -273,3 +273,95 @@ async fn a2a_tasks_list_requires_team() {
 
     assert_eq!(resp.status(), StatusCode::BAD_REQUEST);
 }
+
+// ---------------------------------------------------------------------------
+// Structured health endpoint tests
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn health_returns_200_with_required_fields() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/health")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let json = body_json(resp).await;
+    assert_eq!(json["status"], "ok");
+    assert!(json["version"].as_str().is_some(), "version field missing");
+    assert!(
+        json["uptime_seconds"].as_u64().is_some(),
+        "uptime_seconds must be a non-negative integer"
+    );
+    assert!(json["timestamp"].as_str().is_some(), "timestamp field missing");
+    let providers = &json["providers"];
+    assert!(
+        providers["total"].as_u64().is_some(),
+        "providers.total must be present"
+    );
+    assert!(
+        providers["enabled"].as_u64().is_some(),
+        "providers.enabled must be present"
+    );
+    assert!(
+        providers["enabled"].as_u64().unwrap() <= providers["total"].as_u64().unwrap(),
+        "enabled must not exceed total"
+    );
+}
+
+#[tokio::test]
+async fn health_providers_returns_list() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/health/providers")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let json = body_json(resp).await;
+    let providers = json["providers"].as_array().expect("providers array");
+    // builtin_providers() ships 3 entries
+    assert_eq!(providers.len(), 3, "expected 3 builtin providers");
+    for p in providers {
+        assert!(p["name"].as_str().is_some(), "each provider must have a name");
+        assert!(p["enabled"].as_bool().is_some(), "each provider must have enabled bool");
+    }
+}
+
+#[tokio::test]
+async fn health_providers_enabled_field_is_boolean() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/health/providers")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(resp.status(), StatusCode::OK);
+    let json = body_json(resp).await;
+    let providers = json["providers"].as_array().unwrap();
+    for p in providers {
+        assert!(p["enabled"].is_boolean(), "enabled must be a boolean");
+    }
+}

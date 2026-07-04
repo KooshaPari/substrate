@@ -122,6 +122,8 @@ pub fn build_router(state: AppState) -> Router {
 
     Router::new()
         .route("/healthz", get(healthz_handler))
+        .route("/health", get(health_handler))
+        .route("/health/providers", get(health_providers_handler))
         .merge(protected)
         .with_state(state)
 }
@@ -166,6 +168,90 @@ async fn require_auth(
 async fn healthz_handler() -> impl IntoResponse {
     Json(serde_json::json!({ "status": "ok" }))
 }
+
+// ---------------------------------------------------------------------------
+// Structured health response types
+// ---------------------------------------------------------------------------
+
+/// Counts of configured upstream providers.
+#[derive(Debug, Serialize)]
+pub struct ProviderCounts {
+    /// Total number of configured providers.
+    pub total: usize,
+    /// Providers whose API-key env var is present and non-empty.
+    pub enabled: usize,
+}
+
+/// Response body for `GET /health`.
+#[derive(Debug, Serialize)]
+pub struct HealthResponse {
+    pub status: &'static str,
+    /// Crate version from `Cargo.toml`.
+    pub version: &'static str,
+    /// Seconds the process has been running (`std::time::SystemTime`-based).
+    pub uptime_seconds: u64,
+    pub providers: ProviderCounts,
+    /// RFC 3339 timestamp of when this response was generated.
+    pub timestamp: String,
+}
+
+/// One entry in `GET /health/providers`.
+#[derive(Debug, Serialize)]
+pub struct ProviderStatus {
+    pub name: String,
+    /// `true` when the API-key env var is set and non-empty.
+    pub enabled: bool,
+}
+
+/// Response body for `GET /health/providers`.
+#[derive(Debug, Serialize)]
+pub struct ProvidersHealthResponse {
+    pub providers: Vec<ProviderStatus>,
+}
+
+// ---------------------------------------------------------------------------
+// Health handlers
+// ---------------------------------------------------------------------------
+
+/// `GET /health` — structured liveness + provider summary.
+async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let total = state.providers.len();
+    let enabled = state
+        .providers
+        .iter()
+        .filter(|p| p.resolve_api_key().is_some())
+        .count();
+
+    let uptime_seconds = std::time::SystemTime::now()
+        .duration_since(*PROCESS_START)
+        .unwrap_or_default()
+        .as_secs();
+
+    Json(HealthResponse {
+        status: "ok",
+        version: env!("CARGO_PKG_VERSION"),
+        uptime_seconds,
+        providers: ProviderCounts { total, enabled },
+        timestamp: chrono::Utc::now().to_rfc3339(),
+    })
+}
+
+/// `GET /health/providers` — per-provider name + enabled status.
+async fn health_providers_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let providers = state
+        .providers
+        .iter()
+        .map(|p| ProviderStatus {
+            name: p.name.clone(),
+            enabled: p.resolve_api_key().is_some(),
+        })
+        .collect();
+    Json(ProvidersHealthResponse { providers })
+}
+
+/// Process start time captured once at module load.
+static PROCESS_START: std::sync::LazyLock<std::time::SystemTime> =
+    std::sync::LazyLock::new(std::time::SystemTime::now);
 
 async fn models_handler(
     State(state): State<AppState>,
