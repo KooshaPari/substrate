@@ -9,6 +9,7 @@ mod cast;
 mod commands;
 mod config;
 mod config_watcher;
+mod health_check;
 mod monitoring;
 mod proc_compose;
 mod runtime;
