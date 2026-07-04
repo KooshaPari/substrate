@@ -4,6 +4,7 @@
 //! `/a2a/*` mailbox surface, and `/management/config` backed by `store-sqlite`.
 #![forbid(unsafe_code)]
 
+pub mod audit_log;
 pub mod bounded_body;
 pub mod circuit_breaker;
 mod config;
@@ -14,6 +15,7 @@ pub mod retry;
 pub mod streaming;
 pub mod upstream;
 
+pub use audit_log::{AuditEntry, AuditLogger};
 pub use bounded_body::BoundedBodyConfig;
 pub use circuit_breaker::CircuitBreaker;
 pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
@@ -23,6 +25,7 @@ pub use upstream::UpstreamClient;
 
 use std::path::Path;
 use std::sync::Arc;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
     extract::{Query, State},
@@ -60,6 +63,8 @@ pub struct AppState {
     pub metrics: MetricsStore,
     /// Per-provider token-bucket rate limiter.
     pub rate_limiter: RateLimiterStore,
+    /// Optional structured JSONL audit logger; enabled when `SUBSTRATE_AUDIT_LOG` is set.
+    pub audit_logger: Option<AuditLogger>,
 }
 
 impl AppState {
@@ -77,6 +82,11 @@ impl AppState {
             Arc::new(SqliteConfigStore::open(config_db.to_str().ok_or_else(
                 || anyhow::anyhow!("state path is not valid UTF-8"),
             )?)?);
+        let audit_logger = std::env::var("SUBSTRATE_AUDIT_LOG").ok().and_then(|p| {
+            AuditLogger::new(std::path::Path::new(&p))
+                .map_err(|e| eprintln!("audit log init failed: {e}"))
+                .ok()
+        });
         Ok(Self {
             routing,
             mailbox,
@@ -85,6 +95,7 @@ impl AppState {
             providers: Arc::new(crate::config::builtin_providers()),
             metrics: MetricsStore::new(),
             rate_limiter: RateLimiterStore::new(),
+            audit_logger,
         })
     }
 
@@ -122,6 +133,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         providers: Arc::new(crate::config::builtin_providers()),
         metrics: MetricsStore::new(),
         rate_limiter: RateLimiterStore::new(),
+        audit_logger: None,
     })
 }
 
@@ -323,26 +335,68 @@ async fn chat_completions_handler(
     }
 
     let t0 = std::time::Instant::now();
+    let request_id = uuid::Uuid::new_v4().to_string();
+    let timestamp_ms = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64;
+
     if body.stream {
         let stream = complete_chat_stream(state.routing.as_ref(), &body, &state.providers)
             .await
             .map_err(|e| {
-                state
-                    .metrics
-                    .record("stream", t0.elapsed().as_millis() as u64, true);
+                let latency_ms = t0.elapsed().as_millis() as u64;
+                state.metrics.record("stream", latency_ms, true);
+                if let Some(logger) = &state.audit_logger {
+                    let _ = logger.write(&AuditEntry {
+                        timestamp_ms,
+                        provider: rl_provider.clone(),
+                        model: body.model.clone(),
+                        request_id: request_id.clone(),
+                        status: 400,
+                        latency_ms,
+                        input_tokens: None,
+                        output_tokens: None,
+                        error: Some(e.to_string()),
+                    });
+                }
                 ApiError::bad_request(e)
             })?;
-        state
-            .metrics
-            .record("stream", t0.elapsed().as_millis() as u64, false);
+        let latency_ms = t0.elapsed().as_millis() as u64;
+        state.metrics.record("stream", latency_ms, false);
+        if let Some(logger) = &state.audit_logger {
+            let _ = logger.write(&AuditEntry {
+                timestamp_ms,
+                provider: rl_provider,
+                model: body.model.clone(),
+                request_id,
+                status: 200,
+                latency_ms,
+                input_tokens: None,
+                output_tokens: None,
+                error: None,
+            });
+        }
         Ok(StreamingResponseBuilder::sse_stream(stream))
     } else {
         let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
             .await
             .map_err(|e| {
-                state
-                    .metrics
-                    .record("unknown", t0.elapsed().as_millis() as u64, true);
+                let latency_ms = t0.elapsed().as_millis() as u64;
+                state.metrics.record("unknown", latency_ms, true);
+                if let Some(logger) = &state.audit_logger {
+                    let _ = logger.write(&AuditEntry {
+                        timestamp_ms,
+                        provider: rl_provider.clone(),
+                        model: body.model.clone(),
+                        request_id: request_id.clone(),
+                        status: 400,
+                        latency_ms,
+                        input_tokens: None,
+                        output_tokens: None,
+                        error: Some(e.to_string()),
+                    });
+                }
                 ApiError::bad_request(e)
             })?;
         let provider = response
@@ -351,9 +405,21 @@ async fn chat_completions_handler(
             .next()
             .unwrap_or("unknown")
             .to_string();
-        state
-            .metrics
-            .record(&provider, t0.elapsed().as_millis() as u64, false);
+        let latency_ms = t0.elapsed().as_millis() as u64;
+        state.metrics.record(&provider, latency_ms, false);
+        if let Some(logger) = &state.audit_logger {
+            let _ = logger.write(&AuditEntry {
+                timestamp_ms,
+                provider,
+                model: response.model.clone(),
+                request_id,
+                status: 200,
+                latency_ms,
+                input_tokens: None,
+                output_tokens: None,
+                error: None,
+            });
+        }
         Ok(Json(response).into_response())
     }
 }
