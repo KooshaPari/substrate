@@ -12,6 +12,7 @@ use std::sync::Arc;
 
 use a2a::message::{Message, MessageKind, Part};
 use a2a::task::Task as A2aTask;
+use a2a::task::TaskState;
 use substrate_core::domain::{Mailbox, Task};
 use substrate_core::mailbox_port::{MailboxStore, MailboxTaskState};
 use substrate_core::ports::EnginePort;
@@ -109,10 +110,50 @@ where
         self.store
             .task_create(&task)
             .map_err(|e| SupervisorError::Store(e.to_string()))?;
+        self.store
+            .task_update(
+                task_id,
+                MailboxTaskState::Working,
+                Some("supervisor spawned"),
+            )
+            .map_err(|e| SupervisorError::Store(e.to_string()))?;
 
         self.conv_id = Some(conv_id);
         self.task_id = Some(task_id);
         Ok(())
+    }
+
+    /// Recover the newest active task for this lane from the durable task list.
+    ///
+    /// Tasks created by [`spawn`](Supervisor::spawn) use `spawn:<conv_id>` as
+    /// their title. Recovery scans persisted tasks for this team/agent, selects
+    /// the newest Submitted/Working/InputRequired task, and restores the
+    /// supervisor's in-memory `conv_id` and `task_id`.
+    pub fn recover_active(&mut self) -> Result<bool, SupervisorError> {
+        let tasks = self
+            .store
+            .task_list(&self.config.team_id)
+            .map_err(|e| SupervisorError::Store(e.to_string()))?;
+
+        let Some(task) = tasks
+            .into_iter()
+            .filter(|task| {
+                task.owner == self.config.agent_name
+                    && task.title.starts_with("spawn:")
+                    && matches!(
+                        task.state,
+                        TaskState::Submitted | TaskState::Working | TaskState::InputRequired
+                    )
+            })
+            .max_by_key(|task| task.updated_at)
+        else {
+            return Ok(false);
+        };
+
+        let conv_id = task.title.trim_start_matches("spawn:").to_string();
+        self.conv_id = Some(conv_id);
+        self.task_id = Some(task.id);
+        Ok(true)
     }
 
     /// Claim one unread inbox message, resume the engine, mark consumed.
