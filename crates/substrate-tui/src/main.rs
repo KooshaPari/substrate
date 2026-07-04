@@ -1,6 +1,7 @@
-mod boot;
+
 //! Substrate TUI — terminal UI dashboard for the substrate dispatch surface.
 
+mod boot;
 mod app;
 mod components;
 mod config;

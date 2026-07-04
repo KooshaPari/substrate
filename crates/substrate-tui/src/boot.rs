@@ -18,7 +18,13 @@ pub fn render_boot(f: &mut Frame, s: &BootState) {
     f.render_widget(Paragraph::new("SUBSTRATE").style(Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)).alignment(Alignment::Center), c[0]);
     f.render_widget(Gauge::default().block(Block::default().borders(Borders::NONE)).gauge_style(Style::default().fg(Color::Cyan)).percent(s.phase.progress()), c[1]);
     let phases=[BootPhase::Initializing,BootPhase::ConnectingGateway,BootPhase::LoadingConfig];
-    let items:Vec<ListItem>=phases.iter().map(|p|{ let done=s.done.contains(p); let cur=&s.phase==p; let sp=SPINNER[s.spin as usize]; let (icon,col)=if done{"✓",Color::Green} else if cur {(Box::leak(format!("{sp}").into_boxed_str()) as &str,Color::Yellow)} else {"○",Color::DarkGray}; ListItem::new(Line::from(Span::styled(format!("{icon} {}",p.label()),Style::default().fg(col)))) }).collect();
+    let items:Vec<ListItem>=phases.iter().map(|p|{
+        let done=s.done.contains(p); let cur=&s.phase==p; let sp=SPINNER[s.spin as usize];
+        let (label,col) = if done { (format!("✓ {}", p.label()), Color::Green) }
+            else if cur { (format!("{sp} {}", p.label()), Color::Yellow) }
+            else { (format!("○ {}", p.label()), Color::DarkGray) };
+        ListItem::new(Line::from(Span::styled(label, Style::default().fg(col))))
+    }).collect();
     f.render_widget(List::new(items).block(Block::default().borders(Borders::NONE)), c[2]);
 }
 #[cfg(test)]
