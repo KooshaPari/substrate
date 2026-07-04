@@ -45,7 +45,6 @@ members = [
     "crates/cloud-kilo",
     "crates/cloud-codex",
     "crates/substrate-serve-lock",
-    "crates/forge_daemon",
     "crates/substrate-tui",
 ]
 [workspace.package]
