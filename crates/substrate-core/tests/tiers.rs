@@ -8,6 +8,13 @@ fn tier_escalates_worker_to_main_to_heavy_to_none() {
 }
 
 #[test]
+fn tier_downgrades_heavy_to_main_to_worker_to_none() {
+    assert_eq!(Tier::Heavy.downgrade(), Some(Tier::Main));
+    assert_eq!(Tier::Main.downgrade(), Some(Tier::Worker));
+    assert_eq!(Tier::Worker.downgrade(), None);
+}
+
+#[test]
 fn tier_specs_map_to_model_and_reasoning_effort() {
     let heavy = Tier::Heavy.spec();
     assert_eq!(heavy.model_id, HEAVY_MODEL);
