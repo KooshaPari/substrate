@@ -1,5 +1,5 @@
-mod plugins;
 //! sharecli - Shared CLI process manager
+mod plugins;
 
 use anyhow::Result;
 use clap::{CommandFactory, Parser, Subcommand};
