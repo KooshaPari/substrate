@@ -6,6 +6,7 @@ mod components;
 mod config;
 mod dispatch_client;
 mod help;
+pub mod log_panel;
 mod proccompose;
 mod sparkline;
 mod statusbar;
