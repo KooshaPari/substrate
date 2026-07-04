@@ -25,8 +25,10 @@ store-file = { path = "../store-file" }
 cloud-cursor = { path = "../cloud-cursor" }
 cloud-kilo = { path = "../cloud-kilo" }
 cloud-codex = { path = "../cloud-codex" }
+driver-http = { path = "../driver-http" }
+substrate-serve-lock = { path = "../substrate-serve-lock" }
 clap.workspace = true
-tokio.workspace = true
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time", "signal"] }
 serde_json.workspace = true
 anyhow.workspace = true
 
