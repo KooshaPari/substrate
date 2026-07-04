@@ -10,6 +10,7 @@ mod config;
 pub mod metrics;
 mod openai;
 pub mod rate_limit;
+pub mod retry;
 pub mod streaming;
 pub mod upstream;
 
