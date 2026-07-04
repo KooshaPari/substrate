@@ -17,6 +17,7 @@ pub mod metrics;
 mod openai;
 pub mod rate_limit;
 pub mod retry;
+pub mod router;
 pub mod streaming;
 pub mod upstream;
 pub mod request_rate;
@@ -30,6 +31,7 @@ pub use config_watcher::FileConfig;
 pub use fallback::{try_with_fallback, FallbackChain};
 pub use metrics::MetricsStore;
 pub use rate_limit::{RateLimiterConfig, RateLimiterStore};
+pub use router::{ProviderEntry, ProviderRouter};
 pub use upstream::UpstreamClient;
 
 use std::collections::VecDeque;
