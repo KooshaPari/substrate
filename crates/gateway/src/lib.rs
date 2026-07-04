@@ -9,6 +9,7 @@ pub mod bounded_body;
 pub mod budget;
 pub mod circuit_breaker;
 mod config;
+pub mod config_watcher;
 pub mod fallback;
 pub mod metrics;
 mod openai;
@@ -22,6 +23,7 @@ pub use bounded_body::BoundedBodyConfig;
 pub use budget::{BudgetConfig, BudgetStore};
 pub use circuit_breaker::CircuitBreaker;
 pub use config::{resolve_provider, AuthScheme, GatewayConfig, ProviderConfig};
+pub use config_watcher::FileConfig;
 pub use fallback::{try_with_fallback, FallbackChain};
 pub use metrics::MetricsStore;
 pub use rate_limit::{RateLimiterConfig, RateLimiterStore};
@@ -31,6 +33,8 @@ use std::collections::VecDeque;
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
+
+use tokio::sync::{watch, RwLock as TokioRwLock};
 
 use axum::{
     extract::{Path as AxumPath, Query, State},
@@ -116,6 +120,8 @@ pub struct AppState {
     pub budget_config: Arc<BudgetConfig>,
     /// In-memory ring buffer of the last 100 request audit entries.
     pub log_store: LogStore,
+    /// Live-reloadable config; updated when the TOML config file changes on disk.
+    pub live_config: Arc<TokioRwLock<FileConfig>>,
 }
 
 impl AppState {
@@ -150,7 +156,14 @@ impl AppState {
             budget_store: BudgetStore::new(),
             budget_config: Arc::new(BudgetConfig::from_env()),
             log_store: new_log_store(),
+            live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
         })
+    }
+
+    /// Override the live config (e.g. pre-loaded from a TOML file at startup).
+    pub fn with_live_config(mut self, cfg: FileConfig) -> Self {
+        self.live_config = Arc::new(TokioRwLock::new(cfg));
+        self
     }
 
     /// Attach an optional bearer token for protected routes.
@@ -194,6 +207,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
             max_cost_usd_per_session: None,
         }),
         log_store: new_log_store(),
+        live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
     })
 }
 
@@ -226,10 +240,42 @@ pub fn build_router(state: AppState) -> Router {
 }
 
 /// Bind and serve the gateway using `config`.
+///
+/// If `SUBSTRATE_CONFIG_FILE` env var points to a TOML file, a [`config_watcher::ConfigWatcher`]
+/// is spawned.  Changes to that file update `AppState::live_config` in place without restart.
 pub async fn serve(config: GatewayConfig) -> anyhow::Result<()> {
+    // Load initial FileConfig from disk (if configured); fall back to defaults.
+    let config_file_path = std::env::var("SUBSTRATE_CONFIG_FILE")
+        .ok()
+        .map(std::path::PathBuf::from);
+    let initial_file_cfg = config_file_path
+        .as_ref()
+        .and_then(|p| FileConfig::from_file(p).ok())
+        .unwrap_or_default();
+
     let state = AppState::new(&config.state_dir)?
         .with_auth_token(config.auth_token)
-        .with_providers(config.providers);
+        .with_providers(config.providers)
+        .with_live_config(initial_file_cfg.clone());
+
+    // Spawn the hot-reload task if a config file path is set.
+    if let Some(path) = config_file_path {
+        let live_config = Arc::clone(&state.live_config);
+        let (tx, mut rx) = watch::channel(initial_file_cfg);
+        // Spawn the watcher (runs in the background via its internal thread).
+        let _watcher = config_watcher::ConfigWatcher::new(path, tx)
+            .map_err(|e| anyhow::anyhow!("config watcher init failed: {e}"))?;
+        // Spawn a task that keeps `live_config` in sync when the channel receives.
+        tokio::spawn(async move {
+            // Keep _watcher alive for the duration of the task.
+            let _keep = _watcher;
+            while rx.changed().await.is_ok() {
+                let new_cfg = rx.borrow_and_update().clone();
+                *live_config.write().await = new_cfg;
+            }
+        });
+    }
+
     let router = build_router(state);
     let listener = tokio::net::TcpListener::bind(config.bind).await?;
     axum::serve(listener, router).await?;
