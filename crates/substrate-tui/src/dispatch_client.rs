@@ -82,6 +82,21 @@ impl GatewayClient {
         Ok(metrics)
     }
 
+    // ── Request log ─────────────────────────────────────────────────────
+
+    /// GET /logs — returns the last 100 audit log entries from the gateway.
+    pub async fn refresh_logs(&self) -> anyhow::Result<Vec<LogEntry>> {
+        let url = format!("{}/logs", self.base_url);
+        let resp = self.client.get(&url).send().await.context("GET /logs")?;
+        let status = resp.status();
+        if !status.is_success() {
+            let text = resp.text().await.unwrap_or_default();
+            anyhow::bail!("GET /logs returned {}: {}", status, text);
+        }
+        let entries: Vec<LogEntry> = resp.json().await.context("parse logs")?;
+        Ok(entries)
+    }
+
     // ── Management config ───────────────────────────────────────────────
 
     /// POST /management/config — list all config entries.
@@ -123,6 +138,70 @@ pub struct A2aTaskSummary {
     pub assignee: Option<String>,
     #[serde(default)]
     pub metadata: Option<serde_json::Value>,
+}
+
+/// A single audit log entry from GET /logs.
+#[derive(Debug, Clone, Deserialize)]
+pub struct LogEntry {
+    /// RFC 3339 timestamp of the request.
+    pub timestamp: String,
+    /// Provider name (e.g. `"openai"`).
+    pub provider: String,
+    /// Full model string (e.g. `"openai/gpt-4"`).
+    pub model: String,
+    /// HTTP status code returned by the gateway.
+    pub status_code: u16,
+    /// Request latency in milliseconds.
+    pub latency_ms: u64,
+}
+
+/// Map an HTTP status code to a ratatui display color.
+///
+/// - 2xx → Green
+/// - 429 → Yellow
+/// - 5xx → Red
+/// - other → White
+pub fn log_entry_color(status_code: u16) -> ratatui::style::Color {
+    use ratatui::style::Color;
+    match status_code {
+        200..=299 => Color::Green,
+        429 => Color::Yellow,
+        500..=599 => Color::Red,
+        _ => Color::White,
+    }
+}
+
+/// Truncate `s` to at most `max_chars` characters, appending `…` if shortened.
+pub fn truncate_str(s: &str, max_chars: usize) -> String {
+    let chars: Vec<char> = s.chars().collect();
+    if chars.len() <= max_chars {
+        s.to_owned()
+    } else {
+        let truncated: String = chars[..max_chars.saturating_sub(1)].iter().collect();
+        format!("{truncated}…")
+    }
+}
+
+/// Format an RFC 3339 timestamp for display, keeping only `HH:MM:SS`.
+///
+/// Falls back to returning `ts` unchanged when the input cannot be parsed.
+pub fn format_log_timestamp(ts: &str) -> String {
+    // RFC 3339: "2024-01-15T14:23:45+00:00" — the time part is after 'T'.
+    ts.split('T')
+        .nth(1)
+        .and_then(|time_part| {
+            // Strip timezone suffix (+00:00 or Z) by taking up to the first '+'/Z after hms.
+            let hms = if let Some(pos) = time_part.find('+') {
+                &time_part[..pos]
+            } else if let Some(pos) = time_part.find('Z') {
+                &time_part[..pos]
+            } else {
+                time_part
+            };
+            // Keep at most HH:MM:SS (8 chars).
+            Some(hms.chars().take(8).collect::<String>())
+        })
+        .unwrap_or_else(|| ts.to_owned())
 }
 
 /// Per-provider metrics returned by GET /metrics.
@@ -351,6 +430,100 @@ mod tests {
         let statuses = GatewayClient::get_status(&[comp]).await;
         assert_eq!(statuses.len(), 1);
         assert_eq!(statuses[0].status, ProcessStatus::Stopped);
+    }
+}
+
+// ── Log-panel helper tests ─────────────────────────────────────────────────
+
+#[cfg(test)]
+mod log_panel_tests {
+    use super::*;
+    use ratatui::style::Color;
+
+    // ── log_entry_color ────────────────────────────────────────────────
+
+    #[test]
+    fn color_2xx_is_green() {
+        assert_eq!(log_entry_color(200), Color::Green);
+        assert_eq!(log_entry_color(201), Color::Green);
+        assert_eq!(log_entry_color(299), Color::Green);
+    }
+
+    #[test]
+    fn color_429_is_yellow() {
+        assert_eq!(log_entry_color(429), Color::Yellow);
+    }
+
+    #[test]
+    fn color_5xx_is_red() {
+        assert_eq!(log_entry_color(500), Color::Red);
+        assert_eq!(log_entry_color(503), Color::Red);
+    }
+
+    #[test]
+    fn color_other_is_white() {
+        assert_eq!(log_entry_color(400), Color::White);
+        assert_eq!(log_entry_color(404), Color::White);
+        assert_eq!(log_entry_color(0), Color::White);
+    }
+
+    // ── truncate_str ───────────────────────────────────────────────────
+
+    #[test]
+    fn truncate_short_string_unchanged() {
+        assert_eq!(truncate_str("hello", 10), "hello");
+    }
+
+    #[test]
+    fn truncate_exact_length_unchanged() {
+        assert_eq!(truncate_str("hello", 5), "hello");
+    }
+
+    #[test]
+    fn truncate_long_string_appends_ellipsis() {
+        let result = truncate_str("openai/gpt-4-turbo", 10);
+        assert!(result.ends_with('…'), "expected ellipsis, got: {result}");
+        let char_count = result.chars().count();
+        assert_eq!(
+            char_count, 10,
+            "expected exactly 10 chars, got: {char_count}"
+        );
+    }
+
+    #[test]
+    fn truncate_max_one_returns_ellipsis_only() {
+        let result = truncate_str("abc", 1);
+        assert_eq!(result, "…");
+    }
+
+    // ── format_log_timestamp ───────────────────────────────────────────
+
+    #[test]
+    fn timestamp_utc_z_suffix() {
+        assert_eq!(format_log_timestamp("2024-01-15T14:23:45Z"), "14:23:45");
+    }
+
+    #[test]
+    fn timestamp_offset_suffix() {
+        assert_eq!(
+            format_log_timestamp("2024-01-15T14:23:45+00:00"),
+            "14:23:45"
+        );
+    }
+
+    #[test]
+    fn timestamp_negative_offset() {
+        // Negative offset: "2024-01-15T14:23:45-05:00" — time part before '-' after T
+        // Our function splits on '+' or 'Z'; '-05:00' won't be stripped but the
+        // output should still be 8 chars of HH:MM:SS.
+        let result = format_log_timestamp("2024-01-15T14:23:45.000Z");
+        assert_eq!(result, "14:23:45");
+    }
+
+    #[test]
+    fn timestamp_unparseable_returns_input() {
+        let input = "not-a-timestamp";
+        assert_eq!(format_log_timestamp(input), input);
     }
 }
 

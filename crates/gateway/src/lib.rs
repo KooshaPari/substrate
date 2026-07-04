@@ -27,8 +27,9 @@ pub use metrics::MetricsStore;
 pub use rate_limit::{RateLimiterConfig, RateLimiterStore};
 pub use upstream::UpstreamClient;
 
+use std::collections::VecDeque;
 use std::path::Path;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use axum::{
@@ -49,6 +50,46 @@ use substrate_core::ports::RoutingPort;
 
 use openai::{complete_chat, complete_chat_stream, models_from_decision, ChatCompletionRequest};
 use streaming::StreamingResponseBuilder;
+
+// ---------------------------------------------------------------------------
+// Audit log store
+// ---------------------------------------------------------------------------
+
+/// Maximum number of entries retained in the in-memory log ring buffer.
+const LOG_RING_CAPACITY: usize = 100;
+
+/// A single audit log entry recording one chat completion request.
+#[derive(Debug, Clone, Serialize)]
+pub struct LogEntry {
+    /// RFC 3339 timestamp of the request.
+    pub timestamp: String,
+    /// Provider name derived from the model field (e.g. `"openai"`).
+    pub provider: String,
+    /// Full model string as sent by the client (e.g. `"openai/gpt-4"`).
+    pub model: String,
+    /// HTTP status code returned to the client.
+    pub status_code: u16,
+    /// Request round-trip latency in milliseconds.
+    pub latency_ms: u64,
+}
+
+/// Thread-safe ring buffer holding the last [`LOG_RING_CAPACITY`] log entries.
+pub type LogStore = Arc<Mutex<VecDeque<LogEntry>>>;
+
+/// Create an empty [`LogStore`].
+pub fn new_log_store() -> LogStore {
+    Arc::new(Mutex::new(VecDeque::with_capacity(LOG_RING_CAPACITY)))
+}
+
+/// Append `entry` to the store, evicting the oldest entry when full.
+fn push_log(store: &LogStore, entry: LogEntry) {
+    if let Ok(mut ring) = store.lock() {
+        if ring.len() == LOG_RING_CAPACITY {
+            ring.pop_front();
+        }
+        ring.push_back(entry);
+    }
+}
 
 // ---------------------------------------------------------------------------
 // App state
@@ -73,6 +114,8 @@ pub struct AppState {
     pub budget_store: BudgetStore,
     /// Budget limits from environment variables.
     pub budget_config: Arc<BudgetConfig>,
+    /// In-memory ring buffer of the last 100 request audit entries.
+    pub log_store: LogStore,
 }
 
 impl AppState {
@@ -106,6 +149,7 @@ impl AppState {
             audit_logger,
             budget_store: BudgetStore::new(),
             budget_config: Arc::new(BudgetConfig::from_env()),
+            log_store: new_log_store(),
         })
     }
 
@@ -149,6 +193,7 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
             max_tokens_per_session: None,
             max_cost_usd_per_session: None,
         }),
+        log_store: new_log_store(),
     })
 }
 
@@ -175,6 +220,7 @@ pub fn build_router(state: AppState) -> Router {
         .route("/metrics/prometheus", get(metrics_prometheus_handler))
         .route("/metrics/reset", post(metrics_reset_handler))
         .route("/budget/{session_id}", get(budget_handler))
+        .route("/logs", get(logs_handler))
         .merge(protected)
         .with_state(state)
 }
@@ -378,6 +424,8 @@ async fn chat_completions_handler(
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_millis() as u64;
+    let req_model = body.model.clone();
+    let req_provider = req_model.split('/').next().unwrap_or("unknown").to_string();
 
     if body.stream {
         let stream = complete_chat_stream(state.routing.as_ref(), &body, &state.providers)
@@ -398,6 +446,16 @@ async fn chat_completions_handler(
                         error: Some(e.to_string()),
                     });
                 }
+                push_log(
+                    &state.log_store,
+                    LogEntry {
+                        timestamp: chrono::Utc::now().to_rfc3339(),
+                        provider: req_provider.clone(),
+                        model: req_model.clone(),
+                        status_code: 500,
+                        latency_ms,
+                    },
+                );
                 ApiError::bad_request(e)
             })?;
         let latency_ms = t0.elapsed().as_millis() as u64;
@@ -415,6 +473,16 @@ async fn chat_completions_handler(
                 error: None,
             });
         }
+        push_log(
+            &state.log_store,
+            LogEntry {
+                timestamp: chrono::Utc::now().to_rfc3339(),
+                provider: req_provider.clone(),
+                model: req_model.clone(),
+                status_code: 200,
+                latency_ms,
+            },
+        );
         Ok(StreamingResponseBuilder::sse_stream(stream))
     } else {
         let response = complete_chat(state.routing.as_ref(), &body, &state.providers)
@@ -435,6 +503,16 @@ async fn chat_completions_handler(
                         error: Some(e.to_string()),
                     });
                 }
+                push_log(
+                    &state.log_store,
+                    LogEntry {
+                        timestamp: chrono::Utc::now().to_rfc3339(),
+                        provider: req_provider.clone(),
+                        model: req_model.clone(),
+                        status_code: 500,
+                        latency_ms,
+                    },
+                );
                 ApiError::bad_request(e)
             })?;
         let provider = response
@@ -454,7 +532,7 @@ async fn chat_completions_handler(
         if let Some(logger) = &state.audit_logger {
             let _ = logger.write(&AuditEntry {
                 timestamp_ms,
-                provider,
+                provider: provider.clone(),
                 model: response.model.clone(),
                 request_id,
                 status: 200,
@@ -464,6 +542,16 @@ async fn chat_completions_handler(
                 error: None,
             });
         }
+        push_log(
+            &state.log_store,
+            LogEntry {
+                timestamp: chrono::Utc::now().to_rfc3339(),
+                provider,
+                model: req_model,
+                status_code: 200,
+                latency_ms,
+            },
+        );
         Ok(Json(response).into_response())
     }
 }
@@ -508,6 +596,16 @@ async fn metrics_prometheus_handler(State(state): State<AppState>) -> impl IntoR
 async fn metrics_reset_handler(State(state): State<AppState>) -> impl IntoResponse {
     state.metrics.reset();
     Json(state.metrics.snapshot())
+}
+
+/// `GET /logs` — return the last 100 audit log entries as a JSON array.
+async fn logs_handler(State(state): State<AppState>) -> impl IntoResponse {
+    let entries: Vec<LogEntry> = state
+        .log_store
+        .lock()
+        .map(|ring| ring.iter().cloned().collect())
+        .unwrap_or_default();
+    Json(entries)
 }
 
 // ---------------------------------------------------------------------------
