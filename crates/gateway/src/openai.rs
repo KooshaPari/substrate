@@ -8,6 +8,7 @@ use substrate_core::ports::RoutingPort;
 use uuid::Uuid;
 
 use crate::config::ProviderConfig;
+use crate::fallback::{try_with_fallback, FallbackChain};
 use crate::retry::{with_retry, RetryPolicy, RetryableError};
 
 /// OpenAI chat message role.
@@ -162,19 +163,37 @@ pub async fn complete_chat(
     // Check if the model field carries a provider prefix
     match resolve_provider_route(providers, &req.model) {
         ProviderRoute::Provider(provider_name, stripped_model) => {
-            // Find the provider config
-            let provider = providers
+            // Find the primary provider config
+            let primary = providers
                 .iter()
                 .find(|p| p.name == provider_name)
                 .ok_or_else(|| format!("provider not found: {provider_name}"))?;
 
-            // Resolve the API key at runtime (never hardcoded)
-            let api_key = provider
-                .resolve_api_key()
-                .ok_or_else(|| format!("API key not available for provider {}", provider.name))?;
-
-            // Forward to provider via HTTP
-            forward_to_provider(provider, &stripped_model, req, &api_key).await
+            // Build a fallback chain if the provider declares fallbacks.
+            if primary.fallbacks.is_empty() {
+                // Fast path: no fallbacks configured — dispatch directly.
+                let api_key = primary.resolve_api_key().ok_or_else(|| {
+                    format!("API key not available for provider {}", primary.name)
+                })?;
+                forward_to_provider(primary, &stripped_model, req, &api_key).await
+            } else {
+                let chain = FallbackChain::from_provider_config(primary);
+                let model = stripped_model.clone();
+                let req_clone = req.clone();
+                try_with_fallback(&chain, providers, |p: &ProviderConfig| {
+                    let m = model.clone();
+                    let r = req_clone.clone();
+                    let key = p.resolve_api_key();
+                    let p_clone = p.clone();
+                    async move {
+                        let api_key = key.ok_or_else(|| {
+                            format!("API key not available for provider {}", p_clone.name)
+                        })?;
+                        forward_to_provider(&p_clone, &m, &r, &api_key).await
+                    }
+                })
+                .await
+            }
         }
         ProviderRoute::OmniRoute => {
             // Fall through to OmniRoute (existing behavior preserved)
