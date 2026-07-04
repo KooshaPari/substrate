@@ -147,8 +147,18 @@ pub fn pidfile_path(service: &str) -> PathBuf {
 /// error checking without sending a signal — `Ok` (or `EPERM`) means the process
 /// exists; `ESRCH` means it does not.
 fn pid_alive(pid: u32) -> bool {
+    // pid_t is i32 on all Unix targets. Values that don't fit are not valid
+    // process IDs; treat them as dead. Notably u32::MAX cast to i32 becomes -1,
+    // and kill(-1, 0) broadcasts to every process — always returning EPERM —
+    // which would make any sentinel "impossible PID" appear alive.
+    let Ok(pid_t) = i32::try_from(pid) else {
+        return false;
+    };
+    if pid_t <= 0 {
+        return false;
+    }
     // SAFETY: `kill` with signal 0 sends no signal; it only probes existence.
-    let rc = unsafe { libc::kill(pid as libc::pid_t, 0) };
+    let rc = unsafe { libc::kill(pid_t, 0) };
     if rc == 0 {
         return true;
     }
