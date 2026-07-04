@@ -3,12 +3,46 @@
 //! Tracks total requests, errors, latency, and per-provider breakdowns using
 //! lock-free [`AtomicU64`] globals for the aggregate path and a [`Mutex`]-guarded
 //! [`HashMap`] for per-provider detail.
+//!
+//! Also exposes a [`prometheus`]-backed [`HistogramVec`] for latency observations
+//! at `gateway_latency_ms`, keyed by upstream `provider` label.
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, OnceLock};
 
+use prometheus::{register_histogram_vec, exponential_buckets, HistogramOpts, HistogramVec};
 use serde::Serialize;
+
+// ---------------------------------------------------------------------------
+// Prometheus latency histogram
+// ---------------------------------------------------------------------------
+
+/// Global [`HistogramVec`] for per-provider request latency (milliseconds).
+///
+/// Initialized lazily on first access. Buckets follow an exponential progression
+/// starting at 10ms with a factor of 2 across 10 buckets (10, 20, 40, …, 5120ms),
+/// giving useful resolution across both LAN-fast and slow upstream paths.
+static LATENCY_HISTOGRAM: OnceLock<HistogramVec> = OnceLock::new();
+
+/// Returns the process-global [`HistogramVec`] for `gateway_latency_ms`.
+pub fn latency_histogram() -> &'static HistogramVec {
+    LATENCY_HISTOGRAM.get_or_init(|| {
+        register_histogram_vec!(
+            HistogramOpts::new("gateway_latency_ms", "Request latency in milliseconds")
+                .buckets(exponential_buckets(10.0, 2.0, 10).unwrap()),
+            &["provider"]
+        )
+        .unwrap()
+    })
+}
+
+/// Record one latency observation for `provider` (in milliseconds).
+pub fn record_latency(provider: &str, latency_ms: f64) {
+    latency_histogram()
+        .with_label_values(&[provider])
+        .observe(latency_ms);
+}
 
 // ---------------------------------------------------------------------------
 // Per-provider counters
@@ -368,5 +402,23 @@ mod tests {
         // headers present but no actual metric lines with labels
         assert!(!text.contains("provider="));
         assert!(text.contains("# HELP substrate_requests_total"));
+    }
+
+    // -----------------------------------------------------------------------
+    // Prometheus HistogramVec (latency histogram) tests
+    // -----------------------------------------------------------------------
+
+    #[test]
+    fn record_latency_no_panic() {
+        record_latency("openai", 42.0);
+        record_latency("anthropic", 150.0);
+        record_latency("openai", 500.0);
+    }
+
+    #[test]
+    fn histogram_init_is_idempotent() {
+        let h1 = latency_histogram();
+        let h2 = latency_histogram();
+        assert!(std::ptr::eq(h1, h2));
     }
 }
