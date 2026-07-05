@@ -53,3 +53,5 @@ pub mod base64_util;
 pub mod money;
 pub mod stats;
 pub mod hash_util;
+pub mod bloom;
+pub mod text_slab;
