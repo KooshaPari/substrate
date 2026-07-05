@@ -909,3 +909,4 @@ pub mod bitfield;
 pub mod result_ext;
 pub mod sorted_set;
 pub mod percentile;
+pub mod url_parse;
