@@ -977,3 +977,6 @@ pub mod dns_message_parser;
 
 pub mod jwt_jwks;
 pub mod pkcs7_padding;
+
+pub mod redis_resp;
+pub mod tls_record;
