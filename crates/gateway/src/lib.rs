@@ -943,3 +943,4 @@ pub mod mime;
 pub mod stopwatch;
 pub mod cache2;
 pub mod shardmap2;
+pub mod channel;
