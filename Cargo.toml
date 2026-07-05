@@ -1,6 +1,6 @@
 [package]
 name = "sharecli"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 description = "Shared CLI process manager for multi-project agent orchestration"
 license = "MIT"
