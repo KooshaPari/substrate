@@ -895,3 +895,4 @@ pub mod middleware_chain;
 pub mod conn_pool;
 pub mod tier;
 pub mod budget_tracker;
+pub mod token_bucket;
