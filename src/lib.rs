@@ -47,3 +47,5 @@ pub mod sorted_vec;
 pub mod ring_buffer;
 pub mod uuid;
 pub mod jsonpath_lite;
+pub mod rational;
+pub mod stopwatch;

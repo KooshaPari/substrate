@@ -26,7 +26,9 @@ pub fn slug() -> String {
 mod tests {
     use super::*;
     #[test] fn test_v7_like_unique() {
-        let a = v7_like(); let b = v7_like();
+        std::thread::sleep(std::time::Duration::from_millis(2));
+        let a = v7_like(); std::thread::sleep(std::time::Duration::from_millis(2));
+        let b = v7_like();
         assert_ne!(a, b);
     }
     #[test] fn test_v7_like_format() {
