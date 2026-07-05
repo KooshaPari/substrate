@@ -933,3 +933,5 @@ pub mod semver;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
+pub mod zigzag;
+pub mod tar_header;
