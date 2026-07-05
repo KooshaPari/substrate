@@ -941,3 +941,5 @@ pub mod ansi;
 pub mod stats;
 pub mod mime;
 pub mod stopwatch;
+pub mod cache2;
+pub mod shardmap2;
