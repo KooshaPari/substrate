@@ -957,3 +957,6 @@ pub mod url_parser;
 
 pub mod cron_parser;
 pub mod jwt_hs256;
+
+pub mod circuit_breaker_v2;
+pub mod histogram_metrics;
