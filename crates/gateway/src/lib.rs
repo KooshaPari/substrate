@@ -915,3 +915,5 @@ pub mod flag_set;
 pub mod hex;
 pub mod bloom_gw;
 pub mod ipv4;
+pub mod crc32;
+pub mod chunked;
