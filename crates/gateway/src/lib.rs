@@ -965,3 +965,6 @@ pub mod histogram_metrics;
 
 pub mod prometheus_exposition;
 pub mod json_patch;
+
+pub mod m3u_parser;
+pub mod brotli_dict;
