@@ -911,3 +911,4 @@ pub mod sorted_set;
 pub mod percentile;
 pub mod byte_size;
 pub mod url_parse;
+pub mod hex;
