@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "a2a"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "serde",
@@ -104,7 +104,7 @@ dependencies = [
 
 [[package]]
 name = "arch-test"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "toml 1.1.2+spec-1.1.0",
 ]
@@ -372,7 +372,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
 name = "cliproxy-adapter"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -391,7 +391,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-codex"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "cloud-dispatch-conformance",
@@ -402,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-cursor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -417,7 +417,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-dispatch-conformance"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "cloud-codex",
@@ -429,7 +429,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-kilo"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "dotenvy",
@@ -476,7 +476,7 @@ dependencies = [
 
 [[package]]
 name = "context-budget"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -759,7 +759,7 @@ dependencies = [
 
 [[package]]
 name = "dispatch-bridge"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -805,7 +805,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "driver-argv"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -815,7 +815,7 @@ dependencies = [
 
 [[package]]
 name = "driver-cli"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -843,7 +843,7 @@ dependencies = [
 
 [[package]]
 name = "driver-http"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -874,7 +874,7 @@ dependencies = [
 
 [[package]]
 name = "driver-mcp"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -911,7 +911,7 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "engine-a2a"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "async-trait",
@@ -930,7 +930,7 @@ dependencies = [
 
 [[package]]
 name = "engine-agentapi"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -948,7 +948,7 @@ dependencies = [
 
 [[package]]
 name = "engine-claude"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-conformance",
@@ -960,7 +960,7 @@ dependencies = [
 
 [[package]]
 name = "engine-codex"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-conformance",
@@ -972,7 +972,7 @@ dependencies = [
 
 [[package]]
 name = "engine-conformance"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-spec",
@@ -983,7 +983,7 @@ dependencies = [
 
 [[package]]
 name = "engine-forge"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-spec",
@@ -1001,7 +1001,7 @@ dependencies = [
 
 [[package]]
 name = "engine-spec"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "substrate-core",
@@ -1034,11 +1034,11 @@ dependencies = [
 
 [[package]]
 name = "fake-codex-cloud"
-version = "0.1.0"
+version = "0.3.0"
 
 [[package]]
 name = "fake-forge"
-version = "0.1.0"
+version = "0.3.0"
 
 [[package]]
 name = "fallible-iterator"
@@ -1076,7 +1076,7 @@ checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
 
 [[package]]
 name = "file-watcher"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "notify-debouncer-mini",
@@ -1160,7 +1160,7 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "forge_daemon"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "libc",
@@ -1289,7 +1289,7 @@ dependencies = [
 
 [[package]]
 name = "gateway"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -2133,7 +2133,7 @@ dependencies = [
 
 [[package]]
 name = "omniroute-adapter"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "dotenvy",
@@ -2276,7 +2276,7 @@ dependencies = [
 
 [[package]]
 name = "phenotype-mcp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "thiserror 2.0.18",
@@ -2780,7 +2780,7 @@ dependencies = [
 
 [[package]]
 name = "routing-phenotype-router"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "phenotype-router",
@@ -2803,7 +2803,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-process"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "command-group",
@@ -3179,7 +3179,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "store-file"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -3192,7 +3192,7 @@ dependencies = [
 
 [[package]]
 name = "store-sqlite"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "chrono",
@@ -3256,7 +3256,7 @@ dependencies = [
 
 [[package]]
 name = "substrate"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "engine-spec",
@@ -3267,7 +3267,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-app"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-spec",
@@ -3279,7 +3279,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -3290,7 +3290,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-dag"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "petgraph",
  "substrate-core",
@@ -3298,7 +3298,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-memory"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "store-sqlite",
@@ -3309,7 +3309,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-schedule"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "croner",
@@ -3318,7 +3318,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-serve-lock"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "fs2",
@@ -3330,7 +3330,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-skills"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
  "substrate-core",
@@ -3338,7 +3338,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-trace"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "reqwest",
  "serde",
@@ -3349,7 +3349,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-tui"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3377,7 +3377,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "supervisor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "async-trait",
@@ -3892,7 +3892,7 @@ dependencies = [
 
 [[package]]
 name = "transport-file"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -4139,7 +4139,7 @@ dependencies = [
 
 [[package]]
 name = "wave"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "async-trait",
@@ -4157,7 +4157,7 @@ dependencies = [
 
 [[package]]
 name = "wave-3lane-tests"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "parking_lot",
