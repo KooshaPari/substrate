@@ -1,4 +1,4 @@
-use std::time::{Duration, Instant};
+use std::time::Instant;
 
 pub struct TokenBucket { capacity: f64, refill_per_sec: f64, tokens: f64, last_refill: Instant }
 impl TokenBucket {
