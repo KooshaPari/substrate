@@ -57,3 +57,5 @@ pub mod bloom;
 pub mod text_slab;
 pub mod csv_util;
 pub mod levenshtein;
+pub mod deque;
+pub mod trim;
