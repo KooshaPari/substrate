@@ -929,3 +929,4 @@ pub mod trie;
 pub mod base64;
 pub mod snowflake;
 pub mod json_path;
+pub mod bucket;
