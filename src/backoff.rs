@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-#[derive(Debug,Clone,Copy)]
+#[derive(Debug,Clone,Copy,PartialEq)]
 pub enum BackoffStrategy { Fixed, Linear, Exponential }
 
 pub struct Backoff { strategy: BackoffStrategy, base: Duration, max: Duration }
