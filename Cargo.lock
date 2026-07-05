@@ -4,7 +4,7 @@ version = 3
 
 [[package]]
 name = "a2a"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "serde",
@@ -104,7 +104,7 @@ dependencies = [
 
 [[package]]
 name = "arch-test"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "toml 1.1.2+spec-1.1.0",
 ]
@@ -317,6 +317,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 
 [[package]]
+name = "chacha20"
+version = "0.10.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d524456ba66e72eb8b115ff89e01e497f8e6d11d78b70b1aa13c0fbd97540a81"
+dependencies = [
+ "cfg-if",
+ "cpufeatures 0.3.0",
+ "rand_core 0.10.1",
+]
+
+[[package]]
 name = "chrono"
 version = "0.4.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -372,7 +383,7 @@ checksum = "c8d4a3bb8b1e0c1050499d1815f5ab16d04f0959b233085fb31653fbfc9d98f9"
 
 [[package]]
 name = "cliproxy-adapter"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -391,7 +402,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-codex"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "cloud-dispatch-conformance",
@@ -402,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-cursor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "base64",
@@ -417,7 +428,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-dispatch-conformance"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "cloud-codex",
@@ -429,7 +440,7 @@ dependencies = [
 
 [[package]]
 name = "cloud-kilo"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "dotenvy",
@@ -476,7 +487,7 @@ dependencies = [
 
 [[package]]
 name = "context-budget"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -507,6 +518,15 @@ name = "cpufeatures"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "59ed5838eebb26a2bb2e58f6d5b5316989ae9d08bab10e0e6d103e656d1b0280"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "cpufeatures"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8b2a41393f66f16b0823bb79094d54ac5fbd34ab292ddafb9a0456ac9f87d201"
 dependencies = [
  "libc",
 ]
@@ -759,7 +779,7 @@ dependencies = [
 
 [[package]]
 name = "dispatch-bridge"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -805,7 +825,7 @@ checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
 
 [[package]]
 name = "driver-argv"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "clap",
@@ -815,7 +835,7 @@ dependencies = [
 
 [[package]]
 name = "driver-cli"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "assert_cmd",
@@ -843,7 +863,7 @@ dependencies = [
 
 [[package]]
 name = "driver-http"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -874,7 +894,7 @@ dependencies = [
 
 [[package]]
 name = "driver-mcp"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -911,7 +931,7 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 
 [[package]]
 name = "engine-a2a"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "async-trait",
@@ -930,7 +950,7 @@ dependencies = [
 
 [[package]]
 name = "engine-agentapi"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "bytes",
@@ -948,7 +968,7 @@ dependencies = [
 
 [[package]]
 name = "engine-claude"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-conformance",
@@ -960,7 +980,7 @@ dependencies = [
 
 [[package]]
 name = "engine-codex"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-conformance",
@@ -972,7 +992,7 @@ dependencies = [
 
 [[package]]
 name = "engine-conformance"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-spec",
@@ -983,7 +1003,7 @@ dependencies = [
 
 [[package]]
 name = "engine-forge"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-spec",
@@ -1001,7 +1021,7 @@ dependencies = [
 
 [[package]]
 name = "engine-spec"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "substrate-core",
@@ -1034,11 +1054,11 @@ dependencies = [
 
 [[package]]
 name = "fake-codex-cloud"
-version = "0.1.0"
+version = "0.3.0"
 
 [[package]]
 name = "fake-forge"
-version = "0.1.0"
+version = "0.3.0"
 
 [[package]]
 name = "fallible-iterator"
@@ -1076,7 +1096,7 @@ checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
 
 [[package]]
 name = "file-watcher"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "notify-debouncer-mini",
@@ -1160,7 +1180,7 @@ checksum = "77ce24cb58228fbb8aa041425bb1050850ac19177686ea6e0f41a70416f56fdb"
 
 [[package]]
 name = "forge_daemon"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "libc",
@@ -1289,7 +1309,7 @@ dependencies = [
 
 [[package]]
 name = "gateway"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "anyhow",
@@ -1347,11 +1367,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "899def5c37c4fd7b2664648c28120ecec138e4d395b459e5ca34f9cce2dd77fd"
 dependencies = [
  "cfg-if",
- "js-sys",
  "libc",
  "r-efi 5.3.0",
  "wasip2",
- "wasm-bindgen",
 ]
 
 [[package]]
@@ -1361,8 +1379,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "300e883d756b2e4ec94e02791f39b04b522276138852cfc41d9fb7e904106099"
 dependencies = [
  "cfg-if",
+ "js-sys",
  "libc",
  "r-efi 6.0.0",
+ "rand_core 0.10.1",
+ "wasm-bindgen",
 ]
 
 [[package]]
@@ -2133,7 +2154,7 @@ dependencies = [
 
 [[package]]
 name = "omniroute-adapter"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "dotenvy",
@@ -2221,9 +2242,9 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "pest"
-version = "2.8.6"
+version = "2.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e0848c601009d37dfa3430c4666e147e49cdcf1b92ecd3e63657d8a5f19da662"
+checksum = "47627dd7305c6a2d6c8c6bcd24c5a4c17dbbf425f4f9c5313e724b38fc9782e9"
 dependencies = [
  "memchr",
  "ucd-trie",
@@ -2231,9 +2252,9 @@ dependencies = [
 
 [[package]]
 name = "pest_derive"
-version = "2.8.6"
+version = "2.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "11f486f1ea21e6c10ed15d5a7c77165d0ee443402f0780849d1768e7d9d6fe77"
+checksum = "4b4254325ecad416ab689e27ba51da03ba01a9632bc6e108f5fe7c3c4ad29d58"
 dependencies = [
  "pest",
  "pest_generator",
@@ -2241,9 +2262,9 @@ dependencies = [
 
 [[package]]
 name = "pest_generator"
-version = "2.8.6"
+version = "2.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8040c4647b13b210a963c1ed407c1ff4fdfa01c31d6d2a098218702e6664f94f"
+checksum = "6c4c0e91ead7a8f7acecbca6f003fc2e8282b1dbe2dd9c9d2f16aba42995e0a7"
 dependencies = [
  "pest",
  "pest_meta",
@@ -2254,12 +2275,11 @@ dependencies = [
 
 [[package]]
 name = "pest_meta"
-version = "2.8.6"
+version = "2.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "89815c69d36021a140146f26659a81d6c2afa33d216d736dd4be5381a7362220"
+checksum = "f9744bc48116fee06334924bb5f2bad41eed5e89bd26e29b0b799f9a3f82c210"
 dependencies = [
  "pest",
- "sha2",
 ]
 
 [[package]]
@@ -2276,7 +2296,7 @@ dependencies = [
 
 [[package]]
 name = "phenotype-mcp"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde",
  "thiserror 2.0.18",
@@ -2470,14 +2490,15 @@ dependencies = [
 
 [[package]]
 name = "quinn-proto"
-version = "0.11.15"
+version = "0.11.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4fcb935c5bec503c2f0e306bdd3e58bb9029dcb14fa8d9ac76e3a5256ac0763e"
+checksum = "2f4bfc015262b9df63c8845072ce59068853ff5872180c2ce2f13038b970e560"
 dependencies = [
  "bytes",
- "getrandom 0.3.4",
+ "getrandom 0.4.3",
  "lru-slab",
- "rand 0.9.4",
+ "rand 0.10.2",
+ "rand_pcg",
  "ring",
  "rustc-hash",
  "rustls",
@@ -2491,16 +2512,16 @@ dependencies = [
 
 [[package]]
 name = "quinn-udp"
-version = "0.5.14"
+version = "0.5.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "addec6a0dcad8a8d96a771f815f0eaf55f9d1805756410b39f5fa81332574cbd"
+checksum = "35a133f956daabe89a61a685c2649f13d82d5aa4bd5d12d1277e1072a21c0694"
 dependencies = [
  "cfg_aliases",
  "libc",
  "once_cell",
  "socket2",
  "tracing",
- "windows-sys 0.60.2",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -2531,18 +2552,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5ca0ecfa931c29007047d1bc58e623ab12e5590e8c7cc53200d5202b69266d8a"
 dependencies = [
  "libc",
- "rand_chacha 0.3.1",
+ "rand_chacha",
  "rand_core 0.6.4",
 ]
 
 [[package]]
 name = "rand"
-version = "0.9.4"
+version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44c5af06bb1b7d3216d91932aed5265164bf384dc89cd6ba05cf59a35f5f76ea"
+checksum = "c7f5fa3a058cd35567ef9bfa5e75732bee0f9e4c55fa90477bef2dfcdbc4be80"
 dependencies = [
- "rand_chacha 0.9.0",
- "rand_core 0.9.5",
+ "chacha20",
+ "getrandom 0.4.3",
+ "rand_core 0.10.1",
 ]
 
 [[package]]
@@ -2556,16 +2578,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rand_chacha"
-version = "0.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d3022b5f1df60f26e1ffddd6c66e8aa15de382ae63b3a0c1bfc0e4d3e3f325cb"
-dependencies = [
- "ppv-lite86",
- "rand_core 0.9.5",
-]
-
-[[package]]
 name = "rand_core"
 version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2576,11 +2588,17 @@ dependencies = [
 
 [[package]]
 name = "rand_core"
-version = "0.9.5"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "76afc826de14238e6e8c374ddcc1fa19e374fd8dd986b0d2af0d02377261d83c"
+checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
+
+[[package]]
+name = "rand_pcg"
+version = "0.10.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
 dependencies = [
- "getrandom 0.3.4",
+ "rand_core 0.10.1",
 ]
 
 [[package]]
@@ -2780,7 +2798,7 @@ dependencies = [
 
 [[package]]
 name = "routing-phenotype-router"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "phenotype-router",
@@ -2803,7 +2821,7 @@ dependencies = [
 
 [[package]]
 name = "runtime-process"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "command-group",
@@ -3053,7 +3071,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7507d819769d01a365ab707794a4084392c824f54a7a6a7862f8c3d0892b283"
 dependencies = [
  "cfg-if",
- "cpufeatures",
+ "cpufeatures 0.2.17",
  "digest",
 ]
 
@@ -3179,7 +3197,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "store-file"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -3192,7 +3210,7 @@ dependencies = [
 
 [[package]]
 name = "store-sqlite"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "chrono",
@@ -3256,7 +3274,7 @@ dependencies = [
 
 [[package]]
 name = "substrate"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "engine-spec",
@@ -3267,7 +3285,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-app"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "engine-spec",
@@ -3279,7 +3297,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-core"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -3290,7 +3308,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-dag"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "petgraph",
  "substrate-core",
@@ -3298,7 +3316,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-memory"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "store-sqlite",
@@ -3309,7 +3327,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-schedule"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "croner",
@@ -3318,7 +3336,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-serve-lock"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "fs2",
@@ -3330,7 +3348,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-skills"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
  "substrate-core",
@@ -3338,7 +3356,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-trace"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "reqwest",
  "serde",
@@ -3349,7 +3367,7 @@ dependencies = [
 
 [[package]]
 name = "substrate-tui"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -3377,7 +3395,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "supervisor"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "async-trait",
@@ -3892,7 +3910,7 @@ dependencies = [
 
 [[package]]
 name = "transport-file"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "serde",
@@ -4139,7 +4157,7 @@ dependencies = [
 
 [[package]]
 name = "wave"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "a2a",
  "async-trait",
@@ -4157,7 +4175,7 @@ dependencies = [
 
 [[package]]
 name = "wave-3lane-tests"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "async-trait",
  "parking_lot",
