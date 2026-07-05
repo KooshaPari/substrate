@@ -957,3 +957,5 @@ pub mod url_parser;
 
 pub mod cron_parser;
 pub mod jwt_hs256;
+pub mod connection_pool;
+pub mod websocket_frame;
