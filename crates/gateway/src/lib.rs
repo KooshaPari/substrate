@@ -919,3 +919,5 @@ pub mod crc32;
 pub mod chunked;
 pub mod roman;
 pub mod color;
+pub mod uuid_gen;
+pub mod diff;
