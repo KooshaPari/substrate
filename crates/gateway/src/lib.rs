@@ -907,3 +907,4 @@ pub mod utf8_count;
 pub mod bytebuf;
 pub mod bitfield;
 pub mod result_ext;
+pub mod sorted_set;
