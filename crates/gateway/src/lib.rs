@@ -980,3 +980,6 @@ pub mod pkcs7_padding;
 
 pub mod redis_resp;
 pub mod tls_record;
+
+pub mod ssh_packet;
+pub mod otp_totp;
