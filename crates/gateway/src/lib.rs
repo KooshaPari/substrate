@@ -951,3 +951,6 @@ pub mod csv;
 
 pub mod rate_limit_tokenbucket;
 pub mod retry_jitter;
+
+pub mod gzip_header;
+pub mod url_parser;
