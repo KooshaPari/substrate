@@ -925,3 +925,4 @@ pub mod regex_simple;
 pub mod skiplist;
 pub mod md5;
 pub mod signal;
+pub mod base64;
