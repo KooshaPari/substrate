@@ -983,3 +983,6 @@ pub mod tls_record;
 
 pub mod mac_hmac;
 pub mod oauth1_signature;
+
+pub mod ssh_packet;
+pub mod otp_totp;
