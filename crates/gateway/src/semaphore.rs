@@ -14,6 +14,7 @@ impl Semaphore {
     }
     pub fn available(&self) -> usize { self.inner.lock().unwrap().available }
     pub fn max(&self) -> usize { self.inner.lock().unwrap().max }
+    #[allow(dead_code)]
     fn release(&self) {
         let mut g = self.inner.lock().unwrap();
         g.available += 1;
