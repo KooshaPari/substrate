@@ -931,3 +931,4 @@ pub mod snowflake;
 pub mod json_path;
 pub mod semver;
 pub mod bucket;
+pub mod rle;
