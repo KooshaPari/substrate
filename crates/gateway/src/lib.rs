@@ -974,3 +974,6 @@ pub mod pem_codec;
 
 pub mod chunked_transfer;
 pub mod dns_message_parser;
+
+pub mod jwt_jwks;
+pub mod pkcs7_padding;
