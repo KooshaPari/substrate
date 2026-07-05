@@ -962,3 +962,5 @@ pub mod websocket_frame;
 
 pub mod circuit_breaker_v2;
 pub mod histogram_metrics;
+
+pub mod json_patch;
