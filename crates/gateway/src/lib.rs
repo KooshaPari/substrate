@@ -968,3 +968,6 @@ pub mod json_patch;
 
 pub mod m3u_parser;
 pub mod brotli_dict;
+
+pub mod ed25519_sign_mini;
+pub mod pem_codec;
