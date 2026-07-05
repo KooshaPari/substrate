@@ -935,3 +935,4 @@ pub mod rle;
 pub mod bitset;
 pub mod zigzag;
 pub mod tar_header;
+pub mod conn_check;
