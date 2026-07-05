@@ -921,3 +921,5 @@ pub mod roman;
 pub mod color;
 pub mod uuid_gen;
 pub mod diff;
+pub mod regex_simple;
+pub mod skiplist;
