@@ -971,3 +971,6 @@ pub mod brotli_dict;
 
 pub mod ed25519_sign_mini;
 pub mod pem_codec;
+
+pub mod chunked_transfer;
+pub mod dns_message_parser;
