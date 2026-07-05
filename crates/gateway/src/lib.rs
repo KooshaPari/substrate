@@ -980,3 +980,6 @@ pub mod pkcs7_padding;
 
 pub mod redis_resp;
 pub mod tls_record;
+
+pub mod mac_hmac;
+pub mod oauth1_signature;
