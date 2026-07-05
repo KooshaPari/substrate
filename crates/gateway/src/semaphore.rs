@@ -1,27 +1,28 @@
-use std::sync::{Arc, Condvar, Mutex};
-use std::time::Duration;
+use std::sync::{Arc, Mutex};
 
 struct Inner { available: usize, max: usize }
 
-pub struct Semaphore { inner: Arc<(Mutex<Inner>, Condvar)> }
+pub struct Semaphore { inner: Arc<Mutex<Inner>> }
 impl Semaphore {
-    pub fn new(max: usize) -> Self { Self { inner: Arc::new((Mutex::new(Inner { available: max, max }), Condvar::new())) } }
+    pub fn new(max: usize) -> Self { Self { inner: Arc::new(Mutex::new(Inner { available: max, max })) } }
     pub fn try_acquire(&self) -> Option<SemaphoreGuard> {
-        let (m, _) = &*self.inner;
-        let mut g = m.lock().unwrap();
-        if g.available > 0 { g.available -= 1; Some(SemaphoreGuard { sem: self.inner.clone() }) } else { None }
+        let mut g = self.inner.lock().unwrap();
+        if g.available > 0 {
+            g.available -= 1;
+            Some(SemaphoreGuard { sem: self.inner.clone() })
+        } else { None }
     }
-    pub fn available(&self) -> usize { self.inner.0.lock().unwrap().available }
-    pub fn max(&self) -> usize { self.inner.0.lock().unwrap().max }
-}
-
-pub struct SemaphoreGuard { sem: Arc<(Mutex<Inner>, Condvar)> }
-impl Drop for SemaphoreGuard {
-    fn drop(&mut self) {
-        let (m, _) = &*self.sem;
-        let mut g = m.lock().unwrap();
+    pub fn available(&self) -> usize { self.inner.lock().unwrap().available }
+    pub fn max(&self) -> usize { self.inner.lock().unwrap().max }
+    fn release(&self) {
+        let mut g = self.inner.lock().unwrap();
         g.available += 1;
     }
+}
+
+pub struct SemaphoreGuard { sem: Arc<Mutex<Inner>> }
+impl Drop for SemaphoreGuard {
+    fn drop(&mut self) { self.sem.lock().unwrap().available += 1; }
 }
 
 pub struct WeightedSemaphore { max_weight: usize, current: Mutex<usize> }
@@ -40,9 +41,9 @@ impl WeightedSemaphore {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn try_acquire_decrements() { let s = Semaphore::new(2); assert!(s.try_acquire().is_some()); assert_eq!(s.available(), 1); }
-    #[test] fn blocks_when_full() { let s = Semaphore::new(1); assert!(s.try_acquire().is_some()); assert!(s.try_acquire().is_none()); }
-    #[test] fn guard_release() { let s = Semaphore::new(1); { let _g = s.try_acquire().unwrap(); } assert_eq!(s.available(), 1); }
+    #[test] fn try_acquire_decrements() { let s = Semaphore::new(2); let _g = s.try_acquire().unwrap(); assert_eq!(s.available(), 1); }
+    #[test] fn blocks_when_full() { let s = Semaphore::new(1); let _g = s.try_acquire().unwrap(); assert!(s.try_acquire().is_none()); }
+    #[test] fn guard_release() { let s = Semaphore::new(1); { let _g = s.try_acquire().unwrap(); drop(_g); } assert_eq!(s.available(), 1); }
     #[test] fn weighted_acquire_release() { let s = WeightedSemaphore::new(10); assert!(s.try_acquire(7)); assert!(s.try_acquire(2)); assert!(!s.try_acquire(2)); s.release(7); assert!(s.try_acquire(7)); }
-    #[test] fn weighted_release_clamps() { let s = WeightedSemaphore::new(10); s.release(100); assert_eq!(s.try_acquire(10) as bool, true); }
+    #[test] fn weighted_release_clamps() { let s = WeightedSemaphore::new(10); s.release(100); assert!(s.try_acquire(10)); }
 }
