@@ -939,3 +939,4 @@ pub mod pow;
 pub mod conn_check;
 pub mod ansi;
 pub mod stats;
+pub mod stopwatch;
