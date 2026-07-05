@@ -65,3 +65,5 @@ pub mod graph;
 pub mod disjoint_set;
 pub mod stack;
 pub mod queue2;
+pub mod lru;
+pub mod utf8v;
