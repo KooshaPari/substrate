@@ -937,3 +937,4 @@ pub mod zigzag;
 pub mod tar_header;
 pub mod pow;
 pub mod conn_check;
+pub mod stats;
