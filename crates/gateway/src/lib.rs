@@ -903,3 +903,4 @@ pub mod shard;
 pub mod ttl_map;
 pub mod glob_match;
 pub mod ini_parser;
+pub mod utf8_count;
