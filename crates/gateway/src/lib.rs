@@ -897,3 +897,4 @@ pub mod tier;
 pub mod budget_tracker;
 pub mod token_bucket;
 pub mod circuit_breaker2;
+pub mod lru_cache;
