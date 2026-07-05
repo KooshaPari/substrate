@@ -894,3 +894,5 @@ pub mod sla;
 pub mod middleware;
 pub mod middleware;
 pub mod conn_pool;
+
+pub mod budget_tracker;
