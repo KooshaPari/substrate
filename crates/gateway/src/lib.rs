@@ -993,4 +993,3 @@ pub mod graphql_parse;
 pub mod x509_chain;
 pub mod ebpf_loader;
 pub mod mime_multipart;
-pub mod ebpf_loader;
