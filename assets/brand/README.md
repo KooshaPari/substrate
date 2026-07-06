@@ -20,6 +20,7 @@ Source of truth: [`substrate-icon.svg`](substrate-icon.svg) (1024×1024, Backbon
 | `assets/icons/substrate.iconset/` | PNG 16/32/48/64/128/256/512/1024 + @2x | macOS `.icns` source |
 | `assets/icons/substrate.ico` | ICO multi-res 16/32/48/64/128/256 | Windows app icon |
 | `assets/icons/substrate-256x256.png` | PNG 256×256 | Linux app icon |
+| `assets/brand/substrate-icon-animated.svg` | SVG 1024×1024 (SMIL) | L101 motion variant — sync-violet mesh pulse + amber dispatch-node breathing (no JS) |
 
 ## Mark
 
@@ -61,4 +62,16 @@ resources = []
 category = "DeveloperTool"
 short_description = "Release-ready hexagonal dispatch spine"
 long_description = "Three driver faces (CLI/HTTP/MCP) sharing one planner and composition root."
+
+## Motion variant (L101)
+
+`substrate-icon-animated.svg` ships a 3.5-second loop:
+
+- The 6 mesh-edge lines pulse in sequence (sync-violet `#a371f7` — one edge brightens every
+  ~0.58s, completing the hex rotation).
+- The central amber dispatch-node `#d29922` breathes (radius 48 → 68 → 48).
+- Loop is seamless: last frame == first frame.
+
+All animation is SVG-native SMIL — no JavaScript, no external CSS. Safe to inline in HTML, SVG
+`<img src>`, and README previews.
 ```
