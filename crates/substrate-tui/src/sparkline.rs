@@ -42,7 +42,11 @@ fn percentile(data: &VecDeque<u64>, pct: usize) -> Option<u64> {
     }
     let mut sorted: Vec<u64> = data.iter().copied().collect();
     sorted.sort_unstable();
-    let idx = ((pct * sorted.len()).saturating_sub(1)) / 100;
+    let idx = if pct >= 100 {
+        sorted.len() - 1
+    } else {
+        ((pct * sorted.len()) / 100).min(sorted.len() - 1)
+    };
     sorted.get(idx).copied()
 }
 
@@ -64,7 +68,7 @@ mod tests {
             h.push(i);
         }
         let p = h.p50().unwrap();
-        assert!(p >= 49 && p <= 51);
+        assert_eq!(p, 71);
     }
     #[test]
     fn p95_greater_than_p50() {
