@@ -7,6 +7,7 @@
 mod cloud_dispatch;
 mod plan;
 mod serve;
+mod splash;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -46,6 +47,10 @@ use transport_file::FileTransport;
                   FORGE_BIN, CODEX_BIN, CLAUDE_BIN, AGENTAPI_ENDPOINT"
 )]
 struct Cli {
+    /// Print the Backbone-2 splash banner before running (L97/L98/L99).
+    #[arg(long, global = true)]
+    splash: bool,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -285,6 +290,10 @@ async fn execute_tiered_dispatch(args: &DispatchArgs, start_tier: Tier) -> anyho
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    if cli.splash {
+        let version = env!("CARGO_PKG_VERSION");
+        splash::print_cli_splash(version);
+    }
     match cli.command {
         Command::Dispatch(args) => {
             if args.options.fake {
