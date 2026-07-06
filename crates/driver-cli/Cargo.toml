@@ -36,3 +36,14 @@ anyhow.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
 tempfile.workspace = true
+
+[package.metadata.bundle]
+# Backbone-2 visual identity (decision 2026-07-06 by substrate-mesh).
+# Icon source of truth: ../../assets/brand/substrate-icon.svg.
+name = "substrate"
+identifier = "ai.kooshapari.substrate"
+icon = ["../../assets/icons/substrate.iconset"]
+resources = []
+category = "DeveloperTool"
+short_description = "Release-ready hexagonal dispatch spine"
+long_description = "Three driver faces (CLI/HTTP/MCP) sharing one planner and composition root."
