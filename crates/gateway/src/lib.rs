@@ -991,3 +991,6 @@ pub mod prometheus_scrape;
 pub mod oidc_jwt;
 pub mod graphql_parse;
 pub mod x509_chain;
+pub mod ebpf_loader;
+pub mod mime_multipart;
+pub mod ebpf_loader;
