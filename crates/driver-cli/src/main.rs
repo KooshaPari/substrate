@@ -8,6 +8,7 @@ mod cloud_dispatch;
 mod plan;
 mod serve;
 mod splash;
+mod theme;
 
 use std::path::PathBuf;
 use std::sync::Arc;
