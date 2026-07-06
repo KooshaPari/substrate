@@ -1318,6 +1318,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "gateway-tools"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "gateway",
+ "serde_json",
+]
+
+[[package]]
 name = "generic-array"
 version = "0.14.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"

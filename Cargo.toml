@@ -46,6 +46,7 @@ members = [
     "crates/cloud-codex",
     "crates/substrate-serve-lock",
     "crates/substrate-tui",
+    "crates/gateway-tools",
 ]
 [workspace.package]
 version = "0.3.0"
