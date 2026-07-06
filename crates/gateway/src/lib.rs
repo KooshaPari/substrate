@@ -1003,3 +1003,5 @@ pub mod pcap_global_header;
 pub mod ssh_hostkey;
 pub mod promql_eval;
 pub mod git_pack_idx;
+pub mod ssh_known_hosts;
+pub mod ntp_timestamp;
