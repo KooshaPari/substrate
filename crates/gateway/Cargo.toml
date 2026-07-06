@@ -28,7 +28,7 @@ uuid.workspace = true
 async-trait.workspace = true
 chrono.workspace = true
 bytes = "1.5"
-notify = "6"
+notify = "8"
 toml = "0.8"
 reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
 futures = "0.3"
