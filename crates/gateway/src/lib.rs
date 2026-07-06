@@ -986,3 +986,6 @@ pub mod oauth1_signature;
 
 pub mod ssh_packet;
 pub mod otp_totp;
+
+pub mod prometheus_scrape;
+pub mod oidc_jwt;
