@@ -34,5 +34,5 @@ substrate-core = { path = "../substrate-core" }
 
 [target.'cfg(unix)'.dependencies]
 # Unix-specific proc-compose monitoring uses signal hooks
-signal-hook = "0.3"
+signal-hook = "0.4"
 signal-hook-tokio = { version = "0.4", features = ["futures-v0_3"] }
