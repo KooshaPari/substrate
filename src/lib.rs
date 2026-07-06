@@ -148,3 +148,5 @@ pub mod pem_decode;
 pub mod ldap_filter;
 pub mod bitcoin_bech32;
 pub mod ssh_packet;
+pub mod x509_chain;
+pub mod oauth1_signature;
