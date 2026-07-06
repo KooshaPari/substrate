@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 //! Prometheus text exposition format parser (v0.0.4).
 //!
 //! Reference: <https://prometheus.io/docs/instrumenting/exposition_formats/#text-based-format>
@@ -181,10 +182,109 @@ fn split_around_brace(s: &str, line_no: usize) -> Result<(String, &str), String>
                     let after = &s[i + 1..];
                     return Ok((inner, after));
                 }
+=======
+// Prometheus text exposition format parser.
+#[derive(Debug, PartialEq, Clone)]
+pub enum MetricKind { Counter, Gauge, Histogram, Summary, Untyped }
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Sample {
+    pub labels: Vec<(String, String)>,
+    pub value: f64,
+}
+
+#[derive(Debug, PartialEq, Clone)]
+pub struct Metric {
+    pub name: String,
+    pub help: Option<String>,
+    pub kind: MetricKind,
+    pub samples: Vec<Sample>,
+}
+
+pub fn parse(input: &str) -> Result<Vec<Metric>, String> {
+    let mut out: Vec<Metric> = Vec::new();
+    let mut current: Option<Metric> = None;
+    for raw_line in input.lines() {
+        let line = raw_line.trim();
+        if line.is_empty() { continue; }
+        if let Some(rest) = line.strip_prefix("# HELP ") {
+            let mut parts = rest.splitn(2, char::is_whitespace);
+            let name = parts.next().ok_or("malformed HELP")?.to_string();
+            let help = parts.next().unwrap_or("").to_string();
+            if let Some(m) = current.as_mut() {
+                if m.name == name { m.help = Some(help); continue; }
+            }
+            out.push(Metric { name, help: Some(help), kind: MetricKind::Untyped, samples: vec![] });
+            current = None;
+            continue;
+        }
+        if let Some(rest) = line.strip_prefix("# TYPE ") {
+            let mut parts = rest.splitn(2, char::is_whitespace);
+            let name = parts.next().ok_or("malformed TYPE")?.to_string();
+            let kind_str = parts.next().ok_or("missing type value")?;
+            let kind = match kind_str {
+                "counter" => MetricKind::Counter,
+                "gauge" => MetricKind::Gauge,
+                "histogram" => MetricKind::Histogram,
+                "summary" => MetricKind::Summary,
+                "untyped" => MetricKind::Untyped,
+                other => return Err(format!("unknown metric type: {}", other)),
+            };
+            // attach to existing metric with same name, or create new
+            if let Some(m) = out.iter_mut().find(|m| m.name == name) {
+                m.kind = kind.clone();
+            } else {
+                out.push(Metric { name: name.clone(), help: None, kind: kind.clone(), samples: vec![] });
+            }
+            current = None;
+            continue;
+        }
+        if line.starts_with('#') { continue; }
+        // sample line: name{labels} value [timestamp]
+        let sample = parse_sample_line(line)?;
+        let name = sample.0.clone();
+        // ensure metric exists (auto-create as Untyped if not declared via HELP/TYPE)
+        if out.iter().all(|m| m.name != name) {
+            out.push(Metric { name: name.clone(), help: None, kind: MetricKind::Untyped, samples: vec![] });
+        }
+        if let Some(m) = out.iter_mut().find(|m| m.name == name) {
+            m.samples.push(Sample { labels: sample.1, value: sample.2 });
+        }
+    }
+    if let Some(c) = current { out.push(c); }
+    Ok(out)
+}
+fn parse_sample_line(line: &str) -> Result<(String, Vec<(String, String)>, f64), String> {
+    let (head, value_str) = line.split_once(' ').ok_or("missing space in sample")?;
+    let value: f64 = value_str.trim().parse().map_err(|e| format!("bad value: {}", e))?;
+    if let Some((name, label_str)) = head.split_once('{') {
+        if !label_str.ends_with('}') { return Err("unclosed label".into()); }
+        let inner = &label_str[..label_str.len()-1];
+        let labels = parse_labels(inner);
+        Ok((name.to_string(), labels, value))
+    } else {
+        Ok((head.to_string(), vec![], value))
+    }
+}
+fn parse_labels(s: &str) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    let mut depth = 0;
+    let mut start = 0;
+    let bytes = s.as_bytes();
+    for (i, &b) in bytes.iter().enumerate() {
+        match b {
+            b'"' => depth = 1 - depth,
+            b',' if depth == 0 => {
+                if let Some(pair) = parse_label(&s[start..i]) {
+                    out.push(pair);
+                }
+                start = i + 1;
+>>>>>>> 01c0243 (feat(gateway): Prometheus text exposition parser (counter/gauge/histogram/summary))
             }
             _ => {}
         }
     }
+<<<<<<< HEAD
     Err(format!("line {line_no}: unbalanced brace in label set"))
 }
 
@@ -389,3 +489,74 @@ x_total{path="a\"b"} 1
         assert_eq!(out[0].2, vec![("path".to_string(), "a\"b".to_string())]);
     }
 }
+=======
+    if let Some(pair) = parse_label(&s[start..]) {
+        out.push(pair);
+    }
+    out
+}
+fn parse_label(s: &str) -> Option<(String, String)> {
+    let mut parts = s.splitn(2, '=');
+    let k = parts.next()?.trim().to_string();
+    let v = parts.next()?.trim();
+    let v = v.trim_matches('"').to_string();
+    Some((k, v))
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test] fn parse_counter() {
+        let s = "# HELP http_requests_total Total\n# TYPE http_requests_total counter\nhttp_requests_total{method=\"GET\",code=\"200\"} 42\nhttp_requests_total{method=\"POST\",code=\"500\"} 1\n";
+        let m = parse(s).unwrap();
+        assert_eq!(m.len(), 1);
+        assert_eq!(m[0].name, "http_requests_total");
+        assert_eq!(m[0].kind, MetricKind::Counter);
+        assert_eq!(m[0].help, Some("Total".into()));
+        assert_eq!(m[0].samples.len(), 2);
+        assert_eq!(m[0].samples[0].value, 42.0);
+        assert_eq!(m[0].samples[0].labels[0], ("method".into(), "GET".into()));
+    }
+    #[test] fn parse_gauge_no_labels() {
+        let s = "# TYPE mem_bytes gauge\nmem_bytes 1024\n";
+        let m = parse(s).unwrap();
+        assert_eq!(m.len(), 1);
+        assert_eq!(m[0].kind, MetricKind::Gauge);
+        assert_eq!(m[0].samples[0].value, 1024.0);
+        assert!(m[0].samples[0].labels.is_empty());
+    }
+    #[test] fn parse_histogram_buckets() {
+        // Real prometheus emits buckets/_sum/_count as sibling metrics with the
+        // same base name; TYPE only appears once for the base metric.
+        let s = "# TYPE latency histogram\nlatency_bucket{le=\"0.5\"} 5\nlatency_bucket{le=\"1\"} 10\nlatency_sum 100\nlatency_count 12\n";
+        let m = parse(s).unwrap();
+        assert_eq!(m.len(), 4);
+        let bucket_count = m.iter().filter(|x| x.name == "latency_bucket").count();
+        assert_eq!(bucket_count, 1);
+        assert_eq!(m.iter().find(|x| x.name == "latency_bucket").unwrap().samples.len(), 2);
+    }
+    #[test] fn parse_multiple_metrics() {
+        let s = "# TYPE a counter\n# TYPE b gauge\na 1\nb 2\n";
+        let m = parse(s).unwrap();
+        assert_eq!(m.len(), 2);
+        assert_eq!(m[0].name, "a");
+        assert_eq!(m[1].name, "b");
+    }
+    #[test] fn parse_empty() {
+        let m = parse("").unwrap();
+        assert!(m.is_empty());
+    }
+    #[test] fn parse_comments_only() {
+        let m = parse("# this is a comment\n# another comment\n").unwrap();
+        assert!(m.is_empty());
+    }
+    #[test] fn parse_unknown_type_errors() {
+        let s = "# TYPE x weird\nx 1\n";
+        assert!(parse(s).is_err());
+    }
+    #[test] fn parse_label_with_quote() {
+        let s = "# TYPE x gauge\nx{label=\"a,b\"} 5\n";
+        let m = parse(s).unwrap();
+        assert_eq!(m[0].samples[0].labels[0].1, "a,b");
+    }
+}
+>>>>>>> 01c0243 (feat(gateway): Prometheus text exposition parser (counter/gauge/histogram/summary))
