@@ -995,3 +995,7 @@ pub mod ebpf_loader;
 pub mod mime_multipart;
 pub mod cbor_minimal;
 pub mod ipfix_parser;
+pub mod dnssec_chain;
+pub mod lua_bytecode;
+pub mod stun_protocol;
+pub mod promql_parse;
