@@ -1,5 +1,13 @@
 # substrate
 
+<p align="center">
+  <a href="assets/brand/substrate-icon.svg"><img src="assets/brand/substrate-icon.svg" alt="substrate" width="160" height="160"></a>
+</p>
+<p align="center"><em>Hexagonal AI dispatch gateway &amp; TUI — proxy, rate-limit, retry, observe.</em></p>
+<p align="center"><sub>Backbone-2 graphite palette · <a href="assets/brand/README.md">brand assets &amp; tokens</a> · theme.rs wired (PR #217)</sub></p>
+
+---
+
 > AI dispatch gateway and TUI — proxy, rate-limit, retry, and observe LLM traffic.
 
 ## Features
