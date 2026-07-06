@@ -999,3 +999,5 @@ pub mod dnssec_chain;
 pub mod lua_bytecode;
 pub mod stun_protocol;
 pub mod promql_parse;
+pub mod pcap_global_header;
+pub mod ssh_hostkey;
