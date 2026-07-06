@@ -140,3 +140,6 @@ pub mod json5;
 pub mod s_expression;
 pub mod url_safe_base64;
 pub mod dns_zone;
+pub mod dhcp_options;
+pub mod ssh_known_hosts;
+pub mod ntp_timestamp;
