@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  substrate brand icon — Animated motion variant (vision-pillar L101).
+  Companion to the static substrate-icon.svg.
+  Animation: sync-violet pulse traveling along the 6-node mesh edges,
+  with the central amber dispatch-node breathing.
+  Loop: 3.5s seamless.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024" role="img" aria-label="substrate (animated)">
+  <title>substrate — animated</title>
+  <desc>Backbone-2 mark with sync-violet mesh pulse and amber dispatch-node breathing.</desc>
+
+  <defs>
+    <radialGradient id="substrate-panel-glow" cx="50%" cy="50%" r="65%">
+      <stop offset="0%" stop-color="#1d2530" stop-opacity="1"/>
+      <stop offset="65%" stop-color="#161b22" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#0a0d12" stop-opacity="1"/>
+    </radialGradient>
+    <linearGradient id="substrate-violet" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#a371f7" stop-opacity="0.4"/>
+      <stop offset="50%" stop-color="#a371f7" stop-opacity="1"/>
+      <stop offset="100%" stop-color="#a371f7" stop-opacity="0.4"/>
+    </linearGradient>
+    <radialGradient id="substrate-amber-glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#d29922" stop-opacity="1"/>
+      <stop offset="40%" stop-color="#d29922" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#d29922" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="184" ry="184" fill="url(#substrate-panel-glow)"/>
+
+  <!-- Outer hex frame (static, violet) -->
+  <polygon points="512,128 832,320 832,704 512,896 192,704 192,320"
+           fill="none" stroke="#a371f7" stroke-opacity="0.6" stroke-width="14" stroke-linejoin="round"/>
+
+  <!-- 6 mesh edge lines, each with traveling pulse (3.5s) -->
+  <g stroke="#a371f7" stroke-width="10" stroke-linecap="round" fill="none">
+    <line x1="512" y1="128" x2="832" y2="320">
+      <animate attributeName="stroke-opacity" values="0.25;1;0.25" dur="3.5s" begin="0s" repeatCount="indefinite"/>
+    </line>
+    <line x1="832" y1="320" x2="832" y2="704">
+      <animate attributeName="stroke-opacity" values="0.25;1;0.25" dur="3.5s" begin="0.58s" repeatCount="indefinite"/>
+    </line>
+    <line x1="832" y1="704" x2="512" y2="896">
+      <animate attributeName="stroke-opacity" values="0.25;1;0.25" dur="3.5s" begin="1.16s" repeatCount="indefinite"/>
+    </line>
+    <line x1="512" y1="896" x2="192" y2="704">
+      <animate attributeName="stroke-opacity" values="0.25;1;0.25" dur="3.5s" begin="1.75s" repeatCount="indefinite"/>
+    </line>
+    <line x1="192" y1="704" x2="192" y2="320">
+      <animate attributeName="stroke-opacity" values="0.25;1;0.25" dur="3.5s" begin="2.33s" repeatCount="indefinite"/>
+    </line>
+    <line x1="192" y1="320" x2="512" y2="128">
+      <animate attributeName="stroke-opacity" values="0.25;1;0.25" dur="3.5s" begin="2.91s" repeatCount="indefinite"/>
+    </line>
+  </g>
+
+  <!-- 6 corner mesh nodes (static violet dots) -->
+  <g fill="#a371f7">
+    <circle cx="512" cy="128" r="14"/>
+    <circle cx="832" cy="320" r="14"/>
+    <circle cx="832" cy="704" r="14"/>
+    <circle cx="512" cy="896" r="14"/>
+    <circle cx="192" cy="704" r="14"/>
+    <circle cx="192" cy="320" r="14"/>
+  </g>
+
+  <!-- Central amber dispatch node — breathing 3.5s -->
+  <circle cx="512" cy="512" r="60" fill="url(#substrate-amber-glow)">
+    <animate attributeName="r" values="48;68;48" dur="3.5s" repeatCount="indefinite"/>
+  </circle>
+  <circle cx="512" cy="512" r="22" fill="#d29922"/>
+</svg>
