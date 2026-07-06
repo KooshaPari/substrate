@@ -1001,3 +1001,5 @@ pub mod stun_protocol;
 pub mod promql_parse;
 pub mod pcap_global_header;
 pub mod ssh_hostkey;
+pub mod promql_eval;
+pub mod git_pack_idx;
