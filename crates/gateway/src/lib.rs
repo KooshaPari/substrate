@@ -989,3 +989,4 @@ pub mod otp_totp;
 
 pub mod prometheus_scrape;
 pub mod oidc_jwt;
+pub mod x509_chain;
