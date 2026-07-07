@@ -968,9 +968,6 @@ pub mod roman_numeral;
 pub mod calendar_date;
 pub mod decimal_lc;
 pub mod utf8_iter;
-// L141: substrate v0.3.0 expansion — xoshiro256** PRNG + polynomial arithmetic
-pub mod noise_xoshiro;
-pub mod polynomials;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
@@ -1069,3 +1066,6 @@ pub mod radiotap;
 // L133: wave-35 utility modules — SNMPv3 (RFC 3412) message parser + Cisco CDP (CDPv2) TLV codec with Meraki OUI classification helpers
 pub mod snmpv3_msg;
 pub mod cdp_meraki_discovery;
+// L134: wave-36 utility modules — minimal QOI (Quite OK Image) decoder + minimal BMP (Windows Bitmap) parser
+pub mod qoi_image;
+pub mod bmp_image;
