@@ -964,6 +964,10 @@ pub mod reed_solomon;
 pub mod base_n_radix;
 pub mod natural_sort;
 pub mod roman_numeral;
+// L140: substrate v0.3.0 expansion — UTF-8 codepoint iterator + decimal encoding + Gregorian calendar
+pub mod calendar_date;
+pub mod decimal_lc;
+pub mod utf8_iter;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
