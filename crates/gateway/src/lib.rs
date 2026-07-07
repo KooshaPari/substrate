@@ -968,6 +968,13 @@ pub mod roman_numeral;
 pub mod calendar_date;
 pub mod decimal_lc;
 pub mod utf8_iter;
+// L141: substrate v0.3.0 expansion — xoshiro256** PRNG + polynomial arithmetic
+pub mod noise_xoshiro;
+pub mod polynomials;
+// L142: substrate v0.3.0 expansion — money/currency + SI units + Morse code
+pub mod money_currency;
+pub mod morse_code;
+pub mod units_si;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
