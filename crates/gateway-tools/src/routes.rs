@@ -304,9 +304,20 @@ const COCKPIT_HTML: &str = r#"<!DOCTYPE html>
     .card { border: 1px solid #a371f7; padding: 1rem; margin: 1rem 0; border-radius: 4px; background: #0d1117; }
     code { background: #161b22; padding: 0.2em 0.4em; border-radius: 3px; }
     .pill { background: #a371f7; color: #161b22; padding: 0.1em 0.5em; border-radius: 1em; font-size: 0.8em; }
+    nav { background: #0d1117; padding: 0.8rem 1.2rem; margin: -2rem -2rem 1.5rem -2rem; border-bottom: 1px solid #a371f7; }
+    nav a { margin-right: 1.2rem; font-weight: bold; }
+    .modules { list-style: none; padding: 0; }
+    .modules li { padding: 0.3em 0.6em; border-bottom: 1px dotted #2a2a2a; }
+    .modules li:hover { background: #1a1a1a; }
   </style>
 </head>
 <body>
+  <nav>
+    <a href="/">/ (cockpit)</a>
+    <a href="/health">/health</a>
+    <a href="/v1/modules">/v1/modules</a>
+    <a href="/v1/splash">/v1/splash</a>
+  </nav>
   <h1>&#9670; substrate / gateway-tools</h1>
   <p class="pill">sync-violet Backbone-2 cockpit</p>
   <h2>Routes</h2>
@@ -315,14 +326,25 @@ const COCKPIT_HTML: &str = r#"<!DOCTYPE html>
     <li><a href="/v1/modules">/v1/modules</a> &mdash; module list</li>
     <li><a href="/v1/splash">/v1/splash</a> &mdash; ASCII splash</li>
   </ul>
-  <h2>Modules</h2>
+  <h2>Modules ({mod_count})</h2>
   <div class="card">
-    <strong>{mod_count} modules</strong> exposed via <code>GET /v1/modules/:name</code>
+    <ul class="modules">
+      <li><a href="/v1/modules/oidc_jwt">oidc_jwt</a> &mdash; OIDC JWT decoder (8 pub_fns)</li>
+      <li><a href="/v1/modules/prometheus_scrape">prometheus_scrape</a> &mdash; Prometheus scrape builder (12 pub_fns)</li>
+      <li><a href="/v1/modules/prometheus_exposition">prometheus_exposition</a> &mdash; Prometheus text exposition (6 pub_fns)</li>
+      <li><a href="/v1/modules/vmstat_parser">vmstat_parser</a> &mdash; /proc/vmstat parser (5 pub_fns)</li>
+      <li><a href="/v1/modules/http1_request">http1_request</a> &mdash; HTTP/1.1 request parser (5 pub_fns)</li>
+      <li><a href="/v1/modules/jwt_jwks">jwt_jwks</a> &mdash; JWKS fetcher (5 pub_fns)</li>
+      <li><a href="/v1/modules/pem_codec">pem_codec</a> &mdash; PEM encode/decode (4 pub_fns)</li>
+      <li><a href="/v1/modules/tls_record">tls_record</a> &mdash; TLS record parse/write (4 pub_fns)</li>
+      <li><a href="/v1/modules/redis_resp">redis_resp</a> &mdash; RESP value encode/parse (3 pub_fns)</li>
+      <li><a href="/v1/modules/dns_message_parser">dns_message_parser</a> &mdash; DNS packet parser (3 pub_fns)</li>
+    </ul>
   </div>
   <h2>CLI</h2>
   <pre><code>cargo run -p gateway-tools -- serve --port 8080
 curl http://127.0.0.1:8080/v1/modules</code></pre>
-  <p><small>Built on axum 0.8 + tokio 1 (per xDD mandate). Backbone-2 family palette.</small></p>
+  <p><small>Built on axum 0.8 + tokio 1 (per xDD mandate). L114: nav header + module list added.</small></p>
 </body>
 </html>
 "#;
