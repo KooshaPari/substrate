@@ -1026,4 +1026,6 @@ pub mod http1_request;
 pub mod vmstat_parser;
 pub mod icalendar_parse;
 pub mod vcard_parse;
+pub mod webvtt_cue_parse;
+pub mod webmanifest;
 pub mod mqtt_packet_v5;
