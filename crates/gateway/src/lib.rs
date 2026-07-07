@@ -944,6 +944,10 @@ pub mod glob_pattern;
 pub mod cyclic_check;
 pub mod unicode_normalization;
 pub mod uri_template;
+// L134: substrate v0.3.0 expansion — ASN.1 DER encoding + QR matrix + IPv6 address
+pub mod asn1_der;
+pub mod ipv6_address;
+pub mod qr_code;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
