@@ -1041,3 +1041,6 @@ pub mod vcard_parse;
 pub mod webvtt_cue_parse;
 pub mod webmanifest;
 pub mod mqtt_packet_v5;
+// L131: wave-33 utility modules — TACACS+ (RFC 8907) Authentication START codec + IMAP4rev1 (RFC 3501) response classifier
+pub mod tacacs_auth;
+pub mod imap_response_parity;
