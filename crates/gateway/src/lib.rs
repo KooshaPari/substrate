@@ -1055,3 +1055,6 @@ pub mod imap_response_parity;
 // L132: wave-34 utility modules — IPsec ESP (RFC 4303) packet codec + radiotap (radiotap.org/fields) header codec
 pub mod ipsec_esp_parse;
 pub mod radiotap;
+// L133: wave-35 utility modules — SNMPv3 (RFC 3412) message parser + Cisco CDP (CDPv2) TLV codec with Meraki OUI classification helpers
+pub mod snmpv3_msg;
+pub mod cdp_meraki_discovery;
