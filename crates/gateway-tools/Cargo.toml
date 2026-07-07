@@ -16,3 +16,7 @@ gateway = { path = "../gateway" }
 clap.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
+# wraps: axum 0.8 + tokio 1.42 from workspace (per xDD wrap-over-handroll mandate;
+# the `serve` subcommand is a thin HTTP shell over the in-binary `inspect_registry()`).
+axum.workspace = true
+tokio.workspace = true

@@ -42,6 +42,13 @@ use gateway::tls_record::{
 };
 
 // ---------------------------------------------------------------------------
+// `serve` subcommand imports (axum 0.8 + tokio 1.42, wrapped per xDD mandate).
+// `routes` is a sibling module — keeps the binary's CLI dispatch in this file
+// while letting the HTTP route definitions live on their own.
+// ---------------------------------------------------------------------------
+mod routes;
+
+// ---------------------------------------------------------------------------
 // CLI surface
 // ---------------------------------------------------------------------------
 
@@ -128,6 +135,15 @@ enum Cmd {
     Inspect {
         /// Optional module name (e.g. `dns`, `jwt`, `pem`). Omit to enumerate.
         module: Option<String>,
+    },
+    /// Start the HTTP REST surface (synced with `inspect_registry()`).
+    Serve {
+        /// TCP port to bind (default: 8080).
+        #[arg(long, default_value_t = 8080)]
+        port: u16,
+        /// Bind address (default: 0.0.0.0).
+        #[arg(long, default_value = "0.0.0.0")]
+        bind: String,
     },
 }
 
@@ -721,8 +737,6 @@ fn split_first_token(s: &str) -> (String, String) {
 }
 
 // ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 // `inspect` — list gateway utility modules + dump a module's top fn sigs.
 //
 // Output is plaintext (no JSON option) — human-readable cockpit entrypoint.
@@ -886,6 +900,64 @@ fn run_inspect(module: Option<&str>) -> Result<()> {
 }
 
 // ---------------------------------------------------------------------------
+// `serve` — async HTTP wrapper around `inspect_registry()`.
+//
+// Wraps `axum` 0.8 (per xDD wrap-over-handroll mandate). The route handlers
+// live in `routes.rs`; this function only does:
+//   1) print the sync-violet splash with the listen URL,
+//   2) bind tokio + axum,
+//   3) install a Ctrl-C trap that prints "shutdown signal received".
+//
+// Sync-violet (#a371f7) consistent with the `inspect` splash.
+// ---------------------------------------------------------------------------
+
+fn run_serve(port: u16, bind: String) -> Result<()> {
+    substrate_splash();
+    eprintln!(
+        "\x1b[38;2;163;113;247msubstrate serve\x1b[0m  listening on \x1b[38;2;210;153;34mhttp://{bind}:{port}\x1b[0m"
+    );
+    eprintln!(
+        "  \x1b[38;2;163;113;247mGET /health\x1b[0m                  liveness probe"
+    );
+    eprintln!(
+        "  \x1b[38;2;163;113;247mGET /v1/modules\x1b[0m             module list (counts)"
+    );
+    eprintln!(
+        "  \x1b[38;2;163;113;247mGET /v1/modules/:name\x1b[0m       module details"
+    );
+    eprintln!(
+        "  \x1b[38;2;163;113;247mGET /v1/splash\x1b[0m               ASCII splash (text/plain)"
+    );
+
+    let registry = routes::static_registry();
+    let listener = std::net::TcpListener::bind((bind.as_str(), port))
+        .with_context(|| format!("bind {bind}:{port}"))?;
+    eprintln!("substrate: bound {bind}:{port}, handing off to tokio runtime");
+    tokio::runtime::Builder::new_multi_thread()
+        .enable_all()
+        .build()
+        .context("build tokio runtime")?
+        .block_on(async move {
+            axum::serve(
+                tokio::net::TcpListener::from_std(listener)
+                    .context("convert to tokio listener")?,
+                routes::build_router(registry),
+            )
+            .with_graceful_shutdown(shutdown_signal())
+            .await
+            .context("axum::serve")
+        })?;
+    write_err("substrate: shutdown signal received");
+    Ok(())
+}
+
+async fn shutdown_signal() {
+    if tokio::signal::ctrl_c().await.is_ok() {
+        write_err("substrate: shutdown signal received");
+    }
+}
+
+// ---------------------------------------------------------------------------
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -901,6 +973,7 @@ fn main() -> Result<()> {
         Cmd::M3u { op } => run_m3u(op),
         Cmd::Chunked { op } => run_chunked(op),
         Cmd::Inspect { module } => run_inspect(module.as_deref()),
+        Cmd::Serve { port, bind } => run_serve(*port, bind.clone()),
     };
     if let Err(ref e) = res {
         write_err(format!("error: {e:?}"));
@@ -930,6 +1003,10 @@ mod tests {
             Cmd::M3u { op } => run_m3u(op),
             Cmd::Chunked { op } => run_chunked(op),
             Cmd::Inspect { module } => run_inspect(module.as_deref()),
+            // `serve` is intentionally excluded from the in-process test dispatcher
+            // — it would block on the tokio runtime. The `routes` module is
+            // exercised by `routes::tests::*` instead; here we just return Ok(()).
+            Cmd::Serve { .. } => Ok(()),
         }
         .map(|_| String::new())
     }
