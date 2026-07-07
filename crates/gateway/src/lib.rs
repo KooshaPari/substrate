@@ -17,6 +17,9 @@ mod config;
 pub mod config_watcher;
 pub mod fallback;
 pub mod ldap_filter_parity;
+// L142: wave-37 utility modules — MAPI property stream + MS-CFB / legacy PPT header
+pub mod mapi_props;
+pub mod pres_header_parse;
 pub mod metrics;
 mod openai;
 pub mod oauth1_signature_parity;
