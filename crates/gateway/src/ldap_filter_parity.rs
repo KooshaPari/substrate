@@ -160,7 +160,13 @@ fn parse_filtercomp(cur: &mut Cursor<'_>) -> Result<Filter, String> {
             Ok(Filter::Not(Box::new(inner)))
         }
         Some(b'(') => parse_item(cur),
-        Some(c) => Err(format!("unexpected byte {:?} inside filter", c as char)),
+        // Per RFC 4515 §3 `filtercomp = and / or / not / item`, an
+        // `item` (e.g. `(uid=alice)`) is a valid filtercomp at the
+        // top level when the parser has already consumed the
+        // surrounding `(...)` in `parse_filter`. After `parse_filter`
+        // strips the outer `(`, an item starts with an attribute name
+        // (a letter), not another `(`.
+        Some(_) => parse_item(cur),
         None => Err("unexpected EOF in filtercomp".to_string()),
     }
 }

@@ -64,11 +64,12 @@ fn pct_encode(s: &[u8]) -> String {
     out
 }
 
-/// RFC 5849 §3.4.1.3.1 — parameter normalization.
+/// RFC 5849 §3.4.1.3.2 — parameter normalization.
 ///
-/// 1. Percent-encode each name and value per §3.6.
-/// 2. Sort by name (byte-wise); tie-break by value.
-/// 3. Join with `=` between name and value, `&` between pairs.
+/// 1. First, percent-encode each name and value per §3.6.
+/// 2. Sort by encoded name (byte-wise); tie-break by encoded value.
+/// 3. Concatenate each encoded name with its encoded value using "=".
+/// 4. Concatenate the sorted pairs with "&".
 fn normalize_params(params: &[(&str, &str)]) -> String {
     let mut encoded: Vec<(String, String)> = params
         .iter()
@@ -82,17 +83,34 @@ fn normalize_params(params: &[(&str, &str)]) -> String {
         .join("&")
 }
 
+/// Strip the query component from a URL per RFC 5849 §3.4.1.2.
+///
+/// §3.4.1.2 says only scheme + authority + path contribute to the
+/// base string URI; the query is parsed out and merged into the
+/// normalized request parameters (which the caller is responsible
+/// for). If `url` has no `?`, it is returned unchanged.
+fn strip_query(url: &str) -> &str {
+    match url.find('?') {
+        Some(i) => &url[..i],
+        None => url,
+    }
+}
+
 /// Build the OAuth signature base string per RFC 5849 §3.4.1.1.
 ///
-/// The `method` and `url` are passed through as-is — the caller is
-/// responsible for normalizing the URL (scheme lower-case, host
-/// lower-case, port stripped if default) per §3.4.1.2.
+/// The `method` is upper-cased. The `url`'s query component is
+/// stripped (RFC 5849 §3.4.1.2 only includes scheme + authority +
+/// path in the base string URI; the caller is expected to have
+/// merged the query parameters into `params`). The caller is still
+/// responsible for lower-casing scheme + host and stripping default
+/// ports before calling.
 pub fn build_base_string(method: &str, url: &str, params: &[(&str, &str)]) -> String {
+    let base_uri = strip_query(url);
     let normalized_params = normalize_params(params);
     format!(
         "{}&{}&{}",
         pct_encode(method.to_ascii_uppercase().as_bytes()),
-        pct_encode(url.as_bytes()),
+        pct_encode(base_uri.as_bytes()),
         pct_encode(normalized_params.as_bytes()),
     )
 }
@@ -190,13 +208,13 @@ mod tests {
 
     #[test]
     fn normalize_encodes_before_sort() {
-        // "a b" sorts after "a" when raw, but encoded as "a%20b"
-        // sorts after "a=1" because '=' < '%'.
+        // RFC 5849 §3.4.1.3.2 step 1 encodes names/values first,
+        // step 2 sorts by name using ascending byte value ordering.
+        // Names that share a prefix sort by length: "a" (1 byte)
+        // sorts before "a%20b" (5 bytes), so the "a" pair comes
+        // first regardless of the encoded '=' vs '%' comparison.
         let p = [("a b", "x"), ("a", "1")];
-        // raw sort would put "a" first (shorter prefix), but encoded
-        // sort puts "a=1" first because '=' (0x3d) < '%' (0x25)?
-        // Actually '%' = 0x25 < '=' = 0x3d, so "a%20b" < "a=1".
-        assert_eq!(normalize_params(&p), "a%20b=x&a=1");
+        assert_eq!(normalize_params(&p), "a=1&a%20b=x");
     }
 
     #[test]
@@ -243,10 +261,10 @@ mod tests {
         let consumer = "kAcSOqF21Fu85e7zjz7ZN2U4ZRhfV3WpwPAoE3Z7kBw";
         let token = "LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE";
         let mac = sign_base_string(&base, consumer, token);
-        let sig = base64_encode(&mac);
-        assert_eq!(sig, "tnnArxj06cWHq44gCs1OSKk%2FjLY%3D");
-        // The "%2F" in the canonical RFC answer is percent-decoded
-        // from base64: the actual base64 is `tnnArxj06cWHq44gCs1OSKk/jLY=`.
+        // The RFC 5849 §3.5 example signature is the raw base64 form:
+        //   `tnnArxj06cWHq44gCs1OSKk/jLY=`
+        // (When transmitted on the wire it gets percent-encoded per
+        // §3.6 as `tnnArxj06cWHq44gCs1OSKk%2FjLY%3D`.)
         assert_eq!(base64_encode(&mac), "tnnArxj06cWHq44gCs1OSKk/jLY=");
     }
 

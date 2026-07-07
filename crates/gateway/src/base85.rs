@@ -61,37 +61,32 @@ pub fn encode(data: &[u8]) -> String {
 
 /// Decode a base85 string back into bytes.
 ///
-/// Recognises the RFC 1924 short-form `z` shorthand for a 4-byte zero block.
-/// Returns `Err` on any character outside the alphabet, on a stray `z` mid-block,
-/// on a single trailing character, or on a malformed partial block.
+/// Per RFC 1924, every encoded character is a member of the base85 alphabet
+/// (including the literal `z`); there is no `z`-shorthand in RFC 1924 (that
+/// shorthand belongs to Ascii85 / btoa). Returns `Err` on any character
+/// outside the alphabet, on a single trailing character, or on a malformed
+/// partial block.
 pub fn decode(input: &str) -> Result<Vec<u8>, String> {
     let mut out = Vec::with_capacity(input.len() * 4 / 5);
     let bytes = input.as_bytes();
     let mut buf: Vec<u32> = Vec::with_capacity(5);
     for &b in bytes {
-        if b == b'z' {
-            if !buf.is_empty() {
-                return Err("'z' mid-block".into());
-            }
-            out.extend_from_slice(&[0u8; 4]);
-        } else {
-            let idx = ALPHABET
-                .iter()
-                .position(|&c| c == b)
-                .ok_or_else(|| format!("bad char 0x{b:02x}"))?;
-            buf.push(idx as u32);
-            if buf.len() == 5 {
-                let v = buf[0] * 85 * 85 * 85 * 85
-                    + buf[1] * 85 * 85 * 85
-                    + buf[2] * 85 * 85
-                    + buf[3] * 85
-                    + buf[4];
-                out.push(((v >> 24) & 0xff) as u8);
-                out.push(((v >> 16) & 0xff) as u8);
-                out.push(((v >> 8) & 0xff) as u8);
-                out.push((v & 0xff) as u8);
-                buf.clear();
-            }
+        let idx = ALPHABET
+            .iter()
+            .position(|&c| c == b)
+            .ok_or_else(|| format!("bad char 0x{b:02x}"))?;
+        buf.push(idx as u32);
+        if buf.len() == 5 {
+            let v = buf[0] * 85 * 85 * 85 * 85
+                + buf[1] * 85 * 85 * 85
+                + buf[2] * 85 * 85
+                + buf[3] * 85
+                + buf[4];
+            out.push(((v >> 24) & 0xff) as u8);
+            out.push(((v >> 16) & 0xff) as u8);
+            out.push(((v >> 8) & 0xff) as u8);
+            out.push((v & 0xff) as u8);
+            buf.clear();
         }
     }
     if buf.len() == 1 {
@@ -139,15 +134,11 @@ mod tests {
     }
 
     #[test]
-    fn z_shorthand_zero_block() {
-        // "z" expands to four zero bytes (RFC 1924 short form)
-        assert_eq!(decode("z").unwrap(), vec![0u8; 4]);
-    }
-
-    #[test]
-    fn z_mid_block_errors() {
-        // "0z" — there's already data buffered
-        assert!(decode("0z").is_err());
+    fn z_is_regular_alphabet_char() {
+        // RFC 1924 has no 'z' shorthand; 'z' is a regular alphabet char at
+        // index 61. Decoding a single 'z' should be treated as a 1-char
+        // partial block (trailing 1 char error), not as zero shorthand.
+        assert!(decode("z").is_err());
     }
 
     #[test]

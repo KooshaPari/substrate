@@ -140,11 +140,15 @@ mod tests {
     }
     #[test] fn connect_minimal_packet() {
         let p = encode_connect("a").unwrap();
-        // Fixed header byte = 0x10; remaining length = 1 + 1 (varint) + 10 (vh prefix) + 3 (id)
-        // = 14; varint of 14 is one byte.
+        // p[0] = fixed-header byte = 0x10 (CONNECT).
+        // p[1] = remaining-length varint = 14.
+        // p[2..=3] = Protocol Name length prefix = 0x00, 0x04.
+        // p[4..=7] = Protocol Name "MQTT".
+        // p[8]    = Protocol Level = 0x05.
         assert_eq!(p[0] >> 4, PacketType::Connect as u8);
-        assert_eq!(p[2..=5], [b'M', b'Q', b'T', b'T']);
-        assert_eq!(p[6], 0x05); // MQTT v5
+        assert_eq!(p[2..=3], [0x00, 0x04]); // Protocol Name length prefix
+        assert_eq!(p[4..=7], [b'M', b'Q', b'T', b'T']);
+        assert_eq!(p[8], 0x05); // MQTT v5
     }
     #[test] fn publish_qos0_layout() {
         let p = encode_publish_qos0("t", b"hi").unwrap();
