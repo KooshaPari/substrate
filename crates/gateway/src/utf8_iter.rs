@@ -16,13 +16,22 @@ pub fn chars_iter(s: &str) -> std::str::Chars<'_> {
 }
 
 /// Iterator over Unicode codepoints in a `[u8]` slice that IS known
-/// to be well-formed UTF-8. Wraps the standard `str::from_utf8_unchecked`
-/// conversion + `chars()`.
-/// Caller must ensure `bytes` is valid UTF-8; if not, behavior is
-/// undefined.
+/// to be well-formed UTF-8. Uses the safe `str::from_utf8` conversion
+/// + `chars()`. If `bytes` is not valid UTF-8 the returned iterator is
+/// empty (rather than triggering undefined behaviour). Callers that
+/// have already validated their input pay only the validation cost.
 pub fn chars_iter_bytes_valid(bytes: &[u8]) -> std::str::Chars<'_> {
-    // SAFETY: caller is required to provide valid UTF-8
-    unsafe { std::str::from_utf8_unchecked(bytes) }.chars()
+    // The previous implementation used `from_utf8_unchecked`, which is
+    // rejected by `#![forbid(unsafe_code)]` in lib.rs. Pre-existing
+    // regression introduced in commit d650fa4 (L140 v0.3.0 expansion,
+    // utf8_iter + decimal_lc + calendar_date). Fixed as part of wave-36.
+    // We leak a small String when input is invalid UTF-8 (rare path;
+    // contract requires caller to pass valid input). On the happy path
+    // the safe conversion returns a borrowed `Chars` with no allocation.
+    match std::str::from_utf8(bytes) {
+        Ok(s) => s.chars(),
+        Err(_) => Box::leak(String::new().into_boxed_str()).chars(),
+    }
 }
 
 /// Iterator over Unicode codepoints in a `[u8]` slice that might be

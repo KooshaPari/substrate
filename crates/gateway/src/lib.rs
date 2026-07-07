@@ -1073,3 +1073,6 @@ pub mod radiotap;
 // L133: wave-35 utility modules — SNMPv3 (RFC 3412) message parser + Cisco CDP (CDPv2) TLV codec with Meraki OUI classification helpers
 pub mod snmpv3_msg;
 pub mod cdp_meraki_discovery;
+// L134: wave-36 utility modules — minimal QOI (Quite OK Image) decoder + minimal BMP (Windows Bitmap) parser
+pub mod qoi_image;
+pub mod bmp_image;
