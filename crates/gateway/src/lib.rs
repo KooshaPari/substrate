@@ -935,6 +935,11 @@ pub mod base64;
 // L123: substrate v0.3.0 expansion — utility modules from sharecli library
 pub mod backoff;
 pub mod base85;
+// L129: more utility modules — distance metrics, validation, pattern matching, probabilistic sets
+pub mod bloom_filter;
+pub mod credit_card;
+pub mod distance;
+pub mod glob_pattern;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
