@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 //! Minimal OIDC ID token (JWT) decoder.
 //!
 //! This module decodes a JWT's three URL-safe base64 segments (header, payload,
@@ -219,66 +218,11 @@ fn base64_decode_standard(s: &str) -> Result<Vec<u8>, String> {
     for (i, &c) in T.iter().enumerate() {
         lookup[c as usize] = i as u8;
     }
-=======
-// Minimal OIDC ID token structure (JWT header + payload). Signature is not verified.
-// Decoder splits the 3-segment base64url token and parses header/payload as JSON.
-use serde_json::Value;
-use std::collections::HashMap;
-
-#[derive(Debug, PartialEq)]
-pub struct JwtHeader {
-    pub alg: String,
-    pub typ: Option<String>,
-    pub kid: Option<String>,
-}
-
-#[derive(Debug, PartialEq)]
-pub struct JwtPayload {
-    pub iss: Option<String>,
-    pub sub: Option<String>,
-    pub aud: Option<String>,
-    pub exp: Option<i64>,
-    pub iat: Option<i64>,
-    pub custom_fields: HashMap<String, Value>,
-}
-
-pub fn decode(token: &str) -> Result<(JwtHeader, JwtPayload), String> {
-    let parts: Vec<&str> = token.split('.').collect();
-    if parts.len() != 3 { return Err(format!("expected 3 segments, got {}", parts.len())); }
-    let header_json = b64url_decode(parts[0])?;
-    let payload_json = b64url_decode(parts[1])?;
-    let header: Value = serde_json::from_slice(&header_json).map_err(|e| format!("header json: {}", e))?;
-    let payload: Value = serde_json::from_slice(&payload_json).map_err(|e| format!("payload json: {}", e))?;
-    let alg = header.get("alg").and_then(|v| v.as_str()).ok_or("missing alg")?.to_string();
-    let typ = header.get("typ").and_then(|v| v.as_str()).map(String::from);
-    let kid = header.get("kid").and_then(|v| v.as_str()).map(String::from);
-    let iss = payload.get("iss").and_then(|v| v.as_str()).map(String::from);
-    let sub = payload.get("sub").and_then(|v| v.as_str()).map(String::from);
-    let aud = payload.get("aud").and_then(|v| v.as_str()).map(String::from);
-    let exp = payload.get("exp").and_then(|v| v.as_i64());
-    let iat = payload.get("iat").and_then(|v| v.as_i64());
-    let mut custom = HashMap::new();
-    let reserved = ["iss", "sub", "aud", "exp", "iat"];
-    if let Some(obj) = payload.as_object() {
-        for (k, v) in obj {
-            if !reserved.contains(&k.as_str()) {
-                custom.insert(k.clone(), v.clone());
-            }
-        }
-    }
-    Ok((JwtHeader { alg, typ, kid }, JwtPayload { iss, sub, aud, exp, iat, custom_fields: custom }))
-}
-fn b64url_decode(s: &str) -> Result<Vec<u8>, String> {
-    let mut s = s.replace('-', "+").replace('_', "/");
-    let pad = (4 - s.len() % 4) % 4;
-    s.push_str(&"=".repeat(pad));
->>>>>>> 844cbf0 (feat(gateway): OIDC JWT decoder (header + payload + custom claims))
     let bytes = s.as_bytes();
     let mut out = Vec::with_capacity(bytes.len() * 3 / 4);
     let mut buf: u32 = 0;
     let mut bits: u32 = 0;
     for &b in bytes {
-<<<<<<< HEAD
         let v = lookup[b as usize];
         if v == 255 {
             if b == b'=' {
@@ -287,32 +231,15 @@ fn b64url_decode(s: &str) -> Result<Vec<u8>, String> {
             return Err(format!("bad base64 character `{}`", b as char));
         }
         buf = (buf << 6) | v as u32;
-=======
-        let v: u32 = match b {
-            b'A'..=b'Z' => (b - b'A') as u32,
-            b'a'..=b'z' => (b - b'a' + 26) as u32,
-            b'0'..=b'9' => (b - b'0' + 52) as u32,
-            b'+' => 62,
-            b'/' => 63,
-            b'=' => continue,
-            _ => return Err(format!("bad char {}", b as char)),
-        };
-        buf = (buf << 6) | v;
->>>>>>> 844cbf0 (feat(gateway): OIDC JWT decoder (header + payload + custom claims))
         bits += 6;
         if bits >= 8 {
             bits -= 8;
             out.push((buf >> bits) as u8);
-<<<<<<< HEAD
             buf &= (1u32 << bits) - 1;
-=======
-            buf &= (1 << bits) - 1;
->>>>>>> 844cbf0 (feat(gateway): OIDC JWT decoder (header + payload + custom claims))
         }
     }
     Ok(out)
 }
-<<<<<<< HEAD
 
 #[cfg(test)]
 mod tests {
@@ -331,33 +258,10 @@ mod tests {
             out.push(T[((n >> 12) & 0x3f) as usize] as char);
             out.push(T[((n >> 6) & 0x3f) as usize] as char);
             out.push(T[(n & 0x3f) as usize] as char);
-=======
-#[cfg(test)]
-mod tests {
-    use super::*;
-    fn sample_token() -> String {
-        let header = r#"{"alg":"RS256","typ":"JWT","kid":"k1"}"#;
-        let payload = r#"{"iss":"https://idp.example.com","sub":"user-123","aud":"app-1","exp":9999999999,"iat":1234567890,"email":"a@b.com","role":"admin"}"#;
-        let h = b64url_encode(header.as_bytes());
-        let p = b64url_encode(payload.as_bytes());
-        format!("{}.{}.sig", h, p)
-    }
-    fn b64url_encode(data: &[u8]) -> String {
-        let mut s = String::new();
-        const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        let mut i = 0;
-        while i + 3 <= data.len() {
-            let b = ((data[i] as u32) << 16) | ((data[i+1] as u32) << 8) | (data[i+2] as u32);
-            s.push(T[((b >> 18) & 0x3f) as usize] as char);
-            s.push(T[((b >> 12) & 0x3f) as usize] as char);
-            s.push(T[((b >> 6) & 0x3f) as usize] as char);
-            s.push(T[(b & 0x3f) as usize] as char);
->>>>>>> 844cbf0 (feat(gateway): OIDC JWT decoder (header + payload + custom claims))
             i += 3;
         }
         let rem = data.len() - i;
         if rem == 1 {
-<<<<<<< HEAD
             let n = (data[i] as u32) << 16;
             out.push(T[((n >> 18) & 0x3f) as usize] as char);
             out.push(T[((n >> 12) & 0x3f) as usize] as char);
@@ -493,58 +397,3 @@ mod tests {
         assert!(decode(&token).is_err());
     }
 }
-=======
-            let b = (data[i] as u32) << 16;
-            s.push(T[((b >> 18) & 0x3f) as usize] as char);
-            s.push(T[((b >> 12) & 0x3f) as usize] as char);
-        } else if rem == 2 {
-            let b = ((data[i] as u32) << 16) | ((data[i+1] as u32) << 8);
-            s.push(T[((b >> 18) & 0x3f) as usize] as char);
-            s.push(T[((b >> 12) & 0x3f) as usize] as char);
-            s.push(T[((b >> 6) & 0x3f) as usize] as char);
-        }
-        s
-    }
-    #[test] fn decode_basic() {
-        let (h, p) = decode(&sample_token()).unwrap();
-        assert_eq!(h.alg, "RS256");
-        assert_eq!(h.typ.as_deref(), Some("JWT"));
-        assert_eq!(h.kid.as_deref(), Some("k1"));
-        assert_eq!(p.iss.as_deref(), Some("https://idp.example.com"));
-        assert_eq!(p.sub.as_deref(), Some("user-123"));
-        assert_eq!(p.aud.as_deref(), Some("app-1"));
-        assert_eq!(p.exp, Some(9999999999));
-        assert_eq!(p.iat, Some(1234567890));
-        assert_eq!(p.custom_fields.get("email").and_then(|v| v.as_str()), Some("a@b.com"));
-        assert_eq!(p.custom_fields.get("role").and_then(|v| v.as_str()), Some("admin"));
-    }
-    #[test] fn decode_bad_segments() {
-        assert!(decode("abc.def").is_err());
-        assert!(decode("only_one").is_err());
-    }
-    #[test] fn decode_no_custom_fields() {
-        let header = r#"{"alg":"HS256"}"#;
-        let payload = r#"{"sub":"u"}"#;
-        let h = b64url_encode(header.as_bytes());
-        let p = b64url_encode(payload.as_bytes());
-        let (_, pl) = decode(&format!("{}.{}.sig", h, p)).unwrap();
-        assert!(pl.custom_fields.is_empty());
-    }
-    #[test] fn decode_hs256() {
-        let header = r#"{"alg":"HS256"}"#;
-        let payload = r#"{"sub":"u"}"#;
-        let h = b64url_encode(header.as_bytes());
-        let p = b64url_encode(payload.as_bytes());
-        let (jh, _) = decode(&format!("{}.{}.sig", h, p)).unwrap();
-        assert_eq!(jh.alg, "HS256");
-    }
-    #[test] fn decode_optional_typ() {
-        let header = r#"{"alg":"RS256"}"#;
-        let payload = r#"{}"#;
-        let h = b64url_encode(header.as_bytes());
-        let p = b64url_encode(payload.as_bytes());
-        let (jh, _) = decode(&format!("{}.{}.sig", h, p)).unwrap();
-        assert_eq!(jh.typ, None);
-    }
-}
->>>>>>> 844cbf0 (feat(gateway): OIDC JWT decoder (header + payload + custom claims))
