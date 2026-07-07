@@ -952,6 +952,11 @@ pub mod qr_code;
 pub mod base32;
 pub mod hkdf;
 pub mod hmac_sha256;
+// L136: substrate v0.3.0 expansion — ChaCha20 stream cipher + JWT (none/HS256) + UTF-8 validator + PBKDF2
+pub mod chacha20;
+pub mod jwt_es256;
+pub mod pbkdf2;
+pub mod utf8_validator;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
