@@ -1009,3 +1009,5 @@ pub mod bitcoin_bech32;
 pub mod elf_section;
 pub mod levenshtein;
 pub mod brontide_replay;
+pub mod http1_request;
+pub mod vmstat_parser;
