@@ -6,15 +6,16 @@
 //! for module name, description, and public-fn list.
 //!
 //! Routes (all return JSON unless noted):
+//!   GET /                           -> server-rendered HTML cockpit (Backbone-2 sync-violet)
 //!   GET /health                     -> `{ "status": "ok", "service": "..." }`
 //!   GET /v1/modules                 -> list of `{ name, fns }`
 //!   GET /v1/modules/:name           -> `{ name, description, public_fns }`
 //!   GET /v1/splash                  -> ASCII splash as text/plain
-//!   *                                -> 404 `{ "error": "not_found", "path": "..." }`
+//!   *                                -> HTML 404 cockpit (or JSON for `/v1/*`)
 
 use std::sync::Arc;
 
-use axum::response::IntoResponse;
+use axum::response::{Html, IntoResponse};
 
 /// One row in the static module registry. The CLI's `inspect_registry()` is
 /// the human-readable sibling; this struct is the same data in a typed form so
@@ -175,6 +176,7 @@ pub fn build_router(reg: Registry) -> axum::Router {
     use axum::routing::get;
 
     axum::Router::new()
+        .route("/", get(cockpit))
         .route("/health", get(health))
         .route("/v1/modules", get(list_modules))
         .route("/v1/modules/:name", get(get_module))
@@ -186,6 +188,17 @@ pub fn build_router(reg: Registry) -> axum::Router {
 // ---------------------------------------------------------------------------
 // Handlers
 // ---------------------------------------------------------------------------
+
+/// Server-rendered HTML cockpit for the `serve` subcommand.
+///
+/// Backbone-2 family palette (sync-violet `#a371f7` + amber `#d29922` on
+/// `#161b22` panel) — applied via inline `<style>` so the page has no
+/// external asset dependencies. Builds at request time so the module count
+/// stays in sync with `KNOWN_MODULES.len()`.
+async fn cockpit() -> Html<String> {
+    let mod_count = KNOWN_MODULES.len();
+    Html(COCKPIT_HTML.replace("{mod_count}", &mod_count.to_string()))
+}
 
 async fn health() -> axum::Json<serde_json::Value> {
     axum::Json(serde_json::json!({
@@ -234,17 +247,27 @@ async fn splash() -> axum::response::Response {
 }
 
 async fn not_found() -> axum::response::Response {
-    not_found_inner_body("/").into_response()
+    // The fallback only fires for paths not matched by any registered route.
+    // `/v1/modules/:name` not-found paths go through `not_found_inner_body`
+    // directly via `get_module`. So the fallback is HTML for the cockpit UX.
+    not_found_html("/").into_response()
 }
 
 /// Sync inner for the 404 body — used directly by `get_module` so we don't
-/// need to spawn or await just to build a JSON body. The `async fn not_found`
-/// handler above wraps this for the global fallback.
+/// need to spawn or await just to build a JSON body.
 fn not_found_inner_body(path: &str) -> axum::Json<serde_json::Value> {
     axum::Json(serde_json::json!({
         "error": "not_found",
         "path": path,
     }))
+}
+
+/// HTML 404 cockpit — reuses the Backbone-2 palette and links back to `/`.
+fn not_found_html(path: &str) -> Html<String> {
+    let body = NOT_FOUND_HTML
+        .replace("{path}", path)
+        .replace("{mod_count}", &KNOWN_MODULES.len().to_string());
+    Html(body)
 }
 
 // ---------------------------------------------------------------------------
@@ -259,6 +282,72 @@ const SPLASH_ART: &str = r#"
   \___ \| |_| \___ \ | | | |_    | | | |_) | |  | |
    ___) |  _  |___) || | |  _|   | | |  _ <| |  | |
   |____/|_| |_|____/ |_| |_|     |_| |_| \_\_|  |_|
+"#;
+
+// ---------------------------------------------------------------------------
+// Cockpit HTML — server-rendered, no JS framework, no external assets.
+// Placeholders: `{mod_count}` for KNOWN_MODULES.len(), `{path}` for 404.
+// ---------------------------------------------------------------------------
+
+const COCKPIT_HTML: &str = r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>substrate gateway-tools / cockpit</title>
+  <style>
+    body { background: #161b22; color: #d29922; font-family: 'Courier New', monospace; padding: 2rem; }
+    h1 { color: #a371f7; border-bottom: 2px solid #a371f7; padding-bottom: 0.5rem; }
+    h2 { color: #d29922; }
+    a { color: #a371f7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .card { border: 1px solid #a371f7; padding: 1rem; margin: 1rem 0; border-radius: 4px; background: #0d1117; }
+    code { background: #161b22; padding: 0.2em 0.4em; border-radius: 3px; }
+    .pill { background: #a371f7; color: #161b22; padding: 0.1em 0.5em; border-radius: 1em; font-size: 0.8em; }
+  </style>
+</head>
+<body>
+  <h1>&#9670; substrate / gateway-tools</h1>
+  <p class="pill">sync-violet Backbone-2 cockpit</p>
+  <h2>Routes</h2>
+  <ul>
+    <li><a href="/health">/health</a> &mdash; liveness JSON</li>
+    <li><a href="/v1/modules">/v1/modules</a> &mdash; module list</li>
+    <li><a href="/v1/splash">/v1/splash</a> &mdash; ASCII splash</li>
+  </ul>
+  <h2>Modules</h2>
+  <div class="card">
+    <strong>{mod_count} modules</strong> exposed via <code>GET /v1/modules/:name</code>
+  </div>
+  <h2>CLI</h2>
+  <pre><code>cargo run -p gateway-tools -- serve --port 8080
+curl http://127.0.0.1:8080/v1/modules</code></pre>
+  <p><small>Built on axum 0.8 + tokio 1 (per xDD mandate). Backbone-2 family palette.</small></p>
+</body>
+</html>
+"#;
+
+const NOT_FOUND_HTML: &str = r#"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>substrate / 404</title>
+  <style>
+    body { background: #161b22; color: #d29922; font-family: 'Courier New', monospace; padding: 2rem; }
+    h1 { color: #a371f7; border-bottom: 2px solid #a371f7; padding-bottom: 0.5rem; }
+    a { color: #a371f7; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    code { background: #161b22; padding: 0.2em 0.4em; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>&#9670; substrate / 404</h1>
+  <p>No route matches <code>{path}</code>.</p>
+  <p><a href="/">&larr; back to cockpit</a></p>
+  <p><small>Backbone-2 family palette.</small></p>
+</body>
+</html>
 "#;
 
 // ---------------------------------------------------------------------------
@@ -370,5 +459,57 @@ mod tests {
         assert!(ct.starts_with("text/plain"), "got content-type `{ct}`");
         let bytes = to_bytes(resp.into_body(), 64 * 1024).await.unwrap();
         assert!(std::str::from_utf8(&bytes).unwrap().contains("____"));
+    }
+
+    #[tokio::test]
+    async fn cockpit_root_returns_html() {
+        let app = build_router(Registry::new());
+        let resp = axum::ServiceExt::oneshot(
+            app,
+            axum::http::Request::builder()
+                .uri("/")
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(resp.status(), StatusCode::OK);
+        let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+        assert!(ct.starts_with("text/html"), "got content-type `{ct}`");
+        let bytes = to_bytes(resp.into_body(), 256 * 1024).await.unwrap();
+        let body = std::str::from_utf8(&bytes).unwrap();
+        assert!(body.contains("substrate / gateway-tools"));
+        assert!(body.contains("#a371f7"));
+        // module count is interpolated at request time
+        let expected_count = KNOWN_MODULES.len().to_string();
+        assert!(
+            body.contains(&format!("<strong>{expected_count} modules</strong>")),
+            "cockpit body missing module count `{expected_count}`",
+        );
+        // sanity-check the L109 REST routes are linked from the cockpit
+        assert!(body.contains("/v1/modules"));
+        assert!(body.contains("/v1/splash"));
+        assert!(body.contains("/health"));
+    }
+
+    #[tokio::test]
+    async fn unknown_path_returns_html_404() {
+        let app = build_router(Registry::new());
+        let resp = axum::ServiceExt::oneshot(
+            app,
+            axum::http::Request::builder()
+                .uri("/does-not-exist")
+                .body(axum::body::Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+        assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+        let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+        assert!(ct.starts_with("text/html"), "got content-type `{ct}`");
+        let bytes = to_bytes(resp.into_body(), 64 * 1024).await.unwrap();
+        let body = std::str::from_utf8(&bytes).unwrap();
+        assert!(body.contains("substrate / 404"));
+        assert!(body.contains("back to cockpit"));
     }
 }
