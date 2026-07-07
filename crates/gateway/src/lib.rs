@@ -948,6 +948,10 @@ pub mod uri_template;
 pub mod asn1_der;
 pub mod ipv6_address;
 pub mod qr_code;
+// L135: substrate v0.3.0 expansion — HMAC + HKDF + base32 codec
+pub mod base32;
+pub mod hkdf;
+pub mod hmac_sha256;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
