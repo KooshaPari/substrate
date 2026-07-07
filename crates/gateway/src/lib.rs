@@ -960,6 +960,10 @@ pub mod utf8_validator;
 // L137: substrate v0.3.0 expansion — base64url (RFC 4648 §5) + Reed-Solomon GF(256)
 pub mod base64url;
 pub mod reed_solomon;
+// L138: substrate v0.3.0 expansion — natural_sort (file listing) + base_n_radix + roman_numeral
+pub mod base_n_radix;
+pub mod natural_sort;
+pub mod roman_numeral;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
