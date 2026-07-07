@@ -968,6 +968,9 @@ pub mod roman_numeral;
 pub mod calendar_date;
 pub mod decimal_lc;
 pub mod utf8_iter;
+// L141: substrate v0.3.0 expansion — xoshiro256** PRNG + polynomial arithmetic
+pub mod noise_xoshiro;
+pub mod polynomials;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
