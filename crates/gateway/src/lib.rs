@@ -7,14 +7,17 @@
 pub mod admin;
 pub mod audit_log;
 pub mod banner;
+pub mod bitcoin_segwit_addr;
 pub mod bounded_body;
 pub mod budget;
 pub mod circuit_breaker;
 mod config;
 pub mod config_watcher;
 pub mod fallback;
+pub mod ldap_filter_parity;
 pub mod metrics;
 mod openai;
+pub mod oauth1_signature_parity;
 pub mod rate_limit;
 pub mod request_rate;
 pub mod retry;
