@@ -9,6 +9,8 @@ pub mod audit_log;
 pub mod banner;
 pub mod bitcoin_segwit_addr;
 pub mod bounded_body;
+// L122: wave-29 utility modules — DHCP options TLV codec (RFC 2132) + MQTT v5 packet codec
+pub mod dhcp_options;
 pub mod budget;
 pub mod circuit_breaker;
 mod config;
@@ -1016,3 +1018,4 @@ pub mod http1_request;
 pub mod vmstat_parser;
 pub mod icalendar_parse;
 pub mod vcard_parse;
+pub mod mqtt_packet_v5;
