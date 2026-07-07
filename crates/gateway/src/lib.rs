@@ -7,13 +7,16 @@
 pub mod admin;
 pub mod audit_log;
 pub mod banner;
+pub mod bitcoin_segwit_addr;
 pub mod bounded_body;
 pub mod budget;
 pub mod circuit_breaker;
 mod config;
 pub mod config_watcher;
+pub mod dhcp_options;
 pub mod fallback;
 pub mod metrics;
+pub mod mqtt_packet_v5;
 mod openai;
 pub mod rate_limit;
 pub mod request_rate;
