@@ -932,6 +932,9 @@ pub mod md5;
 pub mod signal;
 pub mod trie;
 pub mod base64;
+// L123: substrate v0.3.0 expansion — utility modules from sharecli library
+pub mod backoff;
+pub mod base85;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
