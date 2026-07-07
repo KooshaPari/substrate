@@ -348,7 +348,7 @@ const COCKPIT_HTML: &str = r#"<!DOCTYPE html>
   <h2>CLI</h2>
   <pre><code>cargo run -p gateway-tools -- serve --port 8080
 curl http://127.0.0.1:8080/v1/modules</code></pre>
-  <p><small>Built on axum 0.8 + tokio 1 (per xDD mandate). L114: nav header + module list added.</small></p>
+  <p><small>Built on axum 0.8 + tokio 1 (per xDD mandate). L114: nav header + module list added. L117: cycle-2026-07-06/07 build (91 PRs across 7 owned repos).</small></p>
 </body>
 </html>
 "#;
