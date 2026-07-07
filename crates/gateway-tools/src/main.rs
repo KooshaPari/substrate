@@ -124,6 +124,11 @@ enum Cmd {
         #[command(subcommand)]
         op: ChunkedCmd,
     },
+    /// List gateway utility modules or print one module's top public fn signatures.
+    Inspect {
+        /// Optional module name (e.g. `dns`, `jwt`, `pem`). Omit to enumerate.
+        module: Option<String>,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -718,6 +723,169 @@ fn split_first_token(s: &str) -> (String, String) {
 // ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
+// `inspect` — list gateway utility modules + dump a module's top fn sigs.
+//
+// Output is plaintext (no JSON option) — human-readable cockpit entrypoint.
+// Sync-violet (#a371f7) ASCII splash for the Substrate / Backbone-2 family.
+// ---------------------------------------------------------------------------
+
+fn substrate_splash() {
+    let violet = "\x1b[38;2;163;113;247m";
+    let amber = "\x1b[38;2;210;153;34m";
+    let reset = "\x1b[0m";
+    if std::env::var("NO_COLOR").is_ok_and(|v| !v.is_empty()) {
+        println!(
+            "substrate gateway-tools inspect  (Backbone-2 sync-violet #a371f7 + amber #d29922)"
+        );
+    } else {
+        let splash = r#"
+   ____  _   _ ____ _____ _____ _____ ____  _____
+  / ___|| | | / ___|_   _|  ___|_   _|  _ \|  __ \
+  \___ \| |_| \___ \ | | | |_    | | | |_) | |  | |
+   ___) |  _  |___) || | |  _|   | | |  _ <| |  | |
+  |____/|_| |_|____/ |_| |_|     |_| |_| \_\_|  |_|
+"#;
+        println!("{violet}{splash}{reset}");
+        println!(
+            "{amber}substrate gateway-tools{reset}  sync-violet (#a371f7)  +  warm-amber (#d29922)"
+        );
+    }
+}
+
+/// Static registry of `gateway` utility modules exported via this CLI.
+/// Each entry: (module-alias, real-crate-path, top-5-public-fn-signatures).
+///
+/// Source-of-truth: `gateway::lib.rs` `pub mod` list. Keep this in sync when
+/// adding a new module.
+fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
+    vec![
+        (
+            "jwt", "gateway::jwt_hs256", vec![
+                "fn b64url_encode(input: &[u8]) -> String",
+                "fn b64url_decode(input: &str) -> Result<Vec<u8>, _>",
+                "fn sign_hs256(header_b64: &str, payload_b64: &str, key: &[u8]) -> String",
+                "fn verify_hs256(token: &str, key: &[u8]) -> Result<(), _>",
+                "fn parts(token: &str) -> (&str, &str, &str)",
+            ],
+        ),
+        (
+            "dns", "gateway::dns_message_parser", vec![
+                "pub struct DnsHeader { id, flags, qdcount, ancount, nscount, arcount }",
+                "pub struct Question { qname, qtype, qclass }",
+                "fn parse_header(buf: &[u8]) -> Result<DnsHeader, _>",
+                "fn parse_question(buf: &[u8]) -> Result<Question, _>",
+                "fn encode_question(q: &Question) -> Vec<u8>",
+            ],
+        ),
+        (
+            "redis", "gateway::redis_resp", vec![
+                "pub enum RespValue { SimpleString, Error, Integer, BulkString, Array }",
+                "fn encode(v: &RespValue) -> Vec<u8>",
+                "fn parse(input: &[u8]) -> Result<(RespValue, usize), _>",
+                "fn format_bulk(s: &str) -> Vec<u8>",
+                "fn format_array(items: &[RespValue]) -> Vec<u8>",
+            ],
+        ),
+        (
+            "tls", "gateway::tls_record", vec![
+                "pub enum ContentType { ChangeCipherSpec, Alert, Handshake, ApplicationData }",
+                "pub struct ProtocolVersion { major: u8, minor: u8 }",
+                "fn parse_record(buf: &[u8]) -> Result<(ContentType, ProtocolVersion, &[u8]), _>",
+                "fn write_record(kind: ContentType, payload: &[u8]) -> Vec<u8>",
+                "const VERSION_TLS_1_2: ProtocolVersion = ...",
+            ],
+        ),
+        (
+            "pkcs7", "gateway::pkcs7_padding", vec![
+                "fn pad(data: &[u8], block: usize) -> Vec<u8>",
+                "fn unpad(data: &[u8], block: usize) -> Result<&[u8], _>",
+                "fn required_padding_len(len: usize, block: usize) -> usize",
+                "fn validate_pkcs7(data: &[u8], block: usize) -> bool",
+                "const PKCS7_ERR: &str = \"invalid PKCS#7 padding\"",
+            ],
+        ),
+        (
+            "patch", "gateway::json_patch", vec![
+                "pub enum Patch { Add, Remove, Replace, Move, Copy, Test }",
+                "pub type JsValue = serde_json::Value",
+                "fn apply(doc: &mut JsValue, patch: &Patch) -> Result<(), _>",
+                "fn parse_op(s: &str) -> Result<Patch, _>",
+                "fn render(p: &Patch) -> serde_json::Value",
+            ],
+        ),
+        (
+            "metrics", "gateway::prometheus_exposition", vec![
+                "pub enum MetricType { Counter, Gauge, Histogram, Summary }",
+                "pub struct Metric { name, kind, labels, value }",
+                "fn render(metrics: &[Metric]) -> String",
+                "fn histogram_buckets(b: &[f64]) -> Vec<String>",
+                "fn format_labels(labels: &[(String, String)]) -> String",
+            ],
+        ),
+        (
+            "pem", "gateway::pem_codec", vec![
+                "pub struct PemBlock { label, data }",
+                "fn encode(label: &str, der: &[u8]) -> String",
+                "fn decode(input: &str) -> Result<PemBlock, _>",
+                "fn decode_many(input: &str) -> Result<Vec<PemBlock>, _>",
+                "fn armor(input: &str) -> String",
+            ],
+        ),
+        (
+            "m3u", "gateway::m3u_parser", vec![
+                "pub struct Playlist { items: Vec<Entry> }",
+                "pub enum Entry { Path(String), ExtInfo { path, duration, title } }",
+                "fn parse(text: &str) -> Result<Playlist, _>",
+                "fn render(pl: &Playlist) -> String",
+                "fn is_extinf_line(line: &str) -> bool",
+            ],
+        ),
+        (
+            "chunked", "gateway::chunked_transfer", vec![
+                "fn encode_chunks(data: &[u8], chunk: usize) -> Vec<Vec<u8>>",
+                "fn decode_chunks(chunks: &[Vec<u8>]) -> Vec<u8>",
+                "fn hex_chunk_header(n: usize) -> String",
+                "fn last_zero_chunk() -> &'static str",
+                "fn parse_chunk_size(line: &str) -> Result<usize, _>",
+            ],
+        ),
+    ]
+}
+
+fn run_inspect(module: Option<&str>) -> Result<()> {
+    let reg = inspect_registry();
+
+    match module {
+        None => {
+            substrate_splash();
+            println!();
+            println!("gateway utility modules ({} total):", reg.len());
+            for (alias, path, sigs) in &reg {
+                println!("  - {:<9}  {:<32}  ({} public fns)", alias, path, sigs.len());
+            }
+            println!();
+            println!("Usage: gateway-tools inspect <alias>     # dump top fn signatures");
+            println!("       gateway-tools <alias> --demo       # run an in-binary example");
+            Ok(())
+        }
+        Some(name) => {
+            let entry = reg
+                .iter()
+                .find(|(alias, _, _)| *alias == name)
+                .ok_or_else(|| anyhow::anyhow!("unknown module `{name}`; try one of: {}", reg.iter().map(|(a, _, _)| *a).collect::<Vec<_>>().join(", ")))?;
+            let (alias, path, sigs) = entry;
+            println!("# gateway module: {alias}");
+            println!("path: {path}");
+            println!("public surface ({} entries):", sigs.len());
+            for sig in sigs {
+                println!("  - {sig}");
+            }
+            Ok(())
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
@@ -732,6 +900,7 @@ fn main() -> Result<()> {
         Cmd::Pem { op } => run_pem(op),
         Cmd::M3u { op } => run_m3u(op),
         Cmd::Chunked { op } => run_chunked(op),
+        Cmd::Inspect { module } => run_inspect(module.as_deref()),
     };
     if let Err(ref e) = res {
         write_err(format!("error: {e:?}"));
@@ -760,6 +929,7 @@ mod tests {
             Cmd::Pem { op } => run_pem(op),
             Cmd::M3u { op } => run_m3u(op),
             Cmd::Chunked { op } => run_chunked(op),
+            Cmd::Inspect { module } => run_inspect(module.as_deref()),
         }
         .map(|_| String::new())
     }
