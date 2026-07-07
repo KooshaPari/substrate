@@ -56,9 +56,9 @@ fn pct_encode_byte(b: u8, out: &mut String) {
     }
 }
 
-fn pct_encode(s: &str) -> String {
+fn pct_encode(s: &[u8]) -> String {
     let mut out = String::with_capacity(s.len());
-    for &b in s.as_bytes() {
+    for &b in s {
         pct_encode_byte(b, &mut out);
     }
     out
@@ -72,7 +72,7 @@ fn pct_encode(s: &str) -> String {
 fn normalize_params(params: &[(&str, &str)]) -> String {
     let mut encoded: Vec<(String, String)> = params
         .iter()
-        .map(|(k, v)| (pct_encode(k), pct_encode(v)))
+        .map(|(k, v)| (pct_encode(k.as_bytes()), pct_encode(v.as_bytes())))
         .collect();
     encoded.sort();
     encoded
@@ -91,15 +91,19 @@ pub fn build_base_string(method: &str, url: &str, params: &[(&str, &str)]) -> St
     let normalized_params = normalize_params(params);
     format!(
         "{}&{}&{}",
-        pct_encode(method.to_ascii_uppercase().as_str()),
-        pct_encode(url),
-        pct_encode(&normalized_params),
+        pct_encode(method.to_ascii_uppercase().as_bytes()),
+        pct_encode(url.as_bytes()),
+        pct_encode(normalized_params.as_bytes()),
     )
 }
 
 /// Sign `base_string` with the consumer+token key per §3.4.2.
 fn sign_base_string(base_string: &str, consumer_secret: &str, token_secret: &str) -> [u8; 20] {
-    let key = format!("{}&{}", pct_encode(consumer_secret), pct_encode(token_secret));
+    let key = format!(
+        "{}&{}",
+        pct_encode(consumer_secret.as_bytes()),
+        pct_encode(token_secret.as_bytes())
+    );
     hmac_sha1(key.as_bytes(), base_string.as_bytes())
 }
 
@@ -163,19 +167,19 @@ mod tests {
 
     #[test]
     fn pct_encode_unreserved_passthrough() {
-        assert_eq!(pct_encode("AZaz09-._~"), "AZaz09-._~");
+        assert_eq!(pct_encode(b"AZaz09-._~"), "AZaz09-._~");
     }
 
     #[test]
     fn pct_encode_spaces_and_plus() {
-        assert_eq!(pct_encode("a b"), "a%20b");
-        assert_eq!(pct_encode("a+b"), "a%2Bb");
+        assert_eq!(pct_encode(b"a b"), "a%20b");
+        assert_eq!(pct_encode(b"a+b"), "a%2Bb");
     }
 
     #[test]
     fn pct_encode_high_bytes() {
-        assert_eq!(pct_encode("\xff"), "%FF");
-        assert_eq!(pct_encode("\x01"), "%01");
+        assert_eq!(pct_encode(b"\xff"), "%FF");
+        assert_eq!(pct_encode(b"\x01"), "%01");
     }
 
     #[test]
