@@ -975,6 +975,11 @@ pub mod polynomials;
 pub mod money_currency;
 pub mod morse_code;
 pub mod units_si;
+// L143: substrate v0.3.0 expansion — ciphers (Caesar, Vigenère) + phonetic (Soundex, Metaphone) + base58
+pub mod base58;
+pub mod caesar_cipher;
+pub mod vigenere;
+pub mod soundex_metaphone;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
