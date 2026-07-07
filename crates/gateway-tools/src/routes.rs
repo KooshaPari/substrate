@@ -309,6 +309,10 @@ const COCKPIT_HTML: &str = r#"<!DOCTYPE html>
     .modules { list-style: none; padding: 0; }
     .modules li { padding: 0.3em 0.6em; border-bottom: 1px dotted #2a2a2a; }
     .modules li:hover { background: #1a1a1a; }
+    @keyframes pulse-pill { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .pill { animation: pulse-pill 2s ease-in-out infinite; }
+    @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+    body { animation: fadein 0.3s ease-out; }
   </style>
 </head>
 <body>
