@@ -1011,3 +1011,5 @@ pub mod levenshtein;
 pub mod brontide_replay;
 pub mod http1_request;
 pub mod vmstat_parser;
+pub mod icalendar_parse;
+pub mod vcard_parse;
