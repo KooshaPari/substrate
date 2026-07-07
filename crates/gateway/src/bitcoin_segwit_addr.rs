@@ -45,7 +45,7 @@ pub fn encode_address(hrp: &str, witver: u8, witprog: &[u8]) -> Result<String, S
     data.push(witver as u5);
     convert_bits(witprog, 8, 5, true, &mut data)?;
 
-    bitcoin_bech32::encode(hrp, data, variant)
+    bitcoin_bech32::encode(hrp, &data, variant)
 }
 
 // 5-bit value type alias for clarity.
