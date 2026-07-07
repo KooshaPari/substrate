@@ -1,8 +1,10 @@
 //! CLI commands for sharecli
 
 pub mod cast;
+pub mod gateway;
 pub mod report;
 pub mod serve;
+pub use gateway::run as gateway_run;
 pub use serve::run as serve_run;
 
 use std::path::PathBuf;

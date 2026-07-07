@@ -34,7 +34,7 @@ mod xxhash3;
 mod xxtea;
 
 use commands::{
-    cast as cast_cmd, check_limits, config as config_cmd, health, pool_status,
+    cast as cast_cmd, check_limits, config as config_cmd, gateway_run, health, pool_status,
     project as project_cmd, ps, run_pool, serve_run, set_limits, start, status, stop,
 };
 use runtime::ProcessPool;
@@ -280,6 +280,18 @@ enum Commands {
 
     /// Print version + Backbone-2 ASCII splash
     Version,
+
+    /// Lightweight HTTP REST gateway exposing cast + util module catalogs
+    /// (Backbone-2 family).
+    ///
+    /// Distinct from `serve` (which streams live process + thermal state
+    /// over WebSocket). `gateway` exposes the *static* catalog: clients
+    /// introspect it before driving sharecli via the CLI surface.
+    Gateway {
+        /// Address to bind the REST surface to (host:port).
+        #[arg(short, long, default_value = "127.0.0.1:8081")]
+        bind: String,
+    },
 }
 
 #[derive(Subcommand, Debug)]
@@ -445,6 +457,12 @@ async fn main() -> Result<()> {
         Commands::Util { cmd } => cmd.run()?,
         Commands::List { json } => cli_list(*json)?,
         Commands::Version => cli_version()?,
+        Commands::Gateway { bind } => {
+            let addr: std::net::SocketAddr = bind.parse().map_err(|e| {
+                anyhow::anyhow!("invalid --bind '{bind}': {e} (expected host:port)")
+            })?;
+            gateway_run(addr).await?
+        }
     }
 
     Ok(())
