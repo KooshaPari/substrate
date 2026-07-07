@@ -940,6 +940,10 @@ pub mod bloom_filter;
 pub mod credit_card;
 pub mod distance;
 pub mod glob_pattern;
+// L131: substrate v0.3.0 expansion — CRC family + RFC 6570 lvl-1 templates + ASCII normalization
+pub mod cyclic_check;
+pub mod unicode_normalization;
+pub mod uri_template;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
