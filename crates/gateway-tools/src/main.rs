@@ -18,6 +18,12 @@
 //! - `m3u`         -> `gateway::m3u_parser`         (M3U parse/render)
 //! - `chunked`     -> `gateway::chunked_transfer`   (hex chunked encode/decode)
 //!
+//! Plus the executable cockpit:
+//!
+//! - `serve`       -> `gateway-tools serve --port 8081`  (axum 0.8 HTTP surface)
+//!                    Routes: `/health`, `/v1/cast`, `/v1/util`, `/v1/splash`,
+//!                    `/v1/inspect/<module>`. Backbone-2 (sync-violet + warm-amber).
+//!
 //! Design choices:
 //! - stdout is reserved for successful payloads (binary-safe hex/utf-8 forms)
 //! - stderr carries errors and human-readable status lines
@@ -26,6 +32,8 @@
 
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
+
+mod serve;
 
 use gateway::chunked_transfer;
 use gateway::dns_message_parser as dns;
@@ -128,6 +136,15 @@ enum Cmd {
     Inspect {
         /// Optional module name (e.g. `dns`, `jwt`, `pem`). Omit to enumerate.
         module: Option<String>,
+    },
+    /// Start the gateway-tools HTTP cockpit (axum 0.8, Backbone-2 splash).
+    ///
+    /// Routes: GET /health, /v1/cast, /v1/util, /v1/splash, /v1/inspect/<module>.
+    /// Default port 8081 (avoid gateway's :8080 collision). Bind failures are loud.
+    Serve {
+        /// TCP port to bind (default 8081).
+        #[arg(long, default_value_t = 8081)]
+        port: u16,
     },
 }
 
@@ -901,11 +918,23 @@ fn main() -> Result<()> {
         Cmd::M3u { op } => run_m3u(op),
         Cmd::Chunked { op } => run_chunked(op),
         Cmd::Inspect { module } => run_inspect(module.as_deref()),
+        Cmd::Serve { port } => run_serve_blocking(*port),
     };
     if let Err(ref e) = res {
         write_err(format!("error: {e:?}"));
     }
     res
+}
+
+/// Bridge from the sync `main()` to the async `serve::run_serve()`.
+/// Builds a single-threaded tokio runtime (the axum server itself uses
+/// `rt-multi-thread` internally, so this is just the dispatch shim).
+fn run_serve_blocking(port: u16) -> Result<()> {
+    let rt = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .context("failed to build tokio runtime for `serve`")?;
+    rt.block_on(serve::run_serve(port))
 }
 
 // ---------------------------------------------------------------------------
@@ -930,6 +959,7 @@ mod tests {
             Cmd::M3u { op } => run_m3u(op),
             Cmd::Chunked { op } => run_chunked(op),
             Cmd::Inspect { module } => run_inspect(module.as_deref()),
+            Cmd::Serve { .. } => Ok(()), // not exercised in unit tests; see serve.rs tests
         }
         .map(|_| String::new())
     }
