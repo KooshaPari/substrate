@@ -957,6 +957,9 @@ pub mod chacha20;
 pub mod jwt_es256;
 pub mod pbkdf2;
 pub mod utf8_validator;
+// L137: substrate v0.3.0 expansion — base64url (RFC 4648 §5) + Reed-Solomon GF(256)
+pub mod base64url;
+pub mod reed_solomon;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
