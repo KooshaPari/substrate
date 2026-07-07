@@ -1049,3 +1049,6 @@ pub mod mqtt_packet_v5;
 // L131: wave-33 utility modules — TACACS+ (RFC 8907) Authentication START codec + IMAP4rev1 (RFC 3501) response classifier
 pub mod tacacs_auth;
 pub mod imap_response_parity;
+// L132: wave-34 utility modules — IPsec ESP (RFC 4303) packet codec + radiotap (radiotap.org/fields) header codec
+pub mod ipsec_esp_parse;
+pub mod radiotap;
