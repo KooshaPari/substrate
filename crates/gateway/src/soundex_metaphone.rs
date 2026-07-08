@@ -11,8 +11,6 @@
 //! Both implementations are self-contained and approximate (they
 //! do not cover all English pronunciation edge cases).
 
-use std::collections::HashMap;
-
 /// Soundex code for a name. Always 4 characters: one letter + 3 digits
 /// (with `0` padding if the algorithm produces fewer).
 ///
@@ -215,7 +213,7 @@ pub fn metaphone(name: &str) -> String {
             }
             'X' => {
                 // X at end or anywhere in mid-word phonetically splits to K + S
-                let _ = (i == n - 1 && prev == 'U');
+                let _ = i == n - 1 && prev == 'U';
                 Some("KS")
             }
             'Y' => {

@@ -116,27 +116,25 @@ fn parse_header(input: &[u8]) -> Result<(Header, &[u8]), String> {
         (low5, &input[1..])
     } else {
         // Long form: subsequent bytes encode the tag number in base-128,
-        // high bit = continuation (X.690 §8.1.2.4).
+        // high bit = continuation (X.690 §8.1.2.4). The loop ends when the
+        // high bit is clear; if we run off the end of `input` first, the
+        // tag is unterminated.
         let mut tag_val: u32 = 0;
         let mut i = 1usize;
-        let mut found_end = false;
-        loop {
+        let mut terminated = false;
+        while !terminated {
             if i >= input.len() {
-                return Err("BER: truncated long-form tag".into());
+                return Err("BER: unterminated long-form tag".into());
             }
             let b = input[i];
             tag_val = (tag_val << 7) | (b & 0x7f) as u32;
             i += 1;
             if b & 0x80 == 0 {
-                found_end = true;
-                break;
+                terminated = true;
             }
             if tag_val > 0xff {
                 return Err("BER: long-form tag overflows u8".into());
             }
-        }
-        if !found_end {
-            return Err("BER: unterminated long-form tag".into());
         }
         (tag_val as u8, &input[i..])
     };

@@ -94,11 +94,10 @@ impl Histogram {
         let rank = (q * self.count as f64).ceil() as u64;
         let target = rank.max(1);
 
-        let mut cumulative: u64 = 0;
         let mut prev_boundary = 0.0_f64;
         let mut prev_count: u64 = 0;
         for (boundary, counter) in &self.buckets {
-            cumulative = *counter;
+            let cumulative = *counter;
             if cumulative >= target {
                 let bucket_count = cumulative - prev_count;
                 if bucket_count == 0 {

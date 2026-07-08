@@ -11,8 +11,6 @@
 //! Reference: de Berg et al., "Computational Geometry: Algorithms and
 //! Applications", §10.
 
-use std::cmp::Ordering;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Interval {
     start: i64,

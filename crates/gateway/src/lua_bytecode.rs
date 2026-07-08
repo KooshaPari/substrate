@@ -107,9 +107,8 @@ fn read_string(input: &[u8]) -> Result<(Vec<u8>, &[u8]), String> {
 
 fn read_size(input: &[u8]) -> Result<(u64, &[u8]), String> {
     if input.is_empty() { return Err("empty".into()); }
-    let mut x: u64 = 0;
     let first = input[0];
-    x = first as u64;
+    let mut x: u64 = first as u64;
     if x == 0xFF {
         if input.len() < 9 { return Err("bad size".into()); }
         let bytes: [u8; 8] = input[1..9].try_into().map_err(|_| "bad size")?;

@@ -1,5 +1,4 @@
 pub fn b64url_encode(data: &[u8]) -> String {
-    use std::str;
     let enc = base64_encode(data);
     enc.replace('+', "-").replace('/', "_").trim_end_matches('=').to_string()
 }

@@ -62,11 +62,8 @@ pub struct EbpfProg {
     pub symbol_value: u64,
 }
 
-const ELFCLASS32: u8 = 1;
 const ELFCLASS64: u8 = 2;
 const ELFDATA2LSB: u8 = 1;
-const ELFDATA2MSB: u8 = 2;
-const ET_REL: u16 = 1;
 const EM_BPF: u16 = 247;
 const SHT_SYMTAB: u32 = 2;
 const SHT_STRTAB: u32 = 3;

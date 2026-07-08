@@ -93,7 +93,7 @@ pub fn uleb128_decode(bytes: &[u8]) -> Result<(u64, usize), &'static str> {
     }
     let mut result: u64 = 0;
     let mut shift: u32 = 0;
-    let mut consumed: usize = 0;
+    let mut consumed: usize;
     for (i, &b) in bytes.iter().enumerate() {
         if i >= 10 {
             return Err("uleb128: input exceeds 10 bytes (u64 overflow)");

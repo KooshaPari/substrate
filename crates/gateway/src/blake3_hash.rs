@@ -16,7 +16,6 @@
 const OUT_LEN: usize = 32;
 const BLOCK_LEN: usize = 64;
 const CHUNK_LEN: usize = 1024;
-const CHAINING_VALUE_LEN: usize = 8;
 
 const IV: [u32; 8] = [
     0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
@@ -116,34 +115,6 @@ fn first_8(out: &[u8; 64]) -> [u32; 8] {
     }
     cv
 }
-
-fn root_output(
-    key_words: &[u32; 8],
-    chunk_state: &ChunkState,
-    out: &mut [u8],
-) {
-    let mut output_block_counter: u64 = 0;
-    let mut pos = 0;
-    while pos < out.len() {
-        let block = [0u8; BLOCK_LEN];
-        let block_words = [0u32; 16];
-        let _ = block_words;
-        let flags = chunk_state.flags | FLAGS_ROOT;
-        let words = compress(
-            &chunk_state.cv,
-            &block,
-            BLOCK_LEN as u8,
-            output_block_counter,
-            flags,
-        );
-        let take = (out.len() - pos).min(2 * OUT_LEN);
-        out[pos..pos + take].copy_from_slice(&words[..take]);
-        pos += take;
-        output_block_counter += 1;
-        let _ = key_words;
-    }
-}
-
 struct ChunkState {
     cv: [u32; 8],
     chunk_counter: u64,
@@ -234,7 +205,6 @@ fn parent_output(left: &[u8; 32], right: &[u8; 32], key: &[u8; 32], flags: u8) -
 pub struct Hasher {
     key: [u8; 32],
     chunk_state: ChunkState,
-    key_words: [u32; 8],
     flags: u8,
     stack: Vec<[u8; 32]>,
 }
@@ -247,14 +217,9 @@ impl Hasher {
 
     /// Create a new keyed-mode hasher (MAC mode with a 32-byte key).
     pub fn new_keyed(key: &[u8; 32], flags: u8) -> Self {
-        let mut key_words = [0u32; 8];
-        for (i, chunk) in key.chunks_exact(4).enumerate() {
-            key_words[i] = u32::from_le_bytes([chunk[0], chunk[1], chunk[2], chunk[3]]);
-        }
         Self {
             key: *key,
             chunk_state: ChunkState::new(key, 0, flags),
-            key_words,
             flags,
             stack: Vec::new(),
         }
@@ -296,9 +261,8 @@ impl Hasher {
     /// Finalize and return a 32-byte digest.
     pub fn finalize(&mut self) -> [u8; OUT_LEN] {
         // Push the current chunk's CV if non-empty.
-        let mut root = [0u8; 32];
-        if self.stack.is_empty() {
-            root = self.chunk_state.output();
+        let root = if self.stack.is_empty() {
+            self.chunk_state.output()
         } else {
             let chunk_cv = self.chunk_state.output();
             self.push_chunk_cv(chunk_cv, 0);
@@ -308,8 +272,8 @@ impl Hasher {
                 let parent = parent_output(&left, &right, &self.key, self.flags);
                 self.stack.push(parent);
             }
-            root = self.stack[0];
-        }
+            self.stack[0]
+        };
         // Reset state for potential reuse.
         self.chunk_state = ChunkState::new(&self.key, 0, self.flags);
         self.stack.clear();

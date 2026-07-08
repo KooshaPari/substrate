@@ -10,17 +10,6 @@
 use std::collections::HashMap;
 use std::sync::OnceLock;
 
-// Case-insensitive table lookup. The static table mixes upper-case ASCII
-// keys with their Morse representation, so callers like `encode("hello")`
-// must still match. CODE_TABLE is declared as a slice below this function.
-fn lookup(c: char) -> Option<&'static str> {
-    let folded = c.to_ascii_uppercase();
-    CODE_TABLE
-        .iter()
-        .find(|(k, _)| *k == folded)
-        .map(|(_, v)| *v)
-}
-
 /// Encode a string (ASCII letters and digits) to Morse code.
 /// Returns the dot/dash sequence separated by spaces between symbols
 /// and `/` between words. Unknown characters are silently skipped.

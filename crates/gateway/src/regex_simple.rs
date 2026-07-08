@@ -15,7 +15,7 @@ fn match_recursive(p: &[char], t: &[char], mut pi: usize, mut ti: usize) -> bool
                 return false;
             }
             '.' => { if ti >= t.len() { return false; } pi += 1; ti += 1; }
-            c if next == Some('*') => {
+            _ if next == Some('*') => {
                 pi += 2;
                 for i in ti..=t.len() { if match_recursive(p, t, pi, i) { return true; } }
                 return false;

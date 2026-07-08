@@ -67,41 +67,6 @@ fn cmp(a: &[u64], b: &[u64]) -> std::cmp::Ordering {
     Ordering::Equal
 }
 
-fn sub(a: &[u64], b: &[u64]) -> Vec<u64> {
-    let mut result = a.to_vec();
-    let mut borrow: u64 = 0;
-    for i in (0..result.len()).rev() {
-        let av = result[i];
-        let bv = if i < b.len() { b[i] } else { 0 };
-        let new = (av as i128) - (bv as i128) - (borrow as i128);
-        if new < 0 {
-            result[i] = (new + (1i128 << 64)) as u64;
-            borrow = 1;
-        } else {
-            result[i] = new as u64;
-            borrow = 0;
-        }
-    }
-    while result.len() > 1 && result[0] == 0 {
-        result.remove(0);
-    }
-    result
-}
-
-fn shift_right_one(limbs: &[u64]) -> Vec<u64> {
-    let mut result = vec![0u64; limbs.len()];
-    let mut carry: u64 = 0;
-    for i in (0..limbs.len()).rev() {
-        let new_carry = limbs[i] & 1;
-        result[i] = (limbs[i] >> 1) | (carry << 63);
-        carry = new_carry;
-    }
-    while result.len() > 1 && result[0] == 0 {
-        result.remove(0);
-    }
-    result
-}
-
 fn is_even(limbs: &[u64]) -> bool {
     limbs.last().map_or(true, |&l| l & 1 == 0)
 }
