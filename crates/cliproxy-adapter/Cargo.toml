@@ -2,13 +2,14 @@
 name = "cliproxy-adapter"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "EnginePort adapter for KooshaPari/cliproxyapi-plusplus — the Plus fork of router-for-me/CLIProxyAPI exposing 50+ agent CLIs (claude, codex, gemini, copilot, q, opencode, etc.) over a single OpenAI-compat /v1 endpoint."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+engine-spec = { version = "0.3.0", path = "../engine-spec" }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 reqwest = { workspace = true, features = ["stream"] }
@@ -21,5 +22,5 @@ futures-util = "0.3"
 bytes = "1.8"
 
 [dev-dependencies]
-engine-conformance = { path = "../engine-conformance" }
+engine-conformance = { version = "0.3.0", path = "../engine-conformance" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

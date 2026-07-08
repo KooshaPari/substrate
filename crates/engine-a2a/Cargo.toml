@@ -2,14 +2,15 @@
 name = "engine-a2a"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "EnginePort adapter for the A2A Agent-to-Agent REST protocol."
 
 [dependencies]
 a2a = { workspace = true }
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+engine-spec = { version = "0.3.0", path = "../engine-spec" }
 async-trait = { workspace = true }
 bytes = "1"
 futures-util = "0.3"
@@ -21,5 +22,5 @@ uuid = { workspace = true }
 
 [dev-dependencies]
 axum = { workspace = true }
-engine-conformance = { path = "../engine-conformance" }
+engine-conformance = { version = "0.3.0", path = "../engine-conformance" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

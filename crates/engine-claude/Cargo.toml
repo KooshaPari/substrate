@@ -2,17 +2,18 @@
 name = "engine-claude"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "EnginePort adapter for the claude CLI (Claude Code)."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+engine-spec = { version = "0.3.0", path = "../engine-spec" }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-engine-conformance = { path = "../engine-conformance" }
+engine-conformance = { version = "0.3.0", path = "../engine-conformance" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

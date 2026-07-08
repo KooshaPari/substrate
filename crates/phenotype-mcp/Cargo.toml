@@ -3,6 +3,8 @@ name = "phenotype-mcp"
 version = "0.3.0"
 edition = "2021"
 license = "MIT"
+repository = "https://github.com/KooshaPari/substrate"
+description = "Placeholder adapter for Model Context Protocol servers, exposing an MCP-shaped interface to the substrate dispatch engine."
 
 [lib]
 path = "src/lib.rs"

@@ -2,6 +2,7 @@
 name = "orchestrator"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "L120 MVP orchestrator: TOML wave.toml loader, dispatch trait, claude -p stream-json parser (gated), JSONL WatcherPort adapter."

@@ -2,15 +2,16 @@
 name = "wave"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "Phase 4: parallel wave runner — N concurrent teammate lanes with sub-subagent fan-out and harvested results."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
-store-sqlite = { path = "../store-sqlite" }
-supervisor = { path = "../supervisor" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+a2a = { version = "0.3.0", path = "../a2a" }
+store-sqlite = { version = "0.3.0", path = "../store-sqlite" }
+supervisor = { version = "0.3.0", path = "../supervisor" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
 uuid = { workspace = true }
 chrono = { workspace = true }
@@ -22,10 +23,10 @@ regex = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
-substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
-store-sqlite = { path = "../store-sqlite" }
-supervisor = { path = "../supervisor" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+a2a = { version = "0.3.0", path = "../a2a" }
+store-sqlite = { version = "0.3.0", path = "../store-sqlite" }
+supervisor = { version = "0.3.0", path = "../supervisor" }
 
 [features]
 default = []

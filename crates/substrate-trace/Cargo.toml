@@ -2,12 +2,13 @@
 name = "substrate-trace"
 version.workspace = true
 edition.workspace = true
+repository.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "TracePort adapters: Noop, Recording, MultiTrace, AgilePlus, Tracera."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
 reqwest = { workspace = true }
 serde = { workspace = true }
