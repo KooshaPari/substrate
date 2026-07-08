@@ -57,15 +57,53 @@ repository = "https://github.com/KooshaPari/substrate"
 rust-version = "1.80"
 
 [workspace.dependencies]
+substrate = { version = "0.3.0", path = "crates/substrate" }
 substrate-core = { version = "0.3.0", path = "crates/substrate-core" }
 substrate-serve-lock = { version = "0.3.0", path = "crates/substrate-serve-lock" }
 substrate-trace = { version = "0.3.0", path = "crates/substrate-trace" }
 substrate-app = { version = "0.3.0", path = "crates/substrate-app" }
+substrate-dag = { version = "0.3.0", path = "crates/substrate-dag" }
+substrate-memory = { version = "0.3.0", path = "crates/substrate-memory" }
+substrate-schedule = { version = "0.3.0", path = "crates/substrate-schedule" }
+substrate-skills = { version = "0.3.0", path = "crates/substrate-skills" }
+substrate-tui = { version = "0.3.0", path = "crates/substrate-tui" }
 engine-spec = { version = "0.3.0", path = "crates/engine-spec" }
+engine-forge = { version = "0.3.0", path = "crates/engine-forge" }
+engine-codex = { version = "0.3.0", path = "crates/engine-codex" }
+engine-claude = { version = "0.3.0", path = "crates/engine-claude" }
+engine-a2a = { version = "0.3.0", path = "crates/engine-a2a" }
+engine-agentapi = { version = "0.3.0", path = "crates/engine-agentapi" }
+engine-conformance = { version = "0.3.0", path = "crates/engine-conformance" }
 a2a = { version = "0.3.0", path = "crates/a2a" }
 store-sqlite = { version = "0.3.0", path = "crates/store-sqlite" }
-engine-forge = { version = "0.3.0", path = "crates/engine-forge" }
+store-file = { version = "0.3.0", path = "crates/store-file" }
+cliproxy-adapter = { version = "0.3.0", path = "crates/cliproxy-adapter" }
+transport-file = { version = "0.3.0", path = "crates/transport-file" }
+routing-phenotype-router = { version = "0.3.0", path = "crates/routing-phenotype-router" }
+omniroute-adapter = { version = "0.3.0", path = "crates/omniroute-adapter" }
+file-watcher = { version = "0.3.0", path = "crates/file-watcher" }
+context-budget = { version = "0.3.0", path = "crates/context-budget" }
+dispatch-bridge = { version = "0.3.0", path = "crates/dispatch-bridge" }
+runtime-process = { version = "0.3.0", path = "crates/runtime-process" }
+cloud-codex = { version = "0.3.0", path = "crates/cloud-codex" }
+cloud-cursor = { version = "0.3.0", path = "crates/cloud-cursor" }
+cloud-kilo = { version = "0.3.0", path = "crates/cloud-kilo" }
+cloud-dispatch-conformance = { version = "0.3.0", path = "crates/cloud-dispatch-conformance" }
+driver-cli = { version = "0.3.0", path = "crates/driver-cli" }
+driver-http = { version = "0.3.0", path = "crates/driver-http" }
+driver-argv = { version = "0.3.0", path = "crates/driver-argv" }
+driver-mcp = { version = "0.3.0", path = "crates/driver-mcp" }
+gateway = { version = "0.3.0", path = "crates/gateway" }
+gateway-tools = { version = "0.3.0", path = "crates/gateway-tools" }
+supervisor = { version = "0.3.0", path = "crates/supervisor" }
+phenotype-mcp = { version = "0.3.0", path = "crates/phenotype-mcp" }
+wave = { version = "0.3.0", path = "crates/wave" }
+wave-3lane-tests = { version = "0.3.0", path = "crates/wave-3lane-tests" }
+orchestrator = { version = "0.3.0", path = "crates/orchestrator" }
+arch-test = { version = "0.3.0", path = "crates/arch-test" }
 forge_daemon = { version = "0.2.0", path = "crates/forge_daemon" }
+fake-forge = { version = "0.3.0", path = "tools/fake-forge" }
+fake-codex-cloud = { version = "0.3.0", path = "tools/fake-codex-cloud" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
