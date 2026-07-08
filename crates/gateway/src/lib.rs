@@ -993,6 +993,10 @@ pub mod huffman_code;
 pub mod sorted_index;
 pub mod geo_distance;
 pub mod markdown_inline;
+// L146: substrate v0.3.0 expansion — replaced md5 stub with full impl + RFC 4180 CSV + RFC 6901 JSON Pointer + RFC 6265 Cookie parsers
+pub mod csv_parser;
+pub mod json_pointer;
+pub mod cookie;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
