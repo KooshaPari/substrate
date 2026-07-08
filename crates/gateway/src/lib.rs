@@ -1105,3 +1105,6 @@ pub mod dhcpv6_msg;
 pub mod bip39_wordlist;
 pub mod bip39_mnemonic;
 pub mod rdp_neg;
+// L147: wave-40 utility modules — minimal RDP negotiation-request (MS-RDPBCGR §2.2) build+round-trip parity + minimal DNS query (RFC 1035 §4.1) build+round-trip parity
+pub mod rdp_neg_parity;
+pub mod dns_query_parser_parity;
