@@ -1019,6 +1019,11 @@ pub mod statistics_basic;
 pub mod sorts;
 pub mod crc_variants;
 pub mod ordered_skiplist;
+// L151: substrate v0.3.0 expansion — modular arithmetic + disjoint-set + Fenwick tree + HTTP status codes
+pub mod modular_arith;
+pub mod union_find;
+pub mod fenwick_tree;
+pub mod http_status;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
