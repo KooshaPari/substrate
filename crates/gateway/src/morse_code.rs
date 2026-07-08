@@ -8,6 +8,7 @@
 //! Reference: ITU-T Recommendation M.1677 (2009).
 
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 // Case-insensitive table lookup. The static table mixes upper-case ASCII
 // keys with their Morse representation, so callers like `encode("hello")`
@@ -28,10 +29,14 @@ fn lookup(c: char) -> Option<&'static str> {
 /// - encode("SOS") -> "... --- ..."
 /// - encode("HELLO") -> ".... . .-.. .-.. ---"
 pub fn encode(s: &str) -> String {
+    let table = forward_table();
     s.split_whitespace()
         .map(|word| {
             word.chars()
-                .filter_map(lookup)
+                .filter_map(|c| {
+                    let upper = c.to_ascii_uppercase();
+                    table.get(&upper).copied()
+                })
                 .collect::<Vec<&str>>()
                 .join(" ")
         })
@@ -45,10 +50,7 @@ pub fn encode(s: &str) -> String {
 ///
 /// Returns the decoded string with one `?` per unrecognized symbol.
 pub fn decode(s: &str) -> String {
-    let mut table: HashMap<&str, char> = HashMap::new();
-    for (k, v) in CODE_TABLE.iter() {
-        table.insert(*v, *k);
-    }
+    let table = reverse_table();
     let mut out = String::new();
     for word in s.split('/') {
         for symbol in word.split_whitespace() {
@@ -56,9 +58,6 @@ pub fn decode(s: &str) -> String {
                 Some(&c) => out.push(c),
                 None => out.push('?'),
             }
-            // Insert a placeholder between symbols that came from
-            // the same word but happened to not decode — already
-            // covered by pushing the literal char above.
         }
         out.push(' ');
     }
@@ -104,6 +103,28 @@ const CODE_TABLE: &[(char, &str)] = &[
     ('9', "----."),
 ];
 
+fn forward_table() -> &'static HashMap<char, &'static str> {
+    static CELL: OnceLock<HashMap<char, &'static str>> = OnceLock::new();
+    CELL.get_or_init(|| {
+        let mut m = HashMap::new();
+        for &(k, v) in CODE_TABLE {
+            m.insert(k, v);
+        }
+        m
+    })
+}
+
+fn reverse_table() -> &'static HashMap<&'static str, char> {
+    static CELL: OnceLock<HashMap<&'static str, char>> = OnceLock::new();
+    CELL.get_or_init(|| {
+        let mut m = HashMap::new();
+        for &(k, v) in CODE_TABLE {
+            m.insert(v, k);
+        }
+        m
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -147,8 +168,17 @@ mod tests {
 
     #[test]
     fn decode_unknown_symbol_errors() {
-        assert_eq!(decode("..-.. / .--- / .-.-"), "FU?");
-        // Note: "-.-.-" isn't valid; ends up as `?`
+        // Unrecognized symbols become '?'; words are split on '/'.
+        // "..-.. / .--- / .-.-" → "..-.." unknown, ".---" = J, ".-.-" unknown
+        assert_eq!(decode("..-.. / .--- / .-.-"), "? J ?");
+    }
+
+    #[test]
+    fn decode_partial_word_errors() {
+        // Within a single word (no '/'), unknown symbols also become '?'.
+        // Symbols are joined without spaces; the space between words comes from '/'.
+        assert_eq!(decode(".... . .-.."), "HEL");
+        assert_eq!(decode(".... . .-.. .---."), "HEL?");
     }
 
     #[test]
