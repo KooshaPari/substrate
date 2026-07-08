@@ -1132,3 +1132,6 @@ pub mod rdp_neg;
 // L147: wave-40 utility modules — minimal RDP negotiation-request (MS-RDPBCGR §2.2) build+round-trip parity + minimal DNS query (RFC 1035 §4.1) build+round-trip parity
 pub mod rdp_neg_parity;
 pub mod dns_query_parser_parity;
+// L148: wave-41 utility modules — minimal MAPI property-entry build+round-trip parity + minimal MS-CFB / legacy .ppt header build+round-trip parity
+pub mod mapi_props_parity;
+pub mod pres_header_parity;
