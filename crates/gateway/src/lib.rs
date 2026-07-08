@@ -1160,3 +1160,8 @@ pub mod scrypt;
 pub mod cellular_automaton;
 pub mod integer_log;
 pub mod z85;
+// L157: substrate v0.3.0 expansion — CRC-16/CCITT/XMODEM/KERMIT + CRC-32/IEEE + Gray code BRGC + signed-delta + ZigZag + unsigned LEB128 + MurmurHash3 x86 32-bit
+pub mod crc16;
+pub mod gray_code;
+pub mod delta_encoding;
+pub mod murmur3;
