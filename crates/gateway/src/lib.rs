@@ -1024,6 +1024,16 @@ pub mod modular_arith;
 pub mod union_find;
 pub mod fenwick_tree;
 pub mod http_status;
+// L152: substrate v0.3.0 expansion — KMP string matching + random distributions + interval tree + segment tree
+pub mod kmp_search;
+pub mod random_distributions;
+pub mod interval_tree;
+pub mod segment_tree;
+// L153: substrate v0.3.0 expansion — SHA-512 (FIPS 180-4) + Rabin-Karp rolling-hash search + Z-algorithm pattern matching + Conway's Game of Life
+pub mod conway_gol;
+pub mod rabin_karp;
+pub mod sha512;
+pub mod z_algorithm;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
