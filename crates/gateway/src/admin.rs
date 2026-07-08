@@ -249,6 +249,9 @@ mod tests {
             }),
             log_store: crate::new_log_store(),
             live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
+            response_cache: Arc::new(std::sync::Mutex::new(
+                crate::TtlCache2::new(std::time::Duration::from_secs(300)),
+            )),
         }
     }
 
