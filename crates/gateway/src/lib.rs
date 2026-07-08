@@ -1165,3 +1165,8 @@ pub mod crc16;
 pub mod gray_code;
 pub mod delta_encoding;
 pub mod murmur3;
+// L158: substrate v0.3.0 expansion — Keccak-p[1600] permutation + SHA3-256 + SHAKE128 + CRC-32C Castagnoli + RFC 3986 percent-encoding + TEA Tiny Encryption Algorithm
+pub mod keccak;
+pub mod crc32c;
+pub mod url_percent;
+pub mod tea;
