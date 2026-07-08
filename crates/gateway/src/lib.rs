@@ -983,6 +983,11 @@ pub mod base58;
 pub mod caesar_cipher;
 pub mod vigenere;
 pub mod soundex_metaphone;
+// L144: substrate v0.3.0 expansion — modern hash (BLAKE3) + number theory (Miller-Rabin) + finance (Black-Scholes) + text diff (Myers)
+pub mod blake3_hash;
+pub mod miller_rabin;
+pub mod black_scholes;
+pub mod diff_match_patch;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
