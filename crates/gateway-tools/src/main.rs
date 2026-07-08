@@ -2,21 +2,21 @@
 //!
 //! CLI binary exposing utility modules from the `gateway` crate as observable
 //! MVP subcommands. Each subcommand wraps an existing public API from
-//! `gateway::<module>::<fn>` and provides both an interactive mode and a
+//! `psub_gateway::<module>::<fn>` and provides both an interactive mode and a
 //! `--demo` mode that runs a non-trivial in-binary example.
 //!
 //! Modules currently surfaced:
 //!
-//! - `jwt`         -> `gateway::jwt_hs256`         (HS256 encode/verify, b64url)
-//! - `dns`         -> `gateway::dns_message_parser` (parse header + 1 question)
-//! - `redis`       -> `gateway::redis_resp`         (encode + parse RESP value)
-//! - `tls`         -> `gateway::tls_record`         (parse + write TLS record)
-//! - `pkcs7`       -> `gateway::pkcs7_padding`      (AES-style PKCS#7 pad/unpad)
-//! - `patch`       -> `gateway::json_patch`         (RFC-6902 patch apply)
-//! - `metrics`     -> `gateway::prometheus_exposition` + `histogram_metrics`
-//! - `pem`         -> `gateway::pem_codec`          (PEM encode/decode)
-//! - `m3u`         -> `gateway::m3u_parser`         (M3U parse/render)
-//! - `chunked`     -> `gateway::chunked_transfer`   (hex chunked encode/decode)
+//! - `jwt`         -> `psub_gateway::jwt_hs256`         (HS256 encode/verify, b64url)
+//! - `dns`         -> `psub_gateway::dns_message_parser` (parse header + 1 question)
+//! - `redis`       -> `psub_gateway::redis_resp`         (encode + parse RESP value)
+//! - `tls`         -> `psub_gateway::tls_record`         (parse + write TLS record)
+//! - `pkcs7`       -> `psub_gateway::pkcs7_padding`      (AES-style PKCS#7 pad/unpad)
+//! - `patch`       -> `psub_gateway::json_patch`         (RFC-6902 patch apply)
+//! - `metrics`     -> `psub_gateway::prometheus_exposition` + `histogram_metrics`
+//! - `pem`         -> `psub_gateway::pem_codec`          (PEM encode/decode)
+//! - `m3u`         -> `psub_gateway::m3u_parser`         (M3U parse/render)
+//! - `chunked`     -> `psub_gateway::chunked_transfer`   (hex chunked encode/decode)
 //!
 //! Design choices:
 //! - stdout is reserved for successful payloads (binary-safe hex/utf-8 forms)
@@ -27,17 +27,17 @@
 use anyhow::{Context, Result};
 use clap::{Parser, Subcommand};
 
-use gateway::chunked_transfer;
-use gateway::dns_message_parser as dns;
-use gateway::histogram_metrics::Histogram;
-use gateway::json_patch::{apply as apply_patch, JsValue, Patch};
-use gateway::jwt_hs256 as jwt;
-use gateway::m3u_parser as m3u;
-use gateway::pem_codec as pem;
-use gateway::pkcs7_padding as p7;
-use gateway::prometheus_exposition::{render as render_metrics, Metric, MetricType};
-use gateway::redis_resp::{encode as resp_encode, parse as resp_parse, RespValue};
-use gateway::tls_record::{
+use psub_gateway::chunked_transfer;
+use psub_gateway::dns_message_parser as dns;
+use psub_gateway::histogram_metrics::Histogram;
+use psub_gateway::json_patch::{apply as apply_patch, JsValue, Patch};
+use psub_gateway::jwt_hs256 as jwt;
+use psub_gateway::m3u_parser as m3u;
+use psub_gateway::pem_codec as pem;
+use psub_gateway::pkcs7_padding as p7;
+use psub_gateway::prometheus_exposition::{render as render_metrics, Metric, MetricType};
+use psub_gateway::redis_resp::{encode as resp_encode, parse as resp_parse, RespValue};
+use psub_gateway::tls_record::{
     parse_record as tls_parse, write_record as tls_write, ContentType, ProtocolVersion,
 };
 
@@ -607,7 +607,7 @@ fn run_m3u(op: &M3uCmd) -> Result<()> {
                     let dur: f64 = pair[0]
                         .parse()
                         .with_context(|| format!("bad duration `{}`", pair[0]))?;
-                    v.push(gateway::m3u_parser::M3uEntry {
+                    v.push(psub_gateway::m3u_parser::M3uEntry {
                         duration_secs: Some(dur),
                         title: None,
                         uri: pair[1].to_string(),
@@ -641,12 +641,12 @@ fn run_m3u(op: &M3uCmd) -> Result<()> {
         }
         M3uCmd::Demo => {
             let entries = vec![
-                gateway::m3u_parser::M3uEntry {
+                psub_gateway::m3u_parser::M3uEntry {
                     duration_secs: Some(180.0),
                     title: Some("Track 1".into()),
                     uri: "track1.mp3".into(),
                 },
-                gateway::m3u_parser::M3uEntry {
+                psub_gateway::m3u_parser::M3uEntry {
                     duration_secs: Some(240.0),
                     title: Some("Track 2".into()),
                     uri: "track2.mp3".into(),
@@ -769,12 +769,12 @@ fn substrate_splash() {
 /// Static registry of `gateway` utility modules exported via this CLI.
 /// Each entry: (module-alias, real-crate-path, top-5-public-fn-signatures).
 ///
-/// Source-of-truth: `gateway::lib.rs` `pub mod` list. Keep this in sync when
+/// Source-of-truth: `psub_gateway::lib.rs` `pub mod` list. Keep this in sync when
 /// adding a new module.
 fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
     vec![
         (
-            "jwt", "gateway::jwt_hs256", vec![
+            "jwt", "psub_gateway::jwt_hs256", vec![
                 "fn b64url_encode(input: &[u8]) -> String",
                 "fn b64url_decode(input: &str) -> Result<Vec<u8>, _>",
                 "fn sign_hs256(header_b64: &str, payload_b64: &str, key: &[u8]) -> String",
@@ -783,7 +783,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "dns", "gateway::dns_message_parser", vec![
+            "dns", "psub_gateway::dns_message_parser", vec![
                 "pub struct DnsHeader { id, flags, qdcount, ancount, nscount, arcount }",
                 "pub struct Question { qname, qtype, qclass }",
                 "fn parse_header(buf: &[u8]) -> Result<DnsHeader, _>",
@@ -792,7 +792,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "redis", "gateway::redis_resp", vec![
+            "redis", "psub_gateway::redis_resp", vec![
                 "pub enum RespValue { SimpleString, Error, Integer, BulkString, Array }",
                 "fn encode(v: &RespValue) -> Vec<u8>",
                 "fn parse(input: &[u8]) -> Result<(RespValue, usize), _>",
@@ -801,7 +801,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "tls", "gateway::tls_record", vec![
+            "tls", "psub_gateway::tls_record", vec![
                 "pub enum ContentType { ChangeCipherSpec, Alert, Handshake, ApplicationData }",
                 "pub struct ProtocolVersion { major: u8, minor: u8 }",
                 "fn parse_record(buf: &[u8]) -> Result<(ContentType, ProtocolVersion, &[u8]), _>",
@@ -810,7 +810,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "pkcs7", "gateway::pkcs7_padding", vec![
+            "pkcs7", "psub_gateway::pkcs7_padding", vec![
                 "fn pad(data: &[u8], block: usize) -> Vec<u8>",
                 "fn unpad(data: &[u8], block: usize) -> Result<&[u8], _>",
                 "fn required_padding_len(len: usize, block: usize) -> usize",
@@ -819,7 +819,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "patch", "gateway::json_patch", vec![
+            "patch", "psub_gateway::json_patch", vec![
                 "pub enum Patch { Add, Remove, Replace, Move, Copy, Test }",
                 "pub type JsValue = serde_json::Value",
                 "fn apply(doc: &mut JsValue, patch: &Patch) -> Result<(), _>",
@@ -828,7 +828,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "metrics", "gateway::prometheus_exposition", vec![
+            "metrics", "psub_gateway::prometheus_exposition", vec![
                 "pub enum MetricType { Counter, Gauge, Histogram, Summary }",
                 "pub struct Metric { name, kind, labels, value }",
                 "fn render(metrics: &[Metric]) -> String",
@@ -837,7 +837,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "pem", "gateway::pem_codec", vec![
+            "pem", "psub_gateway::pem_codec", vec![
                 "pub struct PemBlock { label, data }",
                 "fn encode(label: &str, der: &[u8]) -> String",
                 "fn decode(input: &str) -> Result<PemBlock, _>",
@@ -846,7 +846,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "m3u", "gateway::m3u_parser", vec![
+            "m3u", "psub_gateway::m3u_parser", vec![
                 "pub struct Playlist { items: Vec<Entry> }",
                 "pub enum Entry { Path(String), ExtInfo { path, duration, title } }",
                 "fn parse(text: &str) -> Result<Playlist, _>",
@@ -855,7 +855,7 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "chunked", "gateway::chunked_transfer", vec![
+            "chunked", "psub_gateway::chunked_transfer", vec![
                 "fn encode_chunks(data: &[u8], chunk: usize) -> Vec<Vec<u8>>",
                 "fn decode_chunks(chunks: &[Vec<u8>]) -> Vec<u8>",
                 "fn hex_chunk_header(n: usize) -> String",

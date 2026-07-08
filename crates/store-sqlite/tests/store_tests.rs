@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use std::thread;
 
-use a2a::message::{Message, MessageKind, Part};
-use a2a::task::Task;
+use psub_a2a::message::{Message, MessageKind, Part};
+use psub_a2a::task::Task;
 use store_sqlite::SqliteMailboxStore;
 use substrate_core::mailbox_port::{MailboxStore, MailboxTaskState};
 
@@ -106,7 +106,7 @@ fn task_update_advances_state() {
 
     let tasks = store.task_list("team-d").unwrap();
     assert_eq!(tasks.len(), 1);
-    assert_eq!(tasks[0].state, a2a::task::TaskState::Working);
+    assert_eq!(tasks[0].state, psub_a2a::task::TaskState::Working);
 }
 
 #[test]

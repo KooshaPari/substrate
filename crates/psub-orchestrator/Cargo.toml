@@ -1,0 +1,27 @@
+[package]
+name = "psub-orchestrator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "L120 MVP orchestrator: TOML wave.toml loader, dispatch trait, claude -p stream-json parser (gated), JSONL WatcherPort adapter."
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "io-util", "sync", "time"] }
+tokio-stream = { workspace = true }
+futures-core = { workspace = true }
+toml = { workspace = true }
+async-trait = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
+
+[features]
+default = []
+claude-integration = []

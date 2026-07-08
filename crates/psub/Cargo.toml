@@ -1,0 +1,26 @@
+[package]
+name = "psub"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Rust SDK facade: hexagonal ports, domain types, dispatch planner, and optional adapters."
+readme = "README.md"
+keywords = ["agent", "dispatch", "hexagonal", "orchestration", "substrate"]
+categories = ["development-tools", "asynchronous"]
+
+[features]
+default = ["app", "spec"]
+app = ["dep:substrate-app"]
+spec = ["dep:engine-spec"]
+psub-a2a = ["dep:psub-a2a"]
+
+[dependencies]
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+substrate-app = { version = "0.3.0", path = "../substrate-app", optional = true }
+engine-spec = { version = "0.3.0", path = "../engine-spec", optional = true }
+psub-a2a = { version = "0.3.0", path = "../psub-a2a", optional = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["macros", "rt"] }

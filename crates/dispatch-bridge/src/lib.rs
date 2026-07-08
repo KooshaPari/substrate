@@ -22,7 +22,7 @@
 //!
 //! ```rust,ignore
 //! use dispatch_bridge::{Bridge, HttpServerTransport, ChannelTransport, DispatchEnvelope};
-//! use a2a::task::{Task, TaskState};
+//! use psub_a2a::task::{Task, TaskState};
 //!
 //! // Producer: substrate wave runner posts envelopes.
 //! let (tx, rx) = tokio::sync::mpsc::channel::<DispatchEnvelope>(64);
@@ -104,7 +104,7 @@ pub enum DispatchEnvelope {
         /// Reason for rejection (empty when accepted).
         reason: String,
     },
-    /// Consumer → producer: `a2a::TaskState` transition.
+    /// Consumer → producer: `psub_a2a::TaskState` transition.
     TaskUpdate {
         /// Lane id this update refers to.
         lane_id: uuid::Uuid,

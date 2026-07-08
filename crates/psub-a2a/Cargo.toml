@@ -1,0 +1,20 @@
+[package]
+name = "psub-a2a"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "A2A-shaped wire schema (Task, Message, Artifact, Part). Transport-agnostic; depends only on serde/uuid/thiserror."
+readme = "README.md"
+keywords = ["a2a", "agent", "protocol", "schema"]
+categories = ["development-tools", "encoding"]
+# Deliberately a leaf crate. It must NOT depend on substrate-core, engine-*, transport-*,
+# store-*, driver-*, or *-adapter. arch-test enforces a similar rule for substrate-core.
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+chrono.workspace = true

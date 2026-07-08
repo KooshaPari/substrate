@@ -266,7 +266,7 @@ async fn route_handler(
 
 async fn mailbox_send_handler(
     State(state): State<AppState>,
-    Json(msg): Json<a2a::Message>,
+    Json(msg): Json<psub_a2a::Message>,
 ) -> Result<StatusCode, ApiError> {
     state
         .mailbox
@@ -284,7 +284,7 @@ struct InboxQuery {
 async fn mailbox_inbox_handler(
     State(state): State<AppState>,
     Query(query): Query<InboxQuery>,
-) -> Result<Json<Vec<a2a::Message>>, ApiError> {
+) -> Result<Json<Vec<psub_a2a::Message>>, ApiError> {
     if query.team.trim().is_empty() || query.to.trim().is_empty() {
         return Err(ApiError::bad_request(
             "team and to query params are required",
@@ -305,7 +305,7 @@ struct TasksQuery {
 async fn tasks_list_handler(
     State(state): State<AppState>,
     Query(query): Query<TasksQuery>,
-) -> Result<Json<Vec<a2a::Task>>, ApiError> {
+) -> Result<Json<Vec<psub_a2a::Task>>, ApiError> {
     if query.team.trim().is_empty() {
         return Err(ApiError::bad_request("team query param is required"));
     }

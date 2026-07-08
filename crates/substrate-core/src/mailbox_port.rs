@@ -11,7 +11,7 @@ use uuid::Uuid;
 
 /// Opaque task state at the port boundary.
 ///
-/// Adapters convert to/from `a2a::TaskState` internally.
+/// Adapters convert to/from `psub_a2a::TaskState` internally.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MailboxTaskState {
     /// Submitted, not yet started.

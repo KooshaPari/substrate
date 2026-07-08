@@ -7,7 +7,7 @@ rust-version.workspace = true
 description = "EnginePort adapter for the A2A Agent-to-Agent REST protocol."
 
 [dependencies]
-a2a = { workspace = true }
+psub-a2a.workspace = true
 substrate-core = { path = "../substrate-core" }
 engine-spec = { path = "../engine-spec" }
 async-trait = { workspace = true }

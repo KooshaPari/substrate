@@ -6,7 +6,7 @@
 
 use std::time::Duration;
 
-use a2a::{Message, Task as A2aTask, TaskState as A2aTaskState};
+use psub_a2a::{Message, Task as A2aTask, TaskState as A2aTaskState};
 use async_trait::async_trait;
 use engine_spec::TaskSpec;
 use futures_util::{Stream, StreamExt};
@@ -279,7 +279,7 @@ pub enum A2AEvent {
     /// An artifact event.
     Artifact {
         /// A2A artifact payload.
-        artifact: a2a::Artifact,
+        artifact: psub_a2a::Artifact,
     },
     /// Unknown or extension event payload.
     Other {

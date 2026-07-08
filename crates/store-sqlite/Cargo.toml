@@ -11,7 +11,7 @@ keywords = ["sqlite", "store", "claim", "substrate"]
 categories = ["database"]
 
 [dependencies]
-a2a.workspace = true
+psub-a2a.workspace = true
 substrate-core.workspace = true
 rusqlite = { workspace = true }
 serde = { workspace = true }

@@ -1,0 +1,31 @@
+[package]
+name = "psub-wave"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Phase 4: parallel wave runner — N concurrent teammate lanes with sub-subagent fan-out and harvested results."
+
+[dependencies]
+substrate-core = { path = "../substrate-core" }
+psub-a2a = { path = "../psub-a2a" }
+store-sqlite = { path = "../store-sqlite" }
+psub-supervisor = { path = "../psub-supervisor" }
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
+uuid = { workspace = true }
+chrono = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+async-trait = { workspace = true }
+regex = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
+substrate-core = { path = "../substrate-core" }
+psub-a2a = { path = "../psub-a2a" }
+store-sqlite = { path = "../store-sqlite" }
+psub-supervisor = { path = "../psub-supervisor" }
+
+[features]
+default = []

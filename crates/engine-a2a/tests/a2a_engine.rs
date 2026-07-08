@@ -40,9 +40,9 @@ fn tasks_url_appends_tasks_to_agent_url() {
 #[test]
 fn extract_result_maps_completed_a2a_task_to_completed() {
     let engine = A2AEngine::new();
-    let task = a2a::Task::new("substrate", "write code", "remote-agent");
+    let task = psub_a2a::Task::new("substrate", "write code", "remote-agent");
     let mut raw_task = task;
-    raw_task.state = a2a::TaskState::Completed;
+    raw_task.state = psub_a2a::TaskState::Completed;
     let dump = ConversationDump {
         conversation_id: raw_task.id.to_string(),
         raw: serde_json::to_string(&raw_task).expect("serialize task"),
@@ -64,18 +64,18 @@ async fn start_posts_task_streams_events_and_polls_status() {
 
     async fn post_task(
         State(state): State<TestState>,
-        Json(mut task): Json<a2a::Task>,
-    ) -> Json<a2a::Task> {
+        Json(mut task): Json<psub_a2a::Task>,
+    ) -> Json<psub_a2a::Task> {
         state.post_count.fetch_add(1, Ordering::SeqCst);
-        task.state = a2a::TaskState::Working;
+        task.state = psub_a2a::TaskState::Working;
         Json(task)
     }
 
-    async fn get_task(State(state): State<TestState>, Path(id): Path<String>) -> Json<a2a::Task> {
+    async fn get_task(State(state): State<TestState>, Path(id): Path<String>) -> Json<psub_a2a::Task> {
         state.get_count.fetch_add(1, Ordering::SeqCst);
-        let mut task = a2a::Task::new("substrate", "remote result", "remote-agent");
+        let mut task = psub_a2a::Task::new("substrate", "remote result", "remote-agent");
         task.id = uuid::Uuid::parse_str(&id).expect("task id");
-        task.state = a2a::TaskState::Completed;
+        task.state = psub_a2a::TaskState::Completed;
         Json(task)
     }
 

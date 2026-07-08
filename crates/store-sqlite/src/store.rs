@@ -6,8 +6,8 @@ use chrono::Utc;
 use rusqlite::{params, Connection};
 use uuid::Uuid;
 
-use a2a::message::{Message, MessageKind, MsgState, Part};
-use a2a::task::{Task, TaskState};
+use psub_a2a::message::{Message, MessageKind, MsgState, Part};
+use psub_a2a::task::{Task, TaskState};
 use substrate_core::mailbox_port::{MailboxStore, MailboxTaskState};
 
 use crate::error::StoreError;

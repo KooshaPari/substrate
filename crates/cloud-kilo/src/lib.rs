@@ -18,7 +18,7 @@ use substrate_core::cloud_dispatch_port::{
 use substrate_core::error::{Result, SubstrateError};
 use uuid::Uuid;
 
-pub use gateway::{KiloGatewayConfig, DEFAULT_GATEWAY_URL, DEFAULT_MODEL};
+pub use psub_gateway::{KiloGatewayConfig, DEFAULT_GATEWAY_URL, DEFAULT_MODEL};
 pub use worker::{parse_llm_payload, LlmDispatchPayload};
 
 /// In-memory task record for async model-backed dispatch.

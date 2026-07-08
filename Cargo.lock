@@ -3,17 +3,6 @@
 version = 3
 
 [[package]]
-name = "a2a"
-version = "0.3.0"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "uuid",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -745,11 +734,12 @@ dependencies = [
 name = "dispatch-bridge"
 version = "0.3.0"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "futures",
  "parking_lot",
+ "psub-a2a",
+ "psub-wave",
  "serde",
  "serde_json",
  "substrate-core",
@@ -758,7 +748,6 @@ dependencies = [
  "tokio-stream",
  "tracing",
  "uuid",
- "wave",
 ]
 
 [[package]]
@@ -829,7 +818,6 @@ dependencies = [
 name = "driver-http"
 version = "0.3.0"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "axum",
@@ -840,6 +828,7 @@ dependencies = [
  "engine-forge",
  "engine-spec",
  "http-body-util",
+ "psub-a2a",
  "reqwest",
  "routing-phenotype-router",
  "serde",
@@ -860,7 +849,6 @@ dependencies = [
 name = "driver-mcp"
 version = "0.3.0"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "cliproxy-adapter",
@@ -873,6 +861,7 @@ dependencies = [
  "futures-core",
  "parking_lot",
  "phenotype-mcp",
+ "psub-a2a",
  "routing-phenotype-router",
  "serde",
  "serde_json",
@@ -897,13 +886,13 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 name = "engine-a2a"
 version = "0.3.0"
 dependencies = [
- "a2a",
  "async-trait",
  "axum",
  "bytes",
  "engine-conformance",
  "engine-spec",
  "futures-util",
+ "psub-a2a",
  "reqwest",
  "serde",
  "serde_json",
@@ -1057,18 +1046,6 @@ name = "fastrand"
 version = "2.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
-
-[[package]]
-name = "file-watcher"
-version = "0.3.0"
-dependencies = [
- "async-trait",
- "notify-debouncer-mini",
- "substrate-core",
- "tempfile",
- "tokio",
- "uuid",
-]
 
 [[package]]
 name = "filedescriptor"
@@ -1272,44 +1249,13 @@ dependencies = [
 ]
 
 [[package]]
-name = "gateway"
-version = "0.3.0"
-dependencies = [
- "a2a",
- "anyhow",
- "async-trait",
- "axum",
- "bytes",
- "chrono",
- "dotenvy",
- "futures",
- "http-body-util",
- "notify 6.1.1",
- "prometheus",
- "rand 0.8.6",
- "reqwest",
- "routing-phenotype-router",
- "serde",
- "serde_json",
- "sha2",
- "store-sqlite",
- "substrate-core",
- "tempfile",
- "tokio",
- "toml",
- "tower",
- "tower-http 0.7.0",
- "uuid",
-]
-
-[[package]]
 name = "gateway-tools"
 version = "0.3.0"
 dependencies = [
  "anyhow",
  "axum",
  "clap",
- "gateway",
+ "psub-gateway",
  "serde_json",
  "tokio",
 ]
@@ -2149,24 +2095,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "384b8ab6d37215f3c5301a95a4accb5d64aa607f1fcb26a11b5303878451b4fe"
 
 [[package]]
-name = "orchestrator"
-version = "0.3.0"
-dependencies = [
- "async-trait",
- "chrono",
- "futures-core",
- "serde",
- "serde_json",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "tokio-stream",
- "toml",
- "tracing",
- "uuid",
-]
-
-[[package]]
 name = "ordered-float"
 version = "4.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2469,6 +2397,124 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3e36c2f31e0a47f9280fb347ef5e461ffcd2c52dd520d8e216b52f93b0b0d7d6"
 dependencies = [
  "thiserror 1.0.69",
+]
+
+[[package]]
+name = "psub"
+version = "0.3.0"
+dependencies = [
+ "engine-spec",
+ "psub-a2a",
+ "substrate-app",
+ "substrate-core",
+ "tokio",
+]
+
+[[package]]
+name = "psub-a2a"
+version = "0.3.0"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "uuid",
+]
+
+[[package]]
+name = "psub-file-watcher"
+version = "0.3.0"
+dependencies = [
+ "async-trait",
+ "notify-debouncer-mini",
+ "substrate-core",
+ "tempfile",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "psub-gateway"
+version = "0.3.0"
+dependencies = [
+ "anyhow",
+ "async-trait",
+ "axum",
+ "bytes",
+ "chrono",
+ "dotenvy",
+ "futures",
+ "http-body-util",
+ "notify 6.1.1",
+ "prometheus",
+ "psub-a2a",
+ "rand 0.8.6",
+ "reqwest",
+ "routing-phenotype-router",
+ "serde",
+ "serde_json",
+ "sha2",
+ "store-sqlite",
+ "substrate-core",
+ "tempfile",
+ "tokio",
+ "toml",
+ "tower",
+ "tower-http 0.7.0",
+ "uuid",
+]
+
+[[package]]
+name = "psub-orchestrator"
+version = "0.3.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "futures-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "tokio-stream",
+ "toml",
+ "tracing",
+ "uuid",
+]
+
+[[package]]
+name = "psub-supervisor"
+version = "0.3.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "psub-a2a",
+ "serde",
+ "serde_json",
+ "store-sqlite",
+ "substrate-core",
+ "tempfile",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
+name = "psub-wave"
+version = "0.3.0"
+dependencies = [
+ "async-trait",
+ "chrono",
+ "psub-a2a",
+ "psub-supervisor",
+ "regex",
+ "serde",
+ "serde_json",
+ "store-sqlite",
+ "substrate-core",
+ "thiserror 2.0.18",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -3195,8 +3241,8 @@ dependencies = [
 name = "store-sqlite"
 version = "0.3.0"
 dependencies = [
- "a2a",
  "chrono",
+ "psub-a2a",
  "rusqlite",
  "serde",
  "serde_json",
@@ -3253,17 +3299,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.118",
-]
-
-[[package]]
-name = "substrate"
-version = "0.3.0"
-dependencies = [
- "a2a",
- "engine-spec",
- "substrate-app",
- "substrate-core",
- "tokio",
 ]
 
 [[package]]
@@ -3375,23 +3410,6 @@ name = "subtle"
 version = "2.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
-
-[[package]]
-name = "supervisor"
-version = "0.3.0"
-dependencies = [
- "a2a",
- "async-trait",
- "chrono",
- "serde",
- "serde_json",
- "store-sqlite",
- "substrate-core",
- "tempfile",
- "thiserror 2.0.18",
- "tokio",
- "uuid",
-]
 
 [[package]]
 name = "syn"
@@ -4095,24 +4113,6 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
-]
-
-[[package]]
-name = "wave"
-version = "0.3.0"
-dependencies = [
- "a2a",
- "async-trait",
- "chrono",
- "regex",
- "serde",
- "serde_json",
- "store-sqlite",
- "substrate-core",
- "supervisor",
- "thiserror 2.0.18",
- "tokio",
- "uuid",
 ]
 
 [[package]]

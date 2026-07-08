@@ -2,7 +2,7 @@
 resolver = "2"
 exclude = ["crates/forge_daemon"]
 members = [
-    "crates/substrate",
+    "crates/psub",
     "crates/substrate-core",
     "crates/engine-spec",
     "crates/engine-forge",
@@ -13,16 +13,16 @@ members = [
     "crates/driver-http",
     "crates/driver-argv",
     "crates/driver-mcp",
-    "crates/gateway",
+    "crates/psub-gateway",
     "crates/arch-test",
     "crates/omniroute-adapter",
     "crates/routing-phenotype-router",
     "tools/fake-forge",
     "tools/fake-codex-cloud",
-    "crates/a2a",
+    "crates/psub-a2a",
     "crates/store-sqlite",
-    "crates/supervisor",
-    "crates/wave",
+    "crates/psub-supervisor",
+    "crates/psub-wave",
     "crates/engine-conformance",
     "crates/engine-codex",
     "crates/engine-claude",
@@ -35,7 +35,7 @@ members = [
     "crates/substrate-skills",
     "crates/substrate-memory",
     "crates/runtime-process",
-    "crates/file-watcher",
+    "crates/psub-file-watcher",
     "crates/phenotype-mcp",
     "crates/context-budget",
     "crates/wave-3lane-tests",
@@ -47,7 +47,7 @@ members = [
     "crates/substrate-serve-lock",
     "crates/substrate-tui",
     "crates/gateway-tools",
-    "crates/orchestrator",
+    "crates/psub-orchestrator",
 ]
 [workspace.package]
 version = "0.3.0"
@@ -62,7 +62,7 @@ substrate-serve-lock = { version = "0.3.0", path = "crates/substrate-serve-lock"
 substrate-trace = { version = "0.3.0", path = "crates/substrate-trace" }
 substrate-app = { version = "0.3.0", path = "crates/substrate-app" }
 engine-spec = { version = "0.3.0", path = "crates/engine-spec" }
-a2a = { version = "0.3.0", path = "crates/a2a" }
+psub-a2a = { version = "0.3.0", path = "crates/psub-a2a" }
 store-sqlite = { version = "0.3.0", path = "crates/store-sqlite" }
 engine-forge = { version = "0.3.0", path = "crates/engine-forge" }
 forge_daemon = { version = "0.2.0", path = "crates/forge_daemon" }

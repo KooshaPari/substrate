@@ -1,29 +1,21 @@
 [package]
-name = "driver-http"
+name = "psub-gateway"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "HTTP/REST inbound driver for substrate dispatch, planning, routing, and A2A mailbox."
+description = "OpenAI-compatible HTTP gateway for substrate routing, A2A mailbox, and management config."
 
 [[bin]]
-name = "substrate-http"
+name = "substrate-gateway"
 path = "src/main.rs"
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
-substrate-app = { path = "../substrate-app" }
-engine-spec = { path = "../engine-spec" }
-engine-forge = { path = "../engine-forge" }
-engine-codex = { path = "../engine-codex" }
-engine-claude = { path = "../engine-claude" }
-engine-agentapi = { path = "../engine-agentapi" }
-transport-file = { path = "../transport-file" }
-store-file = { path = "../store-file" }
-store-sqlite = { path = "../store-sqlite" }
 routing-phenotype-router = { path = "../routing-phenotype-router" }
 psub-a2a = { path = "../psub-a2a" }
+store-sqlite = { path = "../store-sqlite" }
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
@@ -34,6 +26,16 @@ anyhow.workspace = true
 dotenvy.workspace = true
 uuid.workspace = true
 async-trait.workspace = true
+chrono.workspace = true
+bytes = "1.5"
+notify = "6"
+toml = "1.1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "rustls-tls"] }
+futures = "0.3"
+http-body-util.workspace = true
+rand = "0.8"
+prometheus = "0.14"
+sha2 = "0.10"
 
 [dev-dependencies]
 http-body-util.workspace = true
@@ -41,4 +43,5 @@ tempfile.workspace = true
 tower = { workspace = true, features = ["util"] }
 serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
-reqwest = { workspace = true, default-features = false, features = ["json", "rustls-tls"] }
+async-trait.workspace = true
+substrate-core = { path = "../substrate-core" }
