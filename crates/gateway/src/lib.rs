@@ -1180,3 +1180,8 @@ pub mod ripemd160;
 pub mod md4;
 pub mod blake2;
 pub mod edit_distance;
+// L161: substrate v0.3.0 expansion — Blowfish block cipher (Schneier 1993) + Fibonacci heap (Fredman & Tarjan 1987) + Aho-Corasick multi-pattern automaton (1975) + Dijkstra's shortest-path algorithm
+pub mod aho_corasick;
+pub mod blowfish;
+pub mod dijkstra_basic;
+pub mod fibonacci_heap;
