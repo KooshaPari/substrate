@@ -1155,3 +1155,8 @@ pub mod lzw;
 pub mod lz77;
 pub mod crockford_base32;
 pub mod simd_checksum;
+// L156: substrate v0.3.0 expansion — scrypt KDF (RFC 7914) + 1D cellular automaton + integer log helpers + Z85 base-85
+pub mod scrypt;
+pub mod cellular_automaton;
+pub mod integer_log;
+pub mod z85;
