@@ -1170,6 +1170,11 @@ pub mod keccak;
 pub mod crc32c;
 pub mod url_percent;
 pub mod tea;
+// L159: substrate v0.3.0 expansion — (7,4) Hamming SEC + SECDED + XTEA 128-bit-key Feistel 32 rounds + row-major i64 matrices with transpose/matmul/det + FNV-1a 32/64/128-bit Fowler-Noll-Vo
+pub mod hamming_code;
+pub mod matrix_ops;
+pub mod xtea;
+pub mod fnv1a;
 // L161: substrate v0.3.0 expansion — Blowfish block cipher (Schneier 1993) + Fibonacci heap (Fredman & Tarjan 1987) + Aho-Corasick multi-pattern automaton (1975) + Dijkstra's shortest-path algorithm
 pub mod aho_corasick;
 pub mod blowfish;

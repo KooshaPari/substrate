@@ -309,4 +309,41 @@ mod tests {
     #[test] fn format_oid_multi_byte_component() {
         assert_eq!(format_oid(&[0x2a, 0x86, 0x48, 0x01]), "1.2.840.1");
     }
+
+    #[test]
+    fn parse_is_idempotent_on_random() {
+        // Property: parsing the same bytes twice must produce structurally
+        // identical results. We assert on the public fields whose comparison is
+        // meaningful (versions, serials, signature alg OID, extension count, and
+        // raw_len). Idempotence holds trivially for any error path — we run
+        // both parses and require they return the same discriminant.
+        let mut state: u32 = 0x1a2b_3c4d;
+        for trial in 0..64 {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            let mut bytes: Vec<u8> = Vec::new();
+            let n_blobs = ((state as usize) % 6) + 1;
+            for _ in 0..n_blobs {
+                state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+                let len = ((state as usize) % 200) + 2;
+                bytes.push(0x30);
+                bytes.push(0x82);
+                bytes.push((len >> 8) as u8);
+                bytes.push(len as u8);
+                for j in 0..len {
+                    state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+                    bytes.push((state >> (j % 24)) as u8);
+                }
+            }
+            let a = parse_der(&bytes);
+            let b = parse_der(&bytes);
+            assert_eq!(a.is_ok(), b.is_ok(), "trial={}: ok parity drifted", trial);
+            if let (Ok(ca), Ok(cb)) = (a, b) {
+                assert_eq!(ca.version, cb.version, "trial={} version drift", trial);
+                assert_eq!(ca.serial, cb.serial, "trial={} serial drift", trial);
+                assert_eq!(ca.signature_algorithm, cb.signature_algorithm);
+                assert_eq!(ca.extensions_count, cb.extensions_count);
+                assert_eq!(ca.raw_len, cb.raw_len);
+            }
+        }
+    }
 }

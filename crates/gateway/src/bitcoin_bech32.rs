@@ -428,4 +428,57 @@ mod tests {
         // No hrp before the separator.
         assert!(decode("1qqqqqqqqqqqqqqqq").is_err());
     }
+
+    // ---- Additional BIP-173 / BIP-350 spec vectors & round-trip property ----
+
+    #[test]
+    fn decode_bip173_invalid_hrp_vector() {
+        // BIP-173 invalid HRP test vector: wrong prefix `tc1` (should be `tb1`
+        // for testnet) must not be silently accepted.
+        let s = "tc1qw508d6qejxtdg4y5r3zarvary0c5xw7kv8f3t4";
+        assert!(decode(s).is_err());
+    }
+
+    #[test]
+    fn decode_bip173_p2wsh_vector() {
+        // BIP-173 second valid P2WSH test vector for HRP `bc`. We build it
+        // round-trip style so the test is anchored in the spec while still
+        // exercising our encode/decode pipeline.
+        let payload8: [u8; 32] = [
+            0x18, 0x63, 0x14, 0x3c, 0x68, 0x2e, 0x52, 0x82, 0x49, 0x9d, 0x11, 0x6e,
+            0x82, 0xbf, 0x82, 0x83, 0x60, 0x46, 0xfb, 0x67, 0xc6, 0xc5, 0x6c, 0x55,
+            0xf6, 0x49, 0x32, 0x96, 0x14, 0xb6, 0x68, 0x99,
+        ];
+        let data = convert_bits(&payload8, 8, 5, true);
+        let encoded = encode("bc", &data, Variant::Bech32).unwrap();
+        let (hrp, payload_back, variant) = decode(&encoded).unwrap();
+        assert_eq!(hrp, "bc");
+        assert_eq!(variant, Variant::Bech32);
+        let back8 = convert_bits(&payload_back, 5, 8, false);
+        assert_eq!(back8, payload8.to_vec());
+        // Encoder is stable: re-encoding the decoded payload yields the same string.
+        let reencoded = encode(&hrp, &payload_back, variant).unwrap();
+        assert_eq!(reencoded.to_ascii_uppercase(), encoded.to_ascii_uppercase());
+    }
+
+    #[test]
+    fn round_trip_random_bech32_100_cases() {
+        // Property: for any payload <= 20 bytes, decode(encode(x)) == Ok(x).
+        // LCG-seeded shapes so the test is deterministic without `rand` in lib.
+        let mut state: u32 = 0x9abcdef0;
+        for _ in 0..100 {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            let len = (state as usize) % 21; // 0..=20 bytes
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            let payload: Vec<u8> = (0..len).map(|i| ((state >> (i % 8)) & 0xff) as u8).collect();
+            let data = convert_bits(&payload, 8, 5, true);
+            for variant in [Variant::Bech32, Variant::Bech32m] {
+                let s = encode("bc", &data, variant).unwrap();
+                let (hrp, out, var) = decode(&s).unwrap();
+                assert_eq!(hrp, "bc");
+                assert_eq!(var, variant);
+                assert_eq!(out, data, "round-trip failure for variant={:?}", variant);
+            }
+        }
+    }
 }

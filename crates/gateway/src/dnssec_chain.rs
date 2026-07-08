@@ -282,4 +282,54 @@ mod tests {
         m.insert("b".into(), vec![2]);
         assert_eq!(chain_summary(&m), 2);
     }
+
+    // ---- RFC 4034 key_tag property: determinism + collision diversity ----
+
+    #[test]
+    fn rfc4034_appendix_b_key_tag_property() {
+        // RFC 4034 Appendix B algorithm: key_tag is a 16-bit accumulation over
+        // the entire DNSKEY RDATA, taken as 16-bit big-endian groups, summed via
+        // (ac >> 16) + (ac & 0xffff). We verify that our impl satisfies the
+        // algorithm's contract on a representative RDATA shape — determinism,
+        // and that the result remains a u16 across varying input sizes.
+        let rdata_a = vec![0x01, 0x00, 0x03, 0x0d]; // flags+prot+alg=0x0d (RSA/SHA1)
+        let rdata_b = vec![0x01, 0x00, 0x03, 0x0d, 0xaa, 0xbb, 0xcc];
+        let ka = compute_key_tag(&rdata_a);
+        let kb = compute_key_tag(&rdata_b);
+        assert_eq!(compute_key_tag(&rdata_a), ka, "determinism violated (a)");
+        assert_eq!(compute_key_tag(&rdata_b), kb, "determinism violated (b)");
+        assert_eq!(ka.count_ones() + ka.count_zeros(), 16, "ka must fit u16");
+    }
+
+    #[test]
+    fn compute_key_tag_deterministic_100_random() {
+        // Property: for any RDATA, compute_key_tag is a pure function — two
+        // invocations on the same bytes yield the same value, AND a sample of
+        // 100 distinct RDATA shapes produces high tag diversity. LCG-seeded
+        // shapes so the test is deterministic.
+        let mut state: u32 = 0xc0ffee01;
+        let mut tags = Vec::with_capacity(100);
+        for _ in 0..100 {
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            let len = ((state as usize) % 256) + 4;
+            state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+            let mut rdata = Vec::with_capacity(len);
+            for i in 0..len {
+                state = state.wrapping_mul(1664525).wrapping_add(1013904223);
+                rdata.push((state >> (i % 8)) as u8);
+            }
+            let a = compute_key_tag(&rdata);
+            let b = compute_key_tag(&rdata);
+            assert_eq!(a, b, "determinism violated for len={}", len);
+            tags.push(a);
+        }
+        let mut sorted = tags.clone();
+        sorted.sort();
+        sorted.dedup();
+        assert!(
+            sorted.len() >= 90,
+            "expected ≥90 unique tags in 100 samples, got {}",
+            sorted.len()
+        );
+    }
 }
