@@ -988,6 +988,11 @@ pub mod blake3_hash;
 pub mod miller_rabin;
 pub mod black_scholes;
 pub mod diff_match_patch;
+// L145: substrate v0.3.0 expansion — Huffman coding + sorted-index map + geo distance/geohash/Maidenhead + Markdown inline parser
+pub mod huffman_code;
+pub mod sorted_index;
+pub mod geo_distance;
+pub mod markdown_inline;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
