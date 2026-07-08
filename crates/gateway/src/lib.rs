@@ -1150,3 +1150,8 @@ pub mod merkle_tree;
 pub mod quickselect;
 pub mod boyer_moore;
 pub mod bencode;
+// L155: substrate v0.3.0 expansion — LZW dictionary compression + LZ77 sliding-window compression + Crockford's Base32 + Fletcher-16 / Adler-32 checksums
+pub mod lzw;
+pub mod lz77;
+pub mod crockford_base32;
+pub mod simd_checksum;
