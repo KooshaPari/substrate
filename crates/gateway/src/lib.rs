@@ -1014,6 +1014,11 @@ pub mod xxhash;
 pub mod string_metrics;
 pub mod cuckoo_filter;
 pub mod quadratic_residue;
+// L150: substrate v0.3.0 expansion — statistics primitives + classic sorts + CRC-32 variants + real skip list
+pub mod statistics_basic;
+pub mod sorts;
+pub mod crc_variants;
+pub mod ordered_skiplist;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
