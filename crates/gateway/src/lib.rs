@@ -1024,6 +1024,11 @@ pub mod modular_arith;
 pub mod union_find;
 pub mod fenwick_tree;
 pub mod http_status;
+// L152: substrate v0.3.0 expansion — KMP string matching + random distributions + interval tree + segment tree
+pub mod kmp_search;
+pub mod random_distributions;
+pub mod interval_tree;
+pub mod segment_tree;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
