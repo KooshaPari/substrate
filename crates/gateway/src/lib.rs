@@ -1205,3 +1205,8 @@ pub mod topological_sort;
 pub mod avl_tree;
 pub mod rle_compress;
 pub mod quaternions;
+// L164: substrate v0.3.0 expansion — red-black self-balancing BST (Bayer 1972) + Knuth's Algorithm X with DLX dancing links for exact cover + 0/1 knapsack DP (Bellman 1957) + Mandelbrot set escape-time iteration
+pub mod red_black_tree;
+pub mod dancing_links;
+pub mod knapsack_dp;
+pub mod mandelbrot;
