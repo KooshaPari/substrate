@@ -1005,6 +1005,10 @@ pub mod cron_expr;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
+// L148: substrate v0.3.0 expansion — SHA-1 + LRU cache (full impl replacing stub) + YAML subset parser + SemVer comparator
+pub mod sha1;
+pub mod yaml_basic;
+pub mod semver_compare;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
