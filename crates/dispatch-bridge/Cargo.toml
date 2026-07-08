@@ -8,9 +8,9 @@ rust-version.workspace = true
 description = "A2A/Wave envelope over HTTP+SSE+Unix-socket transport. Wires substrate::{a2a, wave, substrate-core} across process boundaries via three transport backends."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
-wave = { path = "../wave" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
+a2a = { version = "0.3.0", path = "../a2a" }
+wave = { version = "0.3.0", path = "../wave" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

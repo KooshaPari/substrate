@@ -9,7 +9,7 @@ description = "OmniRoute RoutingPort adapter: configures forge's openai_compatib
 publish = false
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
 async-trait.workspace = true
 serde.workspace = true
 serde_json.workspace = true

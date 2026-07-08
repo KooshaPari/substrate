@@ -9,7 +9,7 @@ description = "RoutingPort adapter that delegates substrate routing decisions to
 publish = false
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
 phenotype-router = { git = "https://github.com/KooshaPari/phenotype-router" }
 async-trait.workspace = true
 serde.workspace = true

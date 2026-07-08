@@ -8,7 +8,7 @@ rust-version.workspace = true
 description = "SkillPort/ToolRegistry: in-memory named skills with JSON schema validation."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
+substrate-core = { version = "0.3.0", path = "../substrate-core" }
 serde_json = { workspace = true }
 
 [dev-dependencies]
