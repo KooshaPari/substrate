@@ -1215,3 +1215,8 @@ pub mod splay_tree;
 pub mod astar_basic;
 pub mod floyd_warshall;
 pub mod lis_dp;
+// L166: substrate v0.3.0 expansion — classic-American Soundex + NYSIIS (Taft 1970) phonetic encoders + Tridgell 32-bit + Adler32 (RFC 1950) rolling rsync checksums + Wilson's uniform-spanning-tree toroidal maze (STOC '96) + Dijkstra shunting-yard + postfix RPN arithmetic evaluator
+pub mod soundex_basic;
+pub mod rsync_rollsum;
+pub mod toroidal_maze;
+pub mod postfix_eval;
