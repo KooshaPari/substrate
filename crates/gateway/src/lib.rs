@@ -997,6 +997,11 @@ pub mod markdown_inline;
 pub mod csv_parser;
 pub mod json_pointer;
 pub mod cookie;
+// L147: substrate v0.3.0 expansion — SHA-256 + JWT decoder (no sig verify) + MIME type registry + cron expression matcher
+pub mod sha256;
+pub mod jwt_decode;
+pub mod mime_type;
+pub mod cron_expr;
 pub mod snowflake;
 pub mod json_path;
 pub mod semver;
