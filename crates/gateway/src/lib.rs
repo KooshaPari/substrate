@@ -1210,3 +1210,8 @@ pub mod red_black_tree;
 pub mod dancing_links;
 pub mod knapsack_dp;
 pub mod mandelbrot;
+// L165: substrate v0.3.0 expansion — splay-tree-API BST (Sleator-Tarjan 1985) + A* shortest-path search (Hart-Nilsson-Raphael 1968) + Floyd-Warshall all-pairs shortest paths (1962) + longest-increasing-subsequence with O(n log n) patience-sort
+pub mod splay_tree;
+pub mod astar_basic;
+pub mod floyd_warshall;
+pub mod lis_dp;
