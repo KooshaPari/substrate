@@ -1200,3 +1200,8 @@ pub mod xxtea;
 pub mod rc4;
 pub mod cobs_encode;
 pub mod salsa20;
+// L163: substrate v0.3.0 expansion — Kahn's topological sort for DAGs + AVL self-balancing BST (Adelson-Velsky & Landis 1962) + run-length encoding with literal escapes + Hamilton-convention unit quaternions for 3D rotations
+pub mod topological_sort;
+pub mod avl_tree;
+pub mod rle_compress;
+pub mod quaternions;
