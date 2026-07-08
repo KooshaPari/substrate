@@ -1175,3 +1175,8 @@ pub mod hamming_code;
 pub mod matrix_ops;
 pub mod xtea;
 pub mod fnv1a;
+// L160: substrate v0.3.0 expansion — RIPEMD-160 (RFC 2286) + MD4 (RFC 1320) + BLAKE2b/BLAKE2s (RFC 7693) + Wagner-Fischer edit distance
+pub mod ripemd160;
+pub mod md4;
+pub mod blake2;
+pub mod edit_distance;
