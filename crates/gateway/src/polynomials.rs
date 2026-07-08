@@ -20,6 +20,9 @@
 ///
 /// Polynomial multiplication. `deg(p) + deg(q) + 1` coefficients returned.
 ///
+/// Returns the canonical `[0]` (length 1) when the product is the zero
+/// polynomial — callers can distinguish "no terms" from "all zero" by length.
+///
 /// Examples:
 /// - polymul(&[1, 2], &[3, 4]) = [3, 10, 8]   // (1 + 2x)(3 + 4x) = 3 + 10x + 8x^2
 /// - polymul(&[1, 1], &[1, 1]) = [1, 2, 1]   // (1 + x)^2 = 1 + 2x + x^2
@@ -28,10 +31,15 @@ pub fn polymul(p: &[i64], q: &[i64]) -> Vec<i64> {
         return vec![0];
     }
     let mut out = vec![0i64; p.len() + q.len() - 1];
-    for (i, &a) in p.iter().enumerate() {
-        for (j, &b) in q.iter().enumerate() {
-            out[i + j] += a * b;
+    for i in 0..p.len() {
+        for j in 0..q.len() {
+            out[i + j] += p[i] * q[j];
         }
+    }
+    // Canonicalise the zero polynomial to length 1 so callers don't have to
+    // distinguish [0, 0, 0] from [0].
+    if out.iter().all(|&x| x == 0) {
+        return vec![0];
     }
     out
 }
@@ -51,47 +59,66 @@ pub fn polyadd(p: &[i64], q: &[i64]) -> Vec<i64> {
     out
 }
 
-/// Euclidean polynomial division. Returns (quotient, remainder) such
-/// that `p = q * quotient + remainder` with `deg(remainder) < deg(q)`.
+/// Euclidean polynomial division over ℤ. Returns (quotient, remainder)
+/// such that `p = q * quotient + remainder` with `deg(remainder) < deg(q)`.
 ///
-/// Panics if `q` is empty or all-zero.
+/// Remainder is canonicalised to `[0]` (length 1) when the division is exact.
+/// Quotient is canonicalised to `[0]` when `deg(p) < deg(q)`.
+///
+/// Panics if `q` is the zero polynomial (empty or all-zero trailing terms).
 pub fn polydivmod(p: &[i64], q: &[i64]) -> (Vec<i64>, Vec<i64>) {
     if q.is_empty() || q.iter().all(|&x| x == 0) {
         panic!("polydivmod called with zero divisor");
     }
+    // Strip trailing zeros from q so we can use its high coefficient as
+    // the divisor leading term.
+    let mut q = q.to_vec();
+    while q.last() == Some(&0) {
+        q.pop();
+    }
+    let lead_q = *q.last().unwrap();
+    let deg_q = q.len() - 1;
+
     let mut p = p.to_vec();
-    let mut q_out = vec![0i64; p.len()];
-    while !p.is_empty() {
+    // Strip trailing zeros from the dividend.
+    while p.last() == Some(&0) {
+        p.pop();
+    }
+    if p.is_empty() {
+        return (vec![0], vec![0]);
+    }
+
+    if p.len() - 1 < deg_q {
+        // Deg(p) < deg(q): quotient is 0, remainder is p itself.
+        return (vec![0], if p.is_empty() { vec![0] } else { p });
+    }
+
+    let mut quotient = vec![0i64; p.len() - deg_q];
+    while !p.is_empty() && p.len() - 1 >= deg_q {
         let lead_p = *p.last().unwrap();
-        let lead_q = *q.last().unwrap();
-        if lead_p == 0 {
-            p.pop();
-            continue;
-        }
-        // Check if degree(q) > degree(p) and stop if so
-        if p.len() < q.len() {
-            break;
-        }
+        let shift = p.len() - 1 - deg_q;
         let k = lead_p / lead_q;
-        let shift = p.len() - q.len();
-        q_out[shift] = k;
+        quotient[shift] = k;
         for i in 0..q.len() {
             p[shift + i] -= k * q[i];
         }
-        p.pop();
-        // Strip trailing zeros from p
+        // Strip trailing zero(s) introduced by the subtraction.
         while p.last() == Some(&0) {
             p.pop();
         }
     }
-    // Strip leading zeros from quotient
-    while q_out.last() == Some(&0) {
-        q_out.pop();
+    if p.is_empty() {
+        p = vec![0];
     }
-    if q_out.is_empty() {
-        q_out = vec![0];
+    // Defensive: strip quotient leading zeros (loop bounds keep this empty
+    // in well-defined inputs, but guard anyway).
+    while quotient.len() > 1 && quotient.last() == Some(&0) {
+        quotient.pop();
     }
-    (q_out, p)
+    if quotient.is_empty() {
+        quotient = vec![0];
+    }
+    (quotient, p)
 }
 
 /// Horner's-method polynomial evaluation at `x`.
@@ -148,12 +175,20 @@ mod tests {
 
     #[test]
     fn polymul_round_trip_with_divmod() {
-        // Build p = q * r, then verify division recovers r
+        // Build p = q * r, then verify that `p / q` recovers r (with no
+        // remainder, since the product is exact). The prior version of this
+        // test compared the `(quotient, remainder)` tuple elements against
+        // the multiplicative factor `q` instead of `r`, which is the wrong
+        // variable — division of `(q * r)` by `q` yields `r`, not `q`.
+        //
+        // Cross-checked against sympy: `div(Poly((1 + x + x^2) * (2 + 3x), x),
+        //                                Poly(1 + x + x^2, x))`
+        // returns `quotient = 2 + 3x`, `remainder = 0`.
         let q = [1i64, 1, 1]; // 1 + x + x^2
         let r = [2i64, 3]; // 2 + 3x
         let p = polymul(&q, &r);
         let (qout, rout) = polydivmod(&p, &q);
-        assert_eq!(qout, q);
-        assert_eq!(rout, r);
+        assert_eq!(qout, r);
+        assert_eq!(rout, vec![0]);
     }
 }

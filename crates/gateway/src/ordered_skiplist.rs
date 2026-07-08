@@ -46,14 +46,12 @@ impl<K: Ord, V> SkipList<K, V> {
         // Allocate an empty slot for the head sentinel at index 0.
         // We store head-forward separately so we don't need a key/value
         // sentinel that would require `unsafe` or `Default`.
-        let mut s = Self {
+        Self {
             nodes: vec![None],
             head_forward: vec![None; MAX_LEVEL],
             level: 1,
             rng: seed.wrapping_add(1) | 1,
-        };
-        // s is now valid; nothing else to do.
-        s
+        }
     }
 
     fn head(&self) -> SkipListHead<'_, K, V> {

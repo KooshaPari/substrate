@@ -124,14 +124,8 @@ pub fn crt(r1: u64, m1: u64, r2: u64, m2: u64) -> Option<(u64, u64)> {
     if (r1 % g) != (r2 % g) {
         return None;
     }
-    let (mut r1, mut m1) = (r1, m1);
-    let (mut r2, mut m2) = (r2, m2);
-    while r1 >= m1 {
-        r1 -= m1;
-    }
-    while r2 >= m2 {
-        r2 -= m2;
-    }
+    let r1 = r1 % m1;
+    let r2 = r2 % m2;
     if r1 == 0 && r2 == 0 {
         return Some((0, (m1 / g) * m2));
     }

@@ -86,7 +86,12 @@ mod tests {
 
     #[test]
     fn ascii_uppercase_preserves_non_ascii() {
-        assert_eq!(ascii_uppercase("naïve"), "NAÏVE");
+        // ASCII-only contract: non-ASCII bytes (ï = U+00EF) pass through
+        // verbatim and are NOT folded to their Latin-1 uppercase counterpart.
+        // The sibling `ascii_lowercase_preserves_non_ascii` test enforces the
+        // same invariant in the other direction. For full Unicode case
+        // folding (ï ↔ Ï, etc.) use the `unicode-normalization` crate.
+        assert_eq!(ascii_uppercase("naïve"), "NAïVE");
     }
 
     #[test]

@@ -87,7 +87,7 @@ fn create_checksum(hrp: &str, data: &[u8], variant: Variant) -> Vec<u8> {
     let mut values = hrp_expand(hrp);
     values.extend_from_slice(data);
     values.extend_from_slice(&[0u8; 6]);
-    let mut modv = bech32_polymod(&values) ^ variant.constant();
+    let modv = bech32_polymod(&values) ^ variant.constant();
     let mut out = Vec::with_capacity(6);
     for i in (0..6).rev() {
         out.push((modv >> (5 * i)) as u8 & MASK_5BIT);

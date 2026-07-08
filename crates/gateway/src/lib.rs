@@ -140,6 +140,10 @@ pub struct AppState {
     pub log_store: LogStore,
     /// Live-reloadable config; updated when the TOML config file changes on disk.
     pub live_config: Arc<TokioRwLock<FileConfig>>,
+    /// Cached response bodies keyed by request id, used by the admin
+    /// inspector to surface the most recent upstream response without
+    /// hitting the live executor.
+    pub response_cache: Arc<std::sync::Mutex<crate::cache2::TtlCache2<String, String>>>,
 }
 
 impl AppState {
@@ -177,6 +181,9 @@ impl AppState {
             budget_config: Arc::new(BudgetConfig::from_env()),
             log_store: new_log_store(),
             live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
+            response_cache: Arc::new(std::sync::Mutex::new(cache2::TtlCache2::new(
+                std::time::Duration::from_secs(300),
+            ))),
         })
     }
 
@@ -236,6 +243,9 @@ pub fn test_state(state_dir: &Path, routing: Arc<dyn RoutingPort>) -> anyhow::Re
         }),
         log_store: new_log_store(),
         live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
+        response_cache: Arc::new(std::sync::Mutex::new(cache2::TtlCache2::new(
+            std::time::Duration::from_secs(300),
+        ))),
     })
 }
 
