@@ -1220,3 +1220,8 @@ pub mod soundex_basic;
 pub mod rsync_rollsum;
 pub mod toroidal_maze;
 pub mod postfix_eval;
+// L167: substrate v0.3.0 expansion — Van Eck's self-describing sequence (OEIS A181391) + exact-arithmetic Gauss-Jordan elimination over the rationals + rail-fence zig-zag transposition cipher + strict ISO 8601 / RFC 3339 date / date-time / duration parser
+pub mod van_eck_sequence;
+pub mod gauss_jordan;
+pub mod rail_fence_cipher;
+pub mod iso8601_basic;
