@@ -1145,3 +1145,8 @@ pub mod dns_query_parser_parity;
 // L148: wave-41 utility modules — minimal MAPI property-entry build+round-trip parity + minimal MS-CFB / legacy .ppt header build+round-trip parity
 pub mod mapi_props_parity;
 pub mod pres_header_parity;
+// L154: substrate v0.3.0 expansion — SHA-256-backed Merkle tree with inclusion proofs + randomized Quickselect order-statistic selection + Boyer-Moore (bad-character rule) byte search + BitTorrent bencode codec
+pub mod merkle_tree;
+pub mod quickselect;
+pub mod boyer_moore;
+pub mod bencode;
