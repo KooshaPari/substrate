@@ -1009,6 +1009,11 @@ pub mod semver;
 pub mod sha1;
 pub mod yaml_basic;
 pub mod semver_compare;
+// L149: substrate v0.3.0 expansion — xxHash non-crypto hash + Hamming/Jaro metrics + Cuckoo filter + quadratic-residue PRNG
+pub mod xxhash;
+pub mod string_metrics;
+pub mod cuckoo_filter;
+pub mod quadratic_residue;
 pub mod bucket;
 pub mod rle;
 pub mod bitset;
