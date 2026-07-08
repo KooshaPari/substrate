@@ -1092,3 +1092,7 @@ pub mod bmp_image;
 // L145: wave-38 utility modules — minimal ASN.1 BER (X.690) parser/encoder + minimal DHCPv6 (RFC 8415) message codec
 pub mod asn1_ber;
 pub mod dhcpv6_msg;
+// L146: wave-39 utility modules — minimal RDP negotiation-request (MS-RDPBCGR §2.2) parser + minimal BIP-39 English mnemonic codec
+pub mod bip39_wordlist;
+pub mod bip39_mnemonic;
+pub mod rdp_neg;

@@ -1291,6 +1291,7 @@ dependencies = [
  "routing-phenotype-router",
  "serde",
  "serde_json",
+ "sha2",
  "store-sqlite",
  "substrate-core",
  "tempfile",
