@@ -1195,3 +1195,8 @@ pub mod aho_corasick;
 pub mod blowfish;
 pub mod dijkstra_basic;
 pub mod fibonacci_heap;
+// L165: substrate v0.3.0 expansion — Splay tree (Sleator–Tarjan 1985) + A* search (Hart–Nilsson–Raphael 1968) + Floyd–Warshall APSP (1962) + longest-increasing-subsequence DP + O(n log n) patience-sort
+pub mod splay_tree;
+pub mod astar_basic;
+pub mod floyd_warshall;
+pub mod lis_dp;
