@@ -1195,3 +1195,8 @@ pub mod aho_corasick;
 pub mod blowfish;
 pub mod dijkstra_basic;
 pub mod fibonacci_heap;
+// L162: substrate v0.3.0 expansion — XXTEA corrected Block TEA + RC4 stream cipher + COBS consistent-overhead byte stuffing + Salsa20 ARX stream cipher
+pub mod xxtea;
+pub mod rc4;
+pub mod cobs_encode;
+pub mod salsa20;
