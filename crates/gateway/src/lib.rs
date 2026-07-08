@@ -1089,3 +1089,6 @@ pub mod cdp_meraki_discovery;
 // L134: wave-36 utility modules — minimal QOI (Quite OK Image) decoder + minimal BMP (Windows Bitmap) parser
 pub mod qoi_image;
 pub mod bmp_image;
+// L145: wave-38 utility modules — minimal ASN.1 BER (X.690) parser/encoder + minimal DHCPv6 (RFC 8415) message codec
+pub mod asn1_ber;
+pub mod dhcpv6_msg;
