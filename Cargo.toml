@@ -97,6 +97,11 @@ futures-core = "0.3"
 parking_lot = "0.12"
 tokio-stream = "0.1"
 tracing = "0.1"
+tracing-opentelemetry = "0.28"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+opentelemetry = { version = "0.28", features = ["trace"] }
+opentelemetry_sdk = { version = "0.28", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.28", features = ["tokio"] }
 fs2 = "0.4"
 libc = "0.2"
 

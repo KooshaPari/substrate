@@ -32,6 +32,7 @@ use substrate_core::domain::{RoutingDecision, StructuredResult, Task};
 use substrate_core::mailbox_port::MailboxStore;
 use substrate_core::ports::{DispatchApi, RoutingPort};
 use transport_file::FileTransport;
+use tracing::instrument;
 
 // ---------------------------------------------------------------------------
 // App state
@@ -218,6 +219,7 @@ impl PromptBody {
     }
 }
 
+#[instrument(skip(_state, body), fields(prompt_len = body.prompt.len()))]
 async fn plan_handler(
     State(_state): State<AppState>,
     Json(body): Json<PromptBody>,
@@ -226,24 +228,41 @@ async fn plan_handler(
     Ok(Json(body.plan()?))
 }
 
+#[instrument(
+    skip(state, body),
+    fields(
+        prompt_len = body.prompt.len(),
+        engine = tracing::field::Empty,
+        success = tracing::field::Empty,
+        error = tracing::field::Empty,
+    ),
+)]
 async fn dispatch_handler(
     State(state): State<AppState>,
     Json(body): Json<PromptBody>,
 ) -> Result<Json<StructuredResult>, ApiError> {
     body.validate()?;
     let plan = body.plan()?;
+    tracing::Span::current().record("engine", plan.engine.as_str());
     if plan.engine != "forge" {
-        return Err(ApiError::unprocessable(format!(
+        let err = ApiError::unprocessable(format!(
             "execution wiring supports forge only in this build; plan selected {}",
             plan.engine
-        )));
+        ));
+        tracing::Span::current().record("error", tracing::field::debug(&err.message));
+        return Err(err);
     }
     let task = Task::new(plan.spec.prompt.clone(), plan.spec.cwd.clone());
     let result = state
         .dispatch
         .dispatch(task)
         .await
-        .map_err(|e| ApiError::internal(format!("dispatch failed: {e}")))?;
+        .map_err(|e| {
+            let msg = format!("dispatch failed: {e}");
+            tracing::error!(error = %msg, "dispatch failed");
+            ApiError::internal(msg)
+        })?;
+    tracing::Span::current().record("success", true);
     Ok(Json(result))
 }
 
@@ -252,6 +271,7 @@ struct RouteBody {
     task: Task,
 }
 
+#[instrument(skip(state, body), fields(task_state = ?body.task.state, task_id = ?body.task.id, task_prompt_len = body.task.prompt.len()))]
 async fn route_handler(
     State(state): State<AppState>,
     Json(body): Json<RouteBody>,
@@ -264,6 +284,7 @@ async fn route_handler(
     Ok(Json(decision))
 }
 
+#[instrument(skip(state, msg), fields(team_id = %msg.team_id, to = %msg.to, kind = ?msg.kind))]
 async fn mailbox_send_handler(
     State(state): State<AppState>,
     Json(msg): Json<psub_a2a::Message>,

@@ -19,6 +19,7 @@ reqwest = { workspace = true, features = ["json"] }
 dotenvy.workspace = true
 uuid.workspace = true
 tokio = { workspace = true, features = ["rt", "macros", "time", "process", "fs", "sync"] }
+# The Kilo config types are defined locally in `gateway.rs`, not in psub-gateway.
 
 [dev-dependencies]
 tempfile.workspace = true

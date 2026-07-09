@@ -34,6 +34,12 @@ anyhow.workspace = true
 dotenvy.workspace = true
 uuid.workspace = true
 async-trait.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tracing-opentelemetry.workspace = true
+opentelemetry.workspace = true
+opentelemetry_sdk.workspace = true
+opentelemetry-otlp.workspace = true
 
 [dev-dependencies]
 http-body-util.workspace = true

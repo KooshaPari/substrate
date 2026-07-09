@@ -42,7 +42,9 @@ pub use rate_limit::{RateLimiterConfig, RateLimiterStore};
 pub use router::{ProviderEntry, ProviderRouter};
 pub use upstream::UpstreamClient;
 
+use std::collections::hash_map::DefaultHasher;
 use std::collections::VecDeque;
+use std::hash::{Hash, Hasher};
 use std::path::Path;
 use std::sync::{Arc, Mutex, RwLock};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -65,8 +67,12 @@ use substrate_core::domain::Task;
 use substrate_core::mailbox_port::MailboxStore;
 use substrate_core::ports::RoutingPort;
 
-use openai::{complete_chat, complete_chat_stream, models_from_decision, ChatCompletionRequest};
+use openai::{
+    complete_chat, complete_chat_stream, models_from_decision, ChatCompletionRequest,
+    ChatCompletionResponse,
+};
 use streaming::StreamingResponseBuilder;
+use tracing::instrument;
 
 // ---------------------------------------------------------------------------
 // Audit log store
@@ -454,6 +460,7 @@ async fn health_providers_handler(State(state): State<AppState>) -> impl IntoRes
 static PROCESS_START: std::sync::LazyLock<std::time::SystemTime> =
     std::sync::LazyLock::new(std::time::SystemTime::now);
 
+#[instrument(skip(state), fields(session_id = tracing::field::Empty))]
 async fn models_handler(
     State(state): State<AppState>,
 ) -> Result<Json<openai::ModelsResponse>, ApiError> {
@@ -472,6 +479,17 @@ async fn models_handler(
 /// with `data: [DONE]\n\n`.  Otherwise returns a single JSON completion object.
 ///
 /// Errors are surfaced as HTTP 400/500 — never swallowed silently.
+#[instrument(
+    skip(state, headers, body),
+    fields(
+        session_id = tracing::field::Empty,
+        model = %body.model,
+        stream = body.stream,
+        provider = tracing::field::Empty,
+        prompt_tokens = tracing::field::Empty,
+        completion_tokens = tracing::field::Empty,
+    ),
+)]
 async fn chat_completions_handler(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
@@ -597,6 +615,72 @@ async fn chat_completions_handler(
         );
         Ok(StreamingResponseBuilder::sse_stream(stream))
     } else {
+        // --- Response cache lookup (cheap-llm parity) --------------------------
+        // Deterministic cache key from the request body (model + messages, in order).
+        let mut hasher = DefaultHasher::new();
+        body.model.hash(&mut hasher);
+        body.stream.hash(&mut hasher);
+        for m in &body.messages {
+            m.role.hash(&mut hasher);
+            m.content.hash(&mut hasher);
+        }
+        let cache_key = format!("{:x}", hasher.finish());
+
+        if let Some(cached_json) = state
+            .response_cache
+            .lock()
+            .ok()
+            .and_then(|mut c| c.get(&cache_key))
+        {
+            // Cache hit: deserialize and return without hitting the upstream.
+            match serde_json::from_str::<ChatCompletionResponse>(&cached_json) {
+                Ok(cached_response) => {
+                    let provider = cached_response
+                        .model
+                        .split('/')
+                        .next()
+                        .unwrap_or("unknown")
+                        .to_string();
+                    let latency_ms = t0.elapsed().as_millis() as u64;
+                    state.metrics.record(&provider, latency_ms, false);
+                    let cost = budget::estimate_cost(&cached_response.model, 0, 0);
+                    budget::record_usage(&state.budget_store, &session_id, 0, cost);
+                    if let Some(logger) = &state.audit_logger {
+                        let _ = logger.write(&AuditEntry {
+                            timestamp_ms,
+                            provider: provider.clone(),
+                            model: cached_response.model.clone(),
+                            request_id,
+                            status: 200,
+                            latency_ms,
+                            input_tokens: None,
+                            output_tokens: None,
+                            error: None,
+                        });
+                    }
+                    push_log(
+                        &state.log_store,
+                        LogEntry {
+                            timestamp: chrono::Utc::now().to_rfc3339(),
+                            provider,
+                            model: req_model,
+                            status_code: 200,
+                            latency_ms,
+                        },
+                    );
+                    return Ok(Json(cached_response).into_response());
+                }
+                Err(e) => {
+                    // Stale or malformed entry — evict and fall through to upstream.
+                    if let Ok(mut c) = state.response_cache.lock() {
+                        c.invalidate(&cache_key);
+                    }
+                    eprintln!("response cache deserialize failed: {e}");
+                }
+            }
+        }
+
+        // --- Cache miss: forward to upstream ------------------------------------
         let response = complete_chat(state.routing.as_ref(), &body, &providers_snap)
             .await
             .map_err(|e| {
@@ -627,6 +711,12 @@ async fn chat_completions_handler(
                 );
                 ApiError::bad_request(e)
             })?;
+        // Store serialized response in cache (best-effort; failure does not block).
+        if let Ok(json) = serde_json::to_string(&response) {
+            if let Ok(mut cache) = state.response_cache.lock() {
+                cache.put(cache_key, json);
+            }
+        }
         let provider = response
             .model
             .split('/')
