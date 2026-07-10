@@ -1,0 +1,92 @@
+# CODEOWNERS for kooshapari/substrate
+# Phase 0 (P0.3). Adjacent reviewers are auto-assigned in PR Routing.
+# See CONTRIBUTING.md §3 for the review SLA.
+
+# Default reviewer
+* @KooshaPari/core
+
+# Substrate-core (L0 ports / domain types / error)
+/crates/substrate-core/ @KooshaPari/core
+/crates/substrate-trace/ @KooshaPari/core
+
+# Substrate-app + L1 use-cases
+/crates/substrate-app/ @KooshaPari/core @KooshaPari/orchestration
+/crates/substrate-dag/ @KooshaPari/core
+/crates/substrate-schedule/ @KooshaPari/core
+/crates/substrate-skills/ @KooshaPari/core
+/crates/substrate-memory/ @KooshaPari/core
+/crates/substrate-serve-lock/ @KooshaPari/core
+/crates/context-budget/ @KooshaPari/core
+
+# Engines (L2 ports/drivers)
+/crates/engine-spec/ @KooshaPari/engines
+/crates/engine-forge/ @KooshaPari/engines
+/crates/engine-codex/ @KooshaPari/engines
+/crates/engine-claude/ @KooshaPari/engines
+/crates/engine-a2a/ @KooshaPari/engines
+/crates/engine-agentapi/ @KooshaPari/engines
+/crates/engine-conformance/ @KooshaPari/engines
+/crates/cliproxy-adapter/ @KooshaPari/engines
+
+# Routing
+/crates/routing-phenotype-router/ @KooshaPari/orchestration
+
+# Stores & transports (L2)
+/crates/store-file/ @KooshaPari/persistence
+/crates/store-sqlite/ @KooshaPari/persistence
+/crates/transport-file/ @KooshaPari/persistence
+
+# Inbound adapters (L3)
+/crates/psub-gateway/ @KooshaPari/gateway
+/crates/psub-a2a/ @KooshaPari/gateway
+/crates/psup-supervisor/ @KooshaPari/gateway
+/crates/psub-wave/ @KooshaPari/gateway
+/crates/psub-orchestrator/ @KooshaPari/gateway
+/crates/psub-file-watcher/ @KooshaPari/gateway
+/crates/driver-http/ @KooshaPari/gateway
+/crates/driver-cli/ @KooshaPari/gateway
+/crates/driver-argv/ @KooshaPari/gateway
+/crates/driver-mcp/ @KooshaPari/gateway
+/crates/gateway-tools/ @KooshaPari/gateway
+
+# MCP
+/crates/phenotype-mcp/ @KooshaPari/mcp
+
+# Cloud engine adapters
+/crates/cloud-codex/ @KooshaPari/engines
+/crates/cloud-cursor/ @KooshaPari/engines
+/crates/cloud-kilo/ @KooshaPari/engines
+/crates/cloud-dispatch-conformance/ @KooshaPari/engines
+
+# Dispatch
+/crates/dispatch-bridge/ @KooshaPari/orchestration
+/crates/runtime-process/ @KooshaPari/orchestration
+
+# Meta
+/crates/psub/ @KooshaPari/core
+/driver-mcp/ @KooshaPari/mcp
+/tools/ @KooshaPari/tooling
+
+# Test fixtures
+/crates/wave-3lane-tests/ @KooshaPari/testing
+/crates/arch-test/ @KooshaPari/testing
+
+# CI / release workflows
+/.github/workflows/ @KooshaPari/devops
+/.github/dependabot.yml @KooshaPari/devops
+/.github/CODEOWNERS @KooshaPari/devops
+
+# ADRs / docs
+/docs/adr/ @KooshaPari/core
+/docs/operations/ @KooshaPari/devops
+/ARCHITECTURE.md @KooshaPari/core
+/CONTRIBUTING.md @KooshaPari/core
+/SECURITY.md @KooshaPari/devops
+
+# Supply chain
+/deny.toml @KooshaPari/devops
+/.gitleaks.toml @KooshaPari/devops
+/Cargo.toml @KooshaPari/core
+/Cargo.lock @KooshaPari/devops
+/rust-toolchain.toml @KooshaPari/devops
+/Containerfile @KooshaPari/devops

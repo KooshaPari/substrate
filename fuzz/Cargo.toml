@@ -1,0 +1,29 @@
+[package]
+name = "substrate-fuzz"
+version = "0.3.0"
+edition = "2021"
+rust-version = "1.80"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/KooshaPari/substrate"
+publish = false
+description = "Fuzz targets for substrate parsers, codecs, and protocol envelopes. Phase 1 (P1.5)."
+
+# fuzz/ is intentionally NOT in the workspace by cargo-fuzz convention.
+# Run from inside fuzz/ via: cargo +nightly fuzz run <target>
+
+[dependencies]
+psub-gateway = { path = "../crates/psub-gateway" }
+psub-a2a = { path = "../crates/psub-a2a" }
+substrate-core = { path = "../crates/substrate-core" }
+
+# Prevent this from being compiled by the workspace's normal targets.
+[lints.rust]
+unexpected_cfgs = { level = "allow", check-cfgs = ['nightly'] }
+
+# ---------------------------------------------------------------------------
+# cargo-fuzz hooks
+# ---------------------------------------------------------------------------
+# Run: cargo +nightly install cargo-fuzz
+#      cargo +nightly fuzz init (already done; this crate is the result)
+#      cargo +nightly fuzz run openai_chat_request
+# ---------------------------------------------------------------------------

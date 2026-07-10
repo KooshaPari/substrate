@@ -1,0 +1,48 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Top-level config for kooshapari/substrate.
+# Per-language overrides are below.
+
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_style = space
+indent_size = 2
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Markdown — trailing whitespace is meaningful (2-space line break)
+[*.md]
+trim_trailing_whitespace = false
+
+# Rust — tabs (rustfmt default), 100-char width to match upstream rustfmt
+[*.rs]
+indent_style = tab
+indent_size = 4
+max_line_length = 100
+
+# TOML — Cargo, deny.toml, etc.
+[*.toml]
+indent_size = 4
+
+# YAML — GitHub Actions, k8s, etc.
+[*.{yml,yaml}]
+indent_size = 2
+
+# Shell — 4 spaces (shellcheck default), LF endings required for execute bit
+[*.sh]
+indent_size = 4
+
+# Make
+[Makefile]
+indent_style = tab
+
+# JSON (pretty common in tests, fixtures, examples)
+[*.json]
+indent_size = 2
+
+# Lock files — never edit by hand
+[{Cargo.lock,package-lock.json,flake.lock}]
+insert_final_newline = false

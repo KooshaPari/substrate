@@ -1,0 +1,104 @@
+name: Bug report
+description: Report a crash, incorrect behavior, or regression.
+title: "[bug] "
+labels: ["bug", "triage:needed"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. Please fill out the template below so we can
+        reproduce and fix it quickly. Use the **friction** template instead
+        for confusing UX / non-crash issues.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One-paragraph description of what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Reproduction steps
+      description: Minimal commands / code / config to reproduce. Paste output verbatim.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Surface
+      description: Where did the bug appear?
+      options:
+        - CLI (psub, psub-gateway, etc.)
+        - HTTP gateway (psub-gateway /v1/...)
+        - A2A (psub-a2a /a2a/...)
+        - MCP driver (driver-mcp / driver-http)
+        - Library API (psub-core, psub-dag, psub-skills, ...)
+        - Build / install / docs
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: substrate version / commit
+      description: `cargo --version` output, `git rev-parse HEAD`, or release tag.
+    validations:
+      required: true
+
+  - type: input
+    id: rust
+    attributes:
+      label: Rust toolchain
+      description: `rustc --version` and `cargo --version`.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: OS
+      options:
+        - Linux (glibc)
+        - Linux (musl)
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows
+        - Docker / container
+    validations:
+      required: false
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / stack trace
+      description: Use a code block. Set `RUST_LOG=psub_gateway=debug,psub_a2a=debug` for verbose output.
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+    validations:
+      required: false
