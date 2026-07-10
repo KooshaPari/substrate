@@ -64,6 +64,7 @@ use store_sqlite::{ConfigEntry, SqliteConfigStore, SqliteMailboxStore};
 use substrate_core::domain::Task;
 use substrate_core::mailbox_port::MailboxStore;
 use substrate_core::ports::RoutingPort;
+use tracing::instrument;
 
 use openai::{complete_chat, complete_chat_stream, models_from_decision, ChatCompletionRequest};
 use streaming::StreamingResponseBuilder;
@@ -415,6 +416,7 @@ pub struct ProvidersHealthResponse {
 // ---------------------------------------------------------------------------
 
 /// `GET /health` — structured liveness + provider summary.
+#[instrument(skip(state))]
 async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
     let providers_snap = state.providers.read().expect("providers lock poisoned");
     let total = providers_snap.len();
@@ -438,6 +440,7 @@ async fn health_handler(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 /// `GET /health/providers` — per-provider name + enabled status.
+#[instrument(skip(state))]
 async fn health_providers_handler(State(state): State<AppState>) -> impl IntoResponse {
     let providers_snap = state.providers.read().expect("providers lock poisoned");
     let providers = providers_snap
@@ -454,6 +457,7 @@ async fn health_providers_handler(State(state): State<AppState>) -> impl IntoRes
 static PROCESS_START: std::sync::LazyLock<std::time::SystemTime> =
     std::sync::LazyLock::new(std::time::SystemTime::now);
 
+#[instrument(skip(state))]
 async fn models_handler(
     State(state): State<AppState>,
 ) -> Result<Json<openai::ModelsResponse>, ApiError> {
@@ -472,6 +476,7 @@ async fn models_handler(
 /// with `data: [DONE]\n\n`.  Otherwise returns a single JSON completion object.
 ///
 /// Errors are surfaced as HTTP 400/500 — never swallowed silently.
+#[instrument(skip(state, headers, body))]
 async fn chat_completions_handler(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
@@ -673,6 +678,7 @@ async fn chat_completions_handler(
 // ---------------------------------------------------------------------------
 
 /// `GET /budget/:session_id` — return current token/cost usage for a session.
+#[instrument(skip(state))]
 async fn budget_handler(
     State(state): State<AppState>,
     AxumPath(session_id): AxumPath<String>,
@@ -687,6 +693,7 @@ async fn budget_handler(
 // ---------------------------------------------------------------------------
 
 /// `GET /metrics` — point-in-time snapshot of request counters plus rate-limit hits.
+#[instrument(skip(state))]
 async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
     let mut snap = state.metrics.snapshot();
     snap.rate_limit_hits = state.rate_limiter.hits_snapshot();
@@ -694,6 +701,7 @@ async fn metrics_handler(State(state): State<AppState>) -> impl IntoResponse {
 }
 
 /// `GET /metrics/prometheus` — Prometheus text exposition format (version 0.0.4).
+#[instrument(skip(state))]
 async fn metrics_prometheus_handler(State(state): State<AppState>) -> impl IntoResponse {
     let rate_limit_hits = state.rate_limiter.hits_snapshot();
     let body = state.metrics.prometheus_text(&rate_limit_hits);
@@ -705,12 +713,14 @@ async fn metrics_prometheus_handler(State(state): State<AppState>) -> impl IntoR
 }
 
 /// `POST /metrics/reset` — zero all counters and return empty snapshot.
+#[instrument(skip(state))]
 async fn metrics_reset_handler(State(state): State<AppState>) -> impl IntoResponse {
     state.metrics.reset();
     Json(state.metrics.snapshot())
 }
 
 /// `GET /logs` — return the last 100 audit log entries as a JSON array.
+#[instrument(skip(state))]
 async fn logs_handler(State(state): State<AppState>) -> impl IntoResponse {
     let entries: Vec<LogEntry> = state
         .log_store
@@ -748,6 +758,7 @@ struct ConfigDeleteResponse {
     deleted: bool,
 }
 
+#[instrument(skip(state, body))]
 async fn management_config_handler(
     State(state): State<AppState>,
     Json(body): Json<ConfigRequest>,
@@ -807,6 +818,7 @@ async fn management_config_handler(
 // A2A handlers
 // ---------------------------------------------------------------------------
 
+#[instrument(skip(state, msg))]
 async fn a2a_send_handler(
     State(state): State<AppState>,
     Json(msg): Json<a2a::Message>,
@@ -824,6 +836,7 @@ struct InboxQuery {
     to: String,
 }
 
+#[instrument(skip(state, query))]
 async fn a2a_inbox_handler(
     State(state): State<AppState>,
     Query(query): Query<InboxQuery>,
@@ -845,6 +858,7 @@ struct TasksQuery {
     team: String,
 }
 
+#[instrument(skip(state, query))]
 async fn a2a_tasks_handler(
     State(state): State<AppState>,
     Query(query): Query<TasksQuery>,
