@@ -25,15 +25,27 @@ jobs:
       - name: Build workspace
         run: cargo build --workspace
 
+      - name: Install cargo-nextest
+        run: cargo install --locked cargo-nextest --version 0.9.85
+
       - name: Test workspace
         timeout-minutes: 30
-        run: cargo test --workspace
+        run: cargo nextest run --workspace --profile ci
 
       - name: Clippy
         run: cargo clippy --workspace --all-targets -- -D warnings
 
+      - name: Install cargo-deny
+        run: cargo install --locked cargo-deny --version 0.18.6
+
+      - name: Run cargo-deny
+        run: cargo deny check
+
       - name: Build driver-http
         run: cargo build -p driver-http
+
+      - name: Build gateway
+        run: cargo build -p gateway
 
       - name: Publish dry-run (SDK crates)
         run: |
@@ -47,6 +59,40 @@ jobs:
           EOF
           cargo publish --dry-run -p substrate-core
           cargo publish --dry-run -p substrate
+
+  coverage:
+    name: Test coverage (cargo-llvm-cov)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust toolchain (nightly for llvm-cov)
+        uses: dtolnay/rust-toolchain@nightly
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-llvm-cov
+        run: cargo install --locked cargo-llvm-cov
+
+      - name: Generate coverage (core + gateway + a2a)
+        run: |
+          cargo llvm-cov \
+            --workspace \
+            --exclude-fuzz \
+            --no-report
+          cargo llvm-cov report \
+            --lcov --output-path coverage.lcov \
+            --fail-under-lines 70
+
+      - name: Upload coverage artifact
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-lcov
+          path: coverage.lcov
 
   python:
     runs-on: ubuntu-latest
@@ -63,3 +109,130 @@ jobs:
 
       - name: Test driver-mcp
         run: pytest driver-mcp/
+
+  sbom:
+    name: CycloneDX SBOM
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Install cargo-cyclonedx
+        run: cargo install --locked cargo-cyclonedx --version 0.5.1
+
+      - name: Generate SBOM (binaries)
+        run: |
+          cargo cyclonedx --format json --override-filename target/sbom-bin
+          cargo cyclonedx --format xml  --override-filename target/sbom-bin
+
+      - name: Generate SBOM (workspace crates)
+        run: |
+          cargo cyclonedx --all --format json --override-filename target/sbom-crates
+          cargo cyclonedx --all --format xml  --override-filename target/sbom-crates
+
+      - name: Upload SBOM to workflow run
+        uses: actions/upload-artifact@v5
+        with:
+          name: sbom
+          path: target/sbom-*.{json,xml}
+
+      - name: Attach SBOM to latest release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/sbom-bin.json
+            target/sbom-bin.xml
+            target/sbom-crates.json
+            target/sbom-crates.xml
+
+  provenance:
+    name: SLSA build provenance (L3)
+    runs-on: ubuntu-latest
+    needs: [ci]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      id-token: write
+      contents: write
+      packages: write
+      attestations: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release binaries
+        run: |
+          cargo build --release --workspace --exclude fuzz
+
+      - name: Generate SLSA provenance
+        uses: slsa-framework/slsa-github-generator@v2.0.0
+        with:
+          artifacts: |
+            target/release/substrate
+            target/release/substrate-gateway
+            target/release/substrate-http
+          attestation-name: substrate-binaries
+
+      - name: Attach provenance to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            target/release/substrate
+            target/release/substrate-gateway
+            target/release/substrate-http
+            .step-outputs/provenance.intoto.jsonl
+
+  container:
+    name: Build & publish GHCR image
+    runs-on: ubuntu-latest
+    needs: [ci]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}/gateway
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build & push (cache from registry)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: mode=max
