@@ -415,11 +415,13 @@ impl EnginePort for ForgeEngine {
 
         let logfile = self.logfile_for(task.id);
 
-        // Serialize list-diff capture so parallel lanes don't race snapshots.
-        let _list_guard = self.list_diff_lock.lock().await;
-
         // ---- Step 1: snapshot the conversation list (BEFORE).
-        let before = self.list_conversation_ids().await;
+        // Serialize only the short list operation. Holding this lock through
+        // child completion would turn parallel wave lanes into a serial queue.
+        let before = {
+            let _list_guard = self.list_diff_lock.lock().await;
+            self.list_conversation_ids().await
+        };
 
         // ---- Step 2: spawn the child in its own group, tee to logfile.
         let (mut child, writer) = self
@@ -457,7 +459,10 @@ impl EnginePort for ForgeEngine {
         let conv_id = match conv_id {
             Some(id) => Some(id),
             None => {
-                let after = self.list_conversation_ids().await;
+                let after = {
+                    let _list_guard = self.list_diff_lock.lock().await;
+                    self.list_conversation_ids().await
+                };
                 find_new_conversation_id(
                     before.iter().map(String::as_str),
                     after.iter().map(String::as_str),
@@ -466,8 +471,6 @@ impl EnginePort for ForgeEngine {
         };
 
         let conv_id = conv_id.unwrap_or_else(fallback_conversation_id);
-
-        drop(_list_guard);
 
         self.conv_cwds
             .lock()

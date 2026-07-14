@@ -45,6 +45,7 @@ fn make_task() -> Task {
         parent_task_id: None,
         requirement_id: None,
         epic_id: None,
+        conv_id: None,
     }
 }
 
