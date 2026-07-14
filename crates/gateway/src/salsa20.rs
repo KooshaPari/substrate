@@ -238,10 +238,11 @@ mod tests {
     #[test]
     fn quarter_round_specific_value() {
         // Salsa20 quarter-round test from the spec: starting state
-        // 0x00000000, 0x00000000, 0x00000000, 0x00000000, after
+        // 0x00000001, 0x00000000, 0x00000000, 0x00000000, after
         // the quarter-round (a=0,b=1,c=2,d=3), state should be
         // 0x08008145, 0x00000080, 0x00010200, 0x20500000.
         let mut state = [0u32; 16];
+        state[0] = 1;
         quarter_round(&mut state, 0, 1, 2, 3);
         assert_eq!(state[0], 0x0800_8145);
         assert_eq!(state[1], 0x0000_0080);
