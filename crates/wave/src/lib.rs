@@ -70,6 +70,8 @@ mod tests {
         gate: Arc<Option<Arc<Semaphore>>>,
         /// Extra PR URLs to embed in the `extract_result` output.
         pr_urls: Arc<std::sync::Mutex<Vec<String>>>,
+        /// Optional terminal state returned by `extract_result`.
+        result_state: Arc<std::sync::Mutex<Option<TaskState>>>,
     }
 
     impl ConcurrencyProbe {
@@ -91,6 +93,13 @@ mod tests {
         fn with_pr_url(url: &str) -> Self {
             Self {
                 pr_urls: Arc::new(std::sync::Mutex::new(vec![url.to_string()])),
+                ..Default::default()
+            }
+        }
+
+        fn with_result_state(state: TaskState) -> Self {
+            Self {
+                result_state: Arc::new(std::sync::Mutex::new(Some(state))),
                 ..Default::default()
             }
         }
@@ -207,7 +216,12 @@ mod tests {
                 text: dump.raw.clone(),
                 artifacts: vec![],
                 pr_urls,
-                status: TaskState::Completed,
+                status: self
+                    .result_state
+                    .lock()
+                    .unwrap()
+                    .clone()
+                    .unwrap_or(TaskState::Completed),
             })
         }
 
@@ -251,6 +265,25 @@ mod tests {
             report.pr_urls
         );
         assert_eq!(report.pr_urls[0], "https://github.com/example/repo/pull/42");
+    }
+
+    #[tokio::test]
+    async fn non_terminal_engine_result_marks_lane_failed() {
+        let engine = Arc::new(ConcurrencyProbe::with_result_state(TaskState::Working));
+        let store = make_store();
+        let runner = WaveRunner::new(engine, store, "wave-team".into(), 1);
+
+        let report = runner
+            .run(vec![WaveSpec::new("lane-0", "task")])
+            .await
+            .unwrap();
+
+        assert_eq!(report.done, 0);
+        assert_eq!(report.failed, 1);
+        assert!(matches!(
+            report.lanes[0].status,
+            LaneStatus::Failed(ref message) if message.contains("non-terminal")
+        ));
     }
 
     // ── test 2: concurrency bound respected ───────────────────────────────────

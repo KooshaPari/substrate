@@ -273,27 +273,24 @@ where
                                 (ls, r.pr_urls.clone())
                             }
                             Some(ref r) => {
+                                let message =
+                                    format!("engine returned non-terminal state: {:?}", r.status);
                                 let _ = store.task_update(
                                     lane_task_id,
-                                    MailboxTaskState::Completed,
-                                    None,
+                                    MailboxTaskState::Failed,
+                                    Some(&message),
                                 );
-                                (LaneStatus::Completed, r.pr_urls.clone())
+                                (LaneStatus::Failed(message), r.pr_urls.clone())
                             }
                             None => {
-                                // Session started but dump/extract gave nothing — treat as completed
-                                // with no PR urls (the session text may be in the logfile).
-                                let pr_urls = session
-                                    .logfile
-                                    .as_deref()
-                                    .map(harvest_pr_urls)
-                                    .unwrap_or_default();
+                                let message =
+                                    "engine did not return a structured result".to_string();
                                 let _ = store.task_update(
                                     lane_task_id,
-                                    MailboxTaskState::Completed,
-                                    None,
+                                    MailboxTaskState::Failed,
+                                    Some(&message),
                                 );
-                                (LaneStatus::Completed, pr_urls)
+                                (LaneStatus::Failed(message), vec![])
                             }
                         };
 
@@ -400,16 +397,4 @@ pub fn task_depth_in_store(
         }
     }
     Ok(depth)
-}
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/// Extract GitHub PR URLs from free text using the canonical PR regex.
-fn harvest_pr_urls(text: &str) -> Vec<String> {
-    use regex::Regex;
-    // Reuse the same pattern as engine-forge parse.rs.
-    let re = Regex::new(r"https://github\.com/[^\s]+/pull/\d+").unwrap();
-    re.find_iter(text).map(|m| m.as_str().to_string()).collect()
 }
