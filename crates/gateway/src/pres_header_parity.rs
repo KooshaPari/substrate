@@ -137,15 +137,6 @@ pub fn assert_round_trip(input: &[u8]) {
     if h.version != CFB_MAJOR_V3 && h.version != CFB_MAJOR_V4 {
         panic!("pres_header_parity: version not 3 or 4, got {}", h.version);
     }
-    // `total_slots` is the number_of_fat_sectors field clamped to u16.
-    // The builder emits 1; if a direct caller supplied a different
-    // value, surface it but don't panic.
-    if h.total_slots > u16::MAX {
-        panic!(
-            "pres_header_parity: total_slots out of range {}",
-            h.total_slots
-        );
-    }
 }
 
 #[cfg(test)]

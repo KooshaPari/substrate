@@ -99,8 +99,8 @@ fn bf_f(x: u32, s: &[u32; 1024]) -> u32 {
     let b = (x >> 16) & 0xFF;
     let c = (x >> 8) & 0xFF;
     let d = x & 0xFF;
-    ((s[0 * 256 + a as usize].wrapping_add(s[1 * 256 + b as usize])) ^ s[2 * 256 + c as usize])
-        .wrapping_add(s[3 * 256 + d as usize])
+    ((s[a as usize].wrapping_add(s[256 + b as usize])) ^ s[512 + c as usize])
+        .wrapping_add(s[768 + d as usize])
 }
 
 #[derive(Debug, Clone)]

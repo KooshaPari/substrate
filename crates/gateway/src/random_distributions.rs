@@ -47,18 +47,12 @@ pub fn exponential<R: FnMut() -> f64>(u: &mut R, lambda: f64) -> f64 {
 
 /// Standard normal (μ=0, σ=1) sample via Box-Muller polar.
 pub fn normal<R: FnMut() -> f64>(u: &mut R) -> f64 {
-    loop {
-        let u1 = u();
-        let u2 = u();
-        let r = (-2.0 * u1.max(1e-15).ln()).sqrt();
-        let theta = 2.0 * std::f64::consts::PI * u2;
-        let x = r * theta.cos();
-        // Reject r outside the unit disk for polar Box-Muller? Plain
-        // Box-Muller accepts all (r, theta); we use the alternate
-        // formulation and return one of the two samples per call.
-        let _ = r * theta.sin(); // could be returned for efficiency
-        return x;
-    }
+    let u1 = u();
+    let u2 = u();
+    let r = (-2.0 * u1.max(1e-15).ln()).sqrt();
+    let theta = 2.0 * std::f64::consts::PI * u2;
+    // Plain Box-Muller accepts all (r, theta); return one sample per call.
+    r * theta.cos()
 }
 
 /// Standard normal samples in pairs (saves one call to u()). The
