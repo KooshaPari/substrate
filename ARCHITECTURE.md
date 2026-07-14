@@ -43,7 +43,7 @@ kooshapari/substrate/
 │   ├── psub/                     # meta-crate                               [L4]
 │   ├── psub-gateway/             # OpenAI-compatible HTTP + A2A ingress   [L3]
 │   ├── psub-a2a/                 # A2A outbound adapters                    [L2]
-│   ├── psup-supervisor/          # process supervisor                       [L3]
+│   ├── psub-supervisor/          # process supervisor                       [L3]
 │   ├── psub-wave/                # wave execution primitive                 [L3]
 │   ├── psub-orchestrator/        # multi-engine orchestrator                [L2]
 │   ├── psub-file-watcher/        # notify-debouncer wrapper                 [L2]
@@ -214,7 +214,7 @@ Client
 | `substrate-tui` | L3 | ratatui dashboard | TUI app shell |
 | `psub-gateway` | L3 | OpenAI-compatible HTTP + A2A ingress + admin + audit log + rate-limit + circuit-breaker + bounded body + metrics | full axum router |
 | `psub-a2a` | L2 | A2A outbound adapters | skill modules |
-| `psup-supervisor` | L3 | process supervisor | runtime helpers |
+| `psub-supervisor` | L3 | process supervisor | runtime helpers |
 | `psub-wave` | L3 | wave execution primitive | wave API |
 | `psub-orchestrator` | L2 | multi-engine orchestrator | composite dispatch |
 | `psub-file-watcher` | L2 | `notify-debouncer-mini` wrapper | hot-reload helper |

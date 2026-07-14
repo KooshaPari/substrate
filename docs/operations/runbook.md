@@ -1,8 +1,8 @@
 # Operations Runbook
 
 > **Audience:** On-call operators and site-reliability engineers.
-> **Scope:** The `psub-gateway` HTTP service, the `psub` CLI, the `driver-http`
-> reverse-proxy driver, and the in-process `psub-core` routing layer.
+> **Scope:** The `substrate-gateway` HTTP service, the `substrate` CLI, the `substrate-http`
+> reverse-proxy driver, and the in-process `substrate-core` routing layer.
 > **When to use:** Anything between "it's degraded" and "it's down".
 
 This is a living document. If you do something during an incident that isn't
@@ -16,7 +16,7 @@ file route to `@KooshaPari/devops` per
 
 ```
                  ┌───────────────────────────────────────────────┐
-   client ─────► │ psub-gateway (axum 0.7, port 8080, systemd)  │
+   client ─────► │ substrate-gateway (axum 0.7, port 8080, systemd)  │
                  │   ├─ /v1/chat/completions  (OpenAI shape)     │
                  │   ├─ /v1/models            (model catalog)   │
                  │   ├─ /a2a/messages, /a2a/inbox, /a2a/tasks   │
@@ -28,7 +28,7 @@ file route to `@KooshaPari/devops` per
                                     │  in-process (no IPC)
                                     ▼
                  ┌───────────────────────────────────────────────┐
-                 │ psub-core  (router + DAG + budget)           │
+                 │ substrate-core  (router + DAG + budget)      │
                  │   ├─ Provider chain + retry / fallback        │
                  │   ├─ Circuit breaker                         │
                  │   ├─ Rate limit (per-IP, configurable)       │

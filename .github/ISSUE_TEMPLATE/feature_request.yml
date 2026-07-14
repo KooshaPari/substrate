@@ -41,12 +41,12 @@ body:
       label: Surface(s) affected
       multiple: true
       options:
-        - psub-core / ports
-        - psub-dag / psub-app
+        - substrate-core / ports
+        - substrate-dag / substrate-app
         - psub-gateway / HTTP
         - psub-a2a
         - driver-http / driver-mcp
-        - psub-skills / psub-memory
+        - substrate-skills / substrate-memory
         - Build / CI / release
         - Docs / ADRs
         - Other

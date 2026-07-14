@@ -39,7 +39,7 @@
 # Inbound adapters (L3)
 /crates/psub-gateway/ @KooshaPari/gateway
 /crates/psub-a2a/ @KooshaPari/gateway
-/crates/psup-supervisor/ @KooshaPari/gateway
+/crates/psub-supervisor/ @KooshaPari/gateway
 /crates/psub-wave/ @KooshaPari/gateway
 /crates/psub-orchestrator/ @KooshaPari/gateway
 /crates/psub-file-watcher/ @KooshaPari/gateway

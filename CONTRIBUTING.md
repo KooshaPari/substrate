@@ -144,7 +144,7 @@ is authoritative for any changes that touch dispatch.
 - **Imports order**: std → third-party → workspace → local (`super`,
   `crate`). Insert blank line between each group.
 - **Error context**: every `?` in production code should chain
-  `.with_context(|| ...)` (thiserror) or `.context(...)` (anyhow). This is
+  `.with_context(|| ...)` or `.context(...)` (anyhow). This is
   a CI-enforced clippy lint.
 - **Public types derive `Debug`.** Add `Clone` only when cheap.
 - **No `println!` in library code.** Use `tracing::info!` etc.
@@ -209,8 +209,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the canonical release history.
 
 - **Issues:** GitHub issues, by component label
 - **Discussions:** GitHub Discussions (not yet enabled — see roadmap)
-- **Code of conduct:** standard "be kind, be technical" — there is no
-  separate `CODE_OF_CONDUCT.md` yet
+- **Code of conduct:** see [`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md)
 
 ---
 

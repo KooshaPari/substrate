@@ -1,6 +1,6 @@
 # Deployment Guide
 
-> **Audience:** Operators deploying `psub-gateway` and `driver-http` binaries.
+> **Audience:** Operators deploying `substrate-gateway` and `substrate-http` binaries.
 > **Environments:** Development (docker-compose), Staging (single node), Production (multi-node behind LB).
 
 ---
@@ -25,9 +25,9 @@
 cargo build --release --workspace --exclude fuzz
 
 # Binaries produced at:
-#   target/release/psub-gateway  (OpenAI-compatible HTTP gateway)
-#   target/release/driver-http   (HTTP dispatch driver)
-#   target/release/psub          (CLI)
+#   target/release/substrate-gateway  (OpenAI-compatible HTTP gateway)
+#   target/release/substrate-http     (HTTP dispatch driver)
+#   target/release/substrate          (CLI)
 ```
 
 ### Docker image (GHCR)
@@ -55,7 +55,7 @@ All configuration is via environment variables. See each binary's `config.rs` fo
 | `RUST_LOG` | no | `info` | Tracing filter expression |
 | `OTEL_EXPORTER_OTLP_ENDPOINT` | no | — | OTLP gRPC endpoint (e.g. `http://otel-collector:4317`) |
 
-### psub-gateway only
+### substrate-gateway only
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
@@ -64,7 +64,7 @@ All configuration is via environment variables. See each binary's `config.rs` fo
 | `SUBSTRATE_ADMIN_TOKEN` | no | — | Token for `/admin/*` routes |
 | `SUBSTRATE_AUDIT_LOG` | no | — | Path to JSONL audit log file |
 
-### driver-http only
+### substrate-http only
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
@@ -76,7 +76,7 @@ All configuration is via environment variables. See each binary's `config.rs` fo
 
 ### 4.1 systemd (bare-metal / VM)
 
-**`/etc/systemd/system/psub-gateway.service`:**
+**`/etc/systemd/system/substrate-gateway.service`:**
 
 ```ini
 [Unit]
@@ -89,7 +89,7 @@ Type=simple
 User=substrate
 Group=substrate
 EnvironmentFile=/etc/substrate/gateway.env
-ExecStart=/usr/local/bin/psub-gateway
+ExecStart=/usr/local/bin/substrate-gateway
 Restart=always
 RestartSec=5
 TimeoutStopSec=30
@@ -128,12 +128,12 @@ WantedBy=multi-user.target
 ```bash
 sudo useradd --system --shell /usr/sbin/nologin --home-dir /var/lib/substrate substrate
 sudo mkdir -p /var/lib/substrate /etc/substrate
-sudo cp target/release/psub-gateway /usr/local/bin/
+sudo cp target/release/substrate-gateway /usr/local/bin/
 sudo cp target/release/substrate-http /usr/local/bin/
 sudo cp config/prod/gateway.env /etc/substrate/gateway.env
 sudo cp config/prod/http.env /etc/substrate/http.env
 sudo systemctl daemon-reload
-sudo systemctl enable --now psub-gateway substrate-http
+sudo systemctl enable --now substrate-gateway substrate-http
 ```
 
 ### 4.2 Docker (container)
@@ -267,8 +267,8 @@ See `docs/operations/rollback.md` for the full rollback playbook. Quick summary:
 
 ```bash
 # systemd: replace binary and restart
-sudo cp target/release/psub-gateway /usr/local/bin/psub-gateway
-sudo systemctl restart psub-gateway
+sudo cp target/release/substrate-gateway /usr/local/bin/substrate-gateway
+sudo systemctl restart substrate-gateway
 
 # Docker: re-tag previous image
 docker compose down
