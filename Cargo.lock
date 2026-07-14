@@ -1387,6 +1387,7 @@ dependencies = [
  "gateway",
  "serde_json",
  "tokio",
+ "tower 0.5.3",
 ]
 
 [[package]]
