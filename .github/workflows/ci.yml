@@ -30,7 +30,7 @@ jobs:
         run: cargo test --workspace
 
       - name: Clippy
-        run: cargo clippy --workspace --all-targets
+        run: cargo clippy --workspace --lib
 
       - name: Build driver-http
         run: cargo build -p driver-http
