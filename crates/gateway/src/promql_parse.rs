@@ -26,10 +26,10 @@ pub struct LabelMatcher {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum MatchOp {
-    Eq,     // =
-    Ne,     // !=
-    Re,     // =~
-    Nre,    // !~
+    Eq,  // =
+    Ne,  // !=
+    Re,  // =~
+    Nre, // !~
 }
 
 impl fmt::Display for MatchOp {
@@ -320,32 +320,78 @@ impl<'a> Parser<'a> {
                 }
             }
             // Binary operators.
-            let Some((op, bp, postfix)) = self.try_infix_op(c) else { break };
+            let Some((op, bp, postfix)) = self.try_infix_op(c) else {
+                break;
+            };
             if bp < min_bp {
                 break;
             }
             // Consume operator.
             let op_str_len = match op {
-                BinOp::Add => { self.pos += 1; 1 }
-                BinOp::Sub => { self.pos += 1; 1 }
-                BinOp::Mul => { self.pos += 1; 1 }
-                BinOp::Div => { self.pos += 1; 1 }
-                BinOp::Mod => { self.pos += 1; 1 }
-                BinOp::Pow => { self.pos += 1; 1 }
-                BinOp::Eq => { self.pos += 2; 2 }
-                BinOp::Ne => { self.pos += 2; 2 }
-                BinOp::Gt => { self.pos += 1; 1 }
-                BinOp::Ge => { self.pos += 2; 2 }
-                BinOp::Lt => { self.pos += 1; 1 }
-                BinOp::Le => { self.pos += 2; 2 }
-                BinOp::Re => { self.pos += 2; 2 }
-                BinOp::Nre => { self.pos += 2; 2 }
+                BinOp::Add => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Sub => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Mul => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Div => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Mod => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Pow => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Eq => {
+                    self.pos += 2;
+                    2
+                }
+                BinOp::Ne => {
+                    self.pos += 2;
+                    2
+                }
+                BinOp::Gt => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Ge => {
+                    self.pos += 2;
+                    2
+                }
+                BinOp::Lt => {
+                    self.pos += 1;
+                    1
+                }
+                BinOp::Le => {
+                    self.pos += 2;
+                    2
+                }
+                BinOp::Re => {
+                    self.pos += 2;
+                    2
+                }
+                BinOp::Nre => {
+                    self.pos += 2;
+                    2
+                }
             };
             // `== bool` / `!= bool` / `> bool` modifier.
             self.skip_ws();
             let mut bool_modifier = false;
-            if matches!(op, BinOp::Eq | BinOp::Ne | BinOp::Gt | BinOp::Ge | BinOp::Lt | BinOp::Le)
-                && self.eat_str("bool")
+            if matches!(
+                op,
+                BinOp::Eq | BinOp::Ne | BinOp::Gt | BinOp::Ge | BinOp::Lt | BinOp::Le
+            ) && self.eat_str("bool")
             {
                 self.skip_ws();
                 bool_modifier = true;
@@ -424,7 +470,9 @@ impl<'a> Parser<'a> {
 
     fn parse_atom(&mut self) -> Result<Expr, Error> {
         self.skip_ws();
-        let Some(c) = self.peek() else { return Err(Error::UnexpectedEof); };
+        let Some(c) = self.peek() else {
+            return Err(Error::UnexpectedEof);
+        };
         // Parenthesised expression.
         if c == '(' {
             self.pos += 1;
@@ -445,7 +493,9 @@ impl<'a> Parser<'a> {
             let name = self.read_ident()?;
             self.skip_ws();
             // Aggregation without leading paren: `agg by (label) (...)`.
-            if AggOp::from_str(&name).is_some() && (self.starts_with("by") || self.starts_with("without")) {
+            if AggOp::from_str(&name).is_some()
+                && (self.starts_with("by") || self.starts_with("without"))
+            {
                 return self.parse_aggregation(name);
             }
             // Function call: `name(args)` where args is comma-separated exprs.
@@ -470,7 +520,13 @@ impl<'a> Parser<'a> {
             // so the parser accepts `rate(metric[5m]) > 0.5`.
             let start = self.pos;
             while let Some(ch) = self.peek() {
-                if ch.is_ascii_digit() || ch == '.' || ch == 'e' || ch == 'E' || ch == '-' || ch == '+' {
+                if ch.is_ascii_digit()
+                    || ch == '.'
+                    || ch == 'e'
+                    || ch == 'E'
+                    || ch == '-'
+                    || ch == '+'
+                {
                     self.pos += ch.len_utf8();
                 } else {
                     break;
@@ -499,8 +555,7 @@ impl<'a> Parser<'a> {
 
     /// Parses `agg by (...) (...)` form (no leading paren).
     fn parse_aggregation(&mut self, name: String) -> Result<Expr, Error> {
-        let agg = AggOp::from_str(&name)
-            .ok_or_else(|| Error::UnknownAggregation(name.clone()))?;
+        let agg = AggOp::from_str(&name).ok_or_else(|| Error::UnknownAggregation(name.clone()))?;
         // Consume `by` or `without`.
         let _is_by = self.eat_str("by") || self.eat_str("without");
         self.skip_ws();
@@ -602,7 +657,9 @@ impl<'a> Parser<'a> {
 
     fn read_ident(&mut self) -> Result<String, Error> {
         let start = self.pos;
-        let Some(c) = self.peek() else { return Err(Error::UnexpectedEof); };
+        let Some(c) = self.peek() else {
+            return Err(Error::UnexpectedEof);
+        };
         if !is_ident_start(c) {
             return Err(Error::UnexpectedChar(c));
         }
@@ -631,7 +688,9 @@ impl<'a> Parser<'a> {
             }
             if c == '\\' {
                 self.pos += 1;
-                let Some(n) = self.peek() else { return Err(Error::InvalidEscape); };
+                let Some(n) = self.peek() else {
+                    return Err(Error::InvalidEscape);
+                };
                 match n {
                     '"' | '\'' | '\\' => {
                         out.push(n);

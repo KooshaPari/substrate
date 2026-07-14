@@ -27,9 +27,7 @@ impl Ipv6Address {
     /// All-zeros address `::` / `::0`.
     pub const UNSPECIFIED: Ipv6Address = Ipv6Address([0u8; 16]);
     /// Loopback `::1`.
-    pub const LOOPBACK: Ipv6Address = Ipv6Address([
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
-    ]);
+    pub const LOOPBACK: Ipv6Address = Ipv6Address([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1]);
 
     /// Classify the address.
     pub fn category(&self) -> Ipv6Category {
@@ -148,7 +146,10 @@ mod tests {
 
     #[test]
     fn unspecified_category() {
-        assert_eq!(Ipv6Address::UNSPECIFIED.category(), Ipv6Category::Unspecified);
+        assert_eq!(
+            Ipv6Address::UNSPECIFIED.category(),
+            Ipv6Category::Unspecified
+        );
     }
 
     #[test]

@@ -63,10 +63,7 @@ pub fn expand(template: &str, vars: &std::collections::HashMap<&str, &str>) -> S
 /// percent-encoded values. Vars with empty values are skipped.
 ///
 /// If no vars are present in the map, the `?` is also omitted.
-pub fn expand_with_query(
-    template: &str,
-    vars: &std::collections::HashMap<&str, &str>,
-) -> String {
+pub fn expand_with_query(template: &str, vars: &std::collections::HashMap<&str, &str>) -> String {
     if !template.starts_with("{?") {
         return expand(template, vars);
     }
@@ -156,10 +153,7 @@ mod tests {
         vars.insert("a", "1");
         vars.insert("b", "2");
         vars.insert("c", "3");
-        assert_eq!(
-            expand_with_query("{?a,b,c}", &vars),
-            "?a=1&b=2&c=3"
-        );
+        assert_eq!(expand_with_query("{?a,b,c}", &vars), "?a=1&b=2&c=3");
     }
 
     #[test]

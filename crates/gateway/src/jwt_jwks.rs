@@ -5,8 +5,8 @@ use serde_json::Value;
 #[derive(Debug, Clone, PartialEq)]
 pub struct RsaJwk {
     pub kty: String,
-    pub n: String,   // base64url modulus
-    pub e: String,   // base64url exponent
+    pub n: String, // base64url modulus
+    pub e: String, // base64url exponent
     pub alg: Option<String>,
     pub kid: Option<String>,
 }
@@ -22,32 +22,80 @@ pub struct EcJwk {
 }
 
 pub fn parse_jwk(val: &Value) -> Result<RsaJwk, String> {
-    let kty = val.get("kty").and_then(|v| v.as_str()).ok_or("missing kty")?;
-    if kty != "RSA" { return Err(format!("not RSA: {}", kty)); }
-    let n = val.get("n").and_then(|v| v.as_str()).ok_or("missing n")?.to_string();
-    let e = val.get("e").and_then(|v| v.as_str()).ok_or("missing e")?.to_string();
+    let kty = val
+        .get("kty")
+        .and_then(|v| v.as_str())
+        .ok_or("missing kty")?;
+    if kty != "RSA" {
+        return Err(format!("not RSA: {}", kty));
+    }
+    let n = val
+        .get("n")
+        .and_then(|v| v.as_str())
+        .ok_or("missing n")?
+        .to_string();
+    let e = val
+        .get("e")
+        .and_then(|v| v.as_str())
+        .ok_or("missing e")?
+        .to_string();
     let alg = val.get("alg").and_then(|v| v.as_str()).map(String::from);
     let kid = val.get("kid").and_then(|v| v.as_str()).map(String::from);
-    Ok(RsaJwk { kty: kty.into(), n, e, alg, kid })
+    Ok(RsaJwk {
+        kty: kty.into(),
+        n,
+        e,
+        alg,
+        kid,
+    })
 }
 
 pub fn parse_ec_jwk(val: &Value) -> Result<EcJwk, String> {
-    let kty = val.get("kty").and_then(|v| v.as_str()).ok_or("missing kty")?;
-    if kty != "EC" { return Err(format!("not EC: {}", kty)); }
-    let crv = val.get("crv").and_then(|v| v.as_str()).ok_or("missing crv")?.to_string();
-    let x = val.get("x").and_then(|v| v.as_str()).ok_or("missing x")?.to_string();
-    let y = val.get("y").and_then(|v| v.as_str()).ok_or("missing y")?.to_string();
+    let kty = val
+        .get("kty")
+        .and_then(|v| v.as_str())
+        .ok_or("missing kty")?;
+    if kty != "EC" {
+        return Err(format!("not EC: {}", kty));
+    }
+    let crv = val
+        .get("crv")
+        .and_then(|v| v.as_str())
+        .ok_or("missing crv")?
+        .to_string();
+    let x = val
+        .get("x")
+        .and_then(|v| v.as_str())
+        .ok_or("missing x")?
+        .to_string();
+    let y = val
+        .get("y")
+        .and_then(|v| v.as_str())
+        .ok_or("missing y")?
+        .to_string();
     let alg = val.get("alg").and_then(|v| v.as_str()).map(String::from);
     let kid = val.get("kid").and_then(|v| v.as_str()).map(String::from);
-    Ok(EcJwk { kty: kty.into(), crv, x, y, alg, kid })
+    Ok(EcJwk {
+        kty: kty.into(),
+        crv,
+        x,
+        y,
+        alg,
+        kid,
+    })
 }
 
 pub fn parse_jwks(json: &str) -> Result<Vec<RsaJwk>, String> {
     let val: Value = serde_json::from_str(json).map_err(|e| format!("parse: {}", e))?;
-    let arr = val.get("keys").and_then(|v| v.as_array()).ok_or("missing keys array")?;
+    let arr = val
+        .get("keys")
+        .and_then(|v| v.as_array())
+        .ok_or("missing keys array")?;
     let mut out = Vec::new();
     for k in arr {
-        if let Ok(rsa) = parse_jwk(k) { out.push(rsa); }
+        if let Ok(rsa) = parse_jwk(k) {
+            out.push(rsa);
+        }
     }
     Ok(out)
 }

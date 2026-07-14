@@ -71,14 +71,18 @@ pub fn build_ppt_header(version: u16, is_encrypted: bool) -> Result<Vec<u8>, Str
     v.extend_from_slice(&0u16.to_le_bytes()); // minor_version
     v.extend_from_slice(&version.to_le_bytes());
     v.extend_from_slice(&CFB_BYTE_ORDER);
-    let sector_shift: u16 = if version == CFB_MAJOR_V4 { 0x000C } else { 0x0009 };
+    let sector_shift: u16 = if version == CFB_MAJOR_V4 {
+        0x000C
+    } else {
+        0x0009
+    };
     v.extend_from_slice(&sector_shift.to_le_bytes());
     v.extend_from_slice(&0x0006u16.to_le_bytes()); // mini_sector_shift
     v.extend_from_slice(&[0u8; 6]); // reserved
     v.extend_from_slice(&0u32.to_le_bytes()); // number_of_directory_sectors
-    // number_of_fat_sectors: any u16-bound value is accepted by the
-    // parser (it clamps at u16::MAX with an explicit error). Use 1
-    // to keep the buffer minimal.
+                                              // number_of_fat_sectors: any u16-bound value is accepted by the
+                                              // parser (it clamps at u16::MAX with an explicit error). Use 1
+                                              // to keep the buffer minimal.
     v.extend_from_slice(&1u32.to_le_bytes());
     v.extend_from_slice(&0u32.to_le_bytes()); // first_directory_sector_location
     let transaction_signature: u32 = if is_encrypted { 1 } else { 0 };
@@ -88,9 +92,9 @@ pub fn build_ppt_header(version: u16, is_encrypted: bool) -> Result<Vec<u8>, Str
     v.extend_from_slice(&0u32.to_le_bytes()); // number_of_minifat_sectors
     v.extend_from_slice(&0xFFFFFFFEu32.to_le_bytes()); // first_difat_sector_location NOSTREAM
     v.extend_from_slice(&0u32.to_le_bytes()); // number_of_difat_sectors
-    // DIFAT: 109 u32 LE entries. The parser does not validate DIFAT
-    // contents — only that the total header size is 512. Fill with
-    // FREESECT (0xFFFFFFFF) per the CFB spec.
+                                              // DIFAT: 109 u32 LE entries. The parser does not validate DIFAT
+                                              // contents — only that the total header size is 512. Fill with
+                                              // FREESECT (0xFFFFFFFF) per the CFB spec.
     for _ in 0..109 {
         v.extend_from_slice(&0xFFFFFFFFu32.to_le_bytes());
     }
@@ -131,10 +135,7 @@ pub fn assert_round_trip(input: &[u8]) {
         );
     }
     if h.version != CFB_MAJOR_V3 && h.version != CFB_MAJOR_V4 {
-        panic!(
-            "pres_header_parity: version not 3 or 4, got {}",
-            h.version
-        );
+        panic!("pres_header_parity: version not 3 or 4, got {}", h.version);
     }
     // `total_slots` is the number_of_fat_sectors field clamped to u16.
     // The builder emits 1; if a direct caller supplied a different

@@ -26,10 +26,9 @@ pub mod stream;
 pub mod watcher;
 pub mod wave;
 
+pub use claude_stream::{claude_stream_available, parse_claude_stream_json, ClaudeEvent};
+pub use dispatcher::Dispatcher;
 pub use error::{OrchestratorError, Result};
-pub use runner::{run_wave, DispatchOutcome, Dispatcher, FailedTask, TaskHandle, WaveReport};
-pub use wave::{
-    DispatcherKind, Expectation, ExpectationKind, TaskSpec, WaveConfig, load_wave,
-};
-pub use watcher::{ToolCall, WatcherSource, watch_project_tasks};
-pub use claude_stream::{ClaudeEvent, claude_stream_available, parse_claude_stream_json};
+pub use runner::{run_wave, DispatchOutcome, FailedTask, TaskHandle, WaveReport};
+pub use watcher::{watch_project_tasks, ToolCall, WatcherSource};
+pub use wave::{load_wave, DispatcherKind, Expectation, ExpectationKind, TaskSpec, WaveConfig};

@@ -125,7 +125,10 @@ pub fn metaphone(name: &str) -> String {
                 }
             }
             'C' => {
-                if i > 0 && prev == 'S' && (next == 'H' || next == 'I' || next == 'Y' || next == 'E') {
+                if i > 0
+                    && prev == 'S'
+                    && (next == 'H' || next == 'I' || next == 'Y' || next == 'E')
+                {
                     // SCH-/SCI-/SCY-/SCE- -> drop the C, treat SH/SI/SY/SE
                     None
                 } else if next == 'H' {

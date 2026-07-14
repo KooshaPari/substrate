@@ -10,19 +10,19 @@ pub mod banner;
 pub mod bitcoin_segwit_addr;
 pub mod bounded_body;
 // L122: wave-29 utility modules — DHCP options TLV codec (RFC 2132) + MQTT v5 packet codec
-pub mod dhcp_options;
 pub mod budget;
 pub mod circuit_breaker;
 mod config;
 pub mod config_watcher;
+pub mod dhcp_options;
 pub mod fallback;
 pub mod ldap_filter_parity;
 // L142: wave-37 utility modules — MAPI property stream + MS-CFB / legacy PPT header
 pub mod mapi_props;
-pub mod pres_header_parse;
 pub mod metrics;
-mod openai;
 pub mod oauth1_signature_parity;
+mod openai;
+pub mod pres_header_parse;
 pub mod rate_limit;
 pub mod request_rate;
 pub mod retry;
@@ -922,43 +922,43 @@ impl IntoResponse for ApiError {
             .into_response()
     }
 }
-pub mod sla;
-pub mod middleware_chain;
-pub mod conn_pool;
-pub mod tier;
-pub mod budget_tracker;
-pub mod token_bucket;
-pub mod circuit_breaker2;
-pub mod semaphore;
-pub mod lru_cache;
-pub mod shard;
-pub mod ttl_map;
-pub mod glob_match;
-pub mod ini_parser;
-pub mod utf8_count;
-pub mod bytebuf;
-pub mod bitfield;
-pub mod result_ext;
-pub mod sorted_set;
-pub mod percentile;
-pub mod byte_size;
-pub mod url_parse;
-pub mod flag_set;
-pub mod hex;
-pub mod bloom_gw;
-pub mod ipv4;
-pub mod crc32;
-pub mod chunked;
-pub mod roman;
-pub mod color;
-pub mod uuid_gen;
-pub mod diff;
-pub mod regex_simple;
-pub mod skiplist;
-pub mod md5;
-pub mod signal;
-pub mod trie;
 pub mod base64;
+pub mod bitfield;
+pub mod bloom_gw;
+pub mod budget_tracker;
+pub mod byte_size;
+pub mod bytebuf;
+pub mod chunked;
+pub mod circuit_breaker2;
+pub mod color;
+pub mod conn_pool;
+pub mod crc32;
+pub mod diff;
+pub mod flag_set;
+pub mod glob_match;
+pub mod hex;
+pub mod ini_parser;
+pub mod ipv4;
+pub mod lru_cache;
+pub mod md5;
+pub mod middleware_chain;
+pub mod percentile;
+pub mod regex_simple;
+pub mod result_ext;
+pub mod roman;
+pub mod semaphore;
+pub mod shard;
+pub mod signal;
+pub mod skiplist;
+pub mod sla;
+pub mod sorted_set;
+pub mod tier;
+pub mod token_bucket;
+pub mod trie;
+pub mod ttl_map;
+pub mod url_parse;
+pub mod utf8_count;
+pub mod uuid_gen;
 // L123: substrate v0.3.0 expansion — utility modules from sharecli library
 pub mod backoff;
 pub mod base85;
@@ -1005,77 +1005,77 @@ pub mod units_si;
 // L143: substrate v0.3.0 expansion — ciphers (Caesar, Vigenère) + phonetic (Soundex, Metaphone) + base58
 pub mod base58;
 pub mod caesar_cipher;
-pub mod vigenere;
 pub mod soundex_metaphone;
+pub mod vigenere;
 // L144: substrate v0.3.0 expansion — modern hash (BLAKE3) + number theory (Miller-Rabin) + finance (Black-Scholes) + text diff (Myers)
-pub mod blake3_hash;
-pub mod miller_rabin;
 pub mod black_scholes;
+pub mod blake3_hash;
 pub mod diff_match_patch;
+pub mod miller_rabin;
 // L145: substrate v0.3.0 expansion — Huffman coding + sorted-index map + geo distance/geohash/Maidenhead + Markdown inline parser
-pub mod huffman_code;
-pub mod sorted_index;
 pub mod geo_distance;
+pub mod huffman_code;
 pub mod markdown_inline;
+pub mod sorted_index;
 // L146: substrate v0.3.0 expansion — replaced md5 stub with full impl + RFC 4180 CSV + RFC 6901 JSON Pointer + RFC 6265 Cookie parsers
+pub mod cookie;
 pub mod csv_parser;
 pub mod json_pointer;
-pub mod cookie;
 // L147: substrate v0.3.0 expansion — SHA-256 + JWT decoder (no sig verify) + MIME type registry + cron expression matcher
-pub mod sha256;
+pub mod cron_expr;
+pub mod json_path;
 pub mod jwt_decode;
 pub mod mime_type;
-pub mod cron_expr;
-pub mod snowflake;
-pub mod json_path;
 pub mod semver;
+pub mod sha256;
+pub mod snowflake;
 // L148: substrate v0.3.0 expansion — SHA-1 + LRU cache (full impl replacing stub) + YAML subset parser + SemVer comparator
+pub mod semver_compare;
 pub mod sha1;
 pub mod yaml_basic;
-pub mod semver_compare;
 // L149: substrate v0.3.0 expansion — xxHash non-crypto hash + Hamming/Jaro metrics + Cuckoo filter + quadratic-residue PRNG
-pub mod xxhash;
-pub mod string_metrics;
 pub mod cuckoo_filter;
 pub mod quadratic_residue;
+pub mod string_metrics;
+pub mod xxhash;
 // L150: substrate v0.3.0 expansion — statistics primitives + classic sorts + CRC-32 variants + real skip list
-pub mod statistics_basic;
-pub mod sorts;
 pub mod crc_variants;
 pub mod ordered_skiplist;
+pub mod sorts;
+pub mod statistics_basic;
 // L151: substrate v0.3.0 expansion — modular arithmetic + disjoint-set + Fenwick tree + HTTP status codes
-pub mod modular_arith;
-pub mod union_find;
 pub mod fenwick_tree;
 pub mod http_status;
+pub mod modular_arith;
+pub mod union_find;
 // L152: substrate v0.3.0 expansion — KMP string matching + random distributions + interval tree + segment tree
+pub mod interval_tree;
 pub mod kmp_search;
 pub mod random_distributions;
-pub mod interval_tree;
 pub mod segment_tree;
 // L153: substrate v0.3.0 expansion — SHA-512 (FIPS 180-4) + Rabin-Karp rolling-hash search + Z-algorithm pattern matching + Conway's Game of Life
-pub mod conway_gol;
-pub mod rabin_karp;
-pub mod sha512;
-pub mod z_algorithm;
-pub mod bucket;
-pub mod rle;
-pub mod bitset;
-pub mod zigzag;
-pub mod tar_header;
-pub mod pow;
-pub mod conn_check;
 pub mod ansi;
-pub mod stats;
-pub mod mime;
-pub mod stopwatch;
+pub mod bitset;
+pub mod bucket;
 pub mod cache2;
-pub mod shardmap2;
-pub mod router2;
 pub mod channel;
+pub mod conn_check;
+pub mod conway_gol;
+pub mod mime;
+pub mod pow;
+pub mod rabin_karp;
+pub mod rle;
+pub mod router2;
+pub mod sha512;
+pub mod shardmap2;
+pub mod stats;
+pub mod stopwatch;
+pub mod tar_header;
+pub mod z_algorithm;
+pub mod zigzag;
 
-pub mod sun;
 pub mod csv;
+pub mod sun;
 
 pub mod rate_limit_tokenbucket;
 pub mod retry_jitter;
@@ -1083,19 +1083,19 @@ pub mod retry_jitter;
 pub mod gzip_header;
 pub mod url_parser;
 
+pub mod connection_pool;
 pub mod cron_parser;
 pub mod jwt_hs256;
-pub mod connection_pool;
 pub mod websocket_frame;
 
 pub mod circuit_breaker_v2;
 pub mod histogram_metrics;
 
-pub mod prometheus_exposition;
 pub mod json_patch;
+pub mod prometheus_exposition;
 
-pub mod m3u_parser;
 pub mod brotli_dict;
+pub mod m3u_parser;
 
 pub mod ed25519_sign_mini;
 pub mod pem_codec;
@@ -1112,130 +1112,130 @@ pub mod tls_record;
 pub mod mac_hmac;
 pub mod oauth1_signature;
 
-pub mod ssh_packet;
 pub mod otp_totp;
+pub mod ssh_packet;
 
-pub mod prometheus_scrape;
-pub mod oidc_jwt;
-pub mod graphql_parse;
-pub mod x509_chain;
-pub mod ebpf_loader;
-pub mod mime_multipart;
-pub mod cbor_minimal;
-pub mod ipfix_parser;
-pub mod dnssec_chain;
-pub mod lua_bytecode;
-pub mod stun_protocol;
-pub mod promql_parse;
-pub mod pcap_global_header;
-pub mod ssh_hostkey;
-pub mod promql_eval;
-pub mod git_pack_idx;
-pub mod ssh_known_hosts;
-pub mod ntp_timestamp;
 pub mod bitcoin_bech32;
-pub mod elf_section;
-pub mod levenshtein;
 pub mod brontide_replay;
+pub mod cbor_minimal;
+pub mod dnssec_chain;
+pub mod ebpf_loader;
+pub mod elf_section;
+pub mod git_pack_idx;
+pub mod graphql_parse;
 pub mod http1_request;
-pub mod vmstat_parser;
 pub mod icalendar_parse;
-pub mod vcard_parse;
-pub mod webvtt_cue_parse;
-pub mod webmanifest;
+pub mod ipfix_parser;
+pub mod levenshtein;
+pub mod lua_bytecode;
+pub mod mime_multipart;
 pub mod mqtt_packet_v5;
+pub mod ntp_timestamp;
+pub mod oidc_jwt;
+pub mod pcap_global_header;
+pub mod prometheus_scrape;
+pub mod promql_eval;
+pub mod promql_parse;
+pub mod ssh_hostkey;
+pub mod ssh_known_hosts;
+pub mod stun_protocol;
+pub mod vcard_parse;
+pub mod vmstat_parser;
+pub mod webmanifest;
+pub mod webvtt_cue_parse;
+pub mod x509_chain;
 // L131: wave-33 utility modules — TACACS+ (RFC 8907) Authentication START codec + IMAP4rev1 (RFC 3501) response classifier
-pub mod tacacs_auth;
 pub mod imap_response_parity;
+pub mod tacacs_auth;
 // L132: wave-34 utility modules — IPsec ESP (RFC 4303) packet codec + radiotap (radiotap.org/fields) header codec
 pub mod ipsec_esp_parse;
 pub mod radiotap;
 // L133: wave-35 utility modules — SNMPv3 (RFC 3412) message parser + Cisco CDP (CDPv2) TLV codec with Meraki OUI classification helpers
-pub mod snmpv3_msg;
 pub mod cdp_meraki_discovery;
+pub mod snmpv3_msg;
 // L134: wave-36 utility modules — minimal QOI (Quite OK Image) decoder + minimal BMP (Windows Bitmap) parser
-pub mod qoi_image;
 pub mod bmp_image;
+pub mod qoi_image;
 // L145: wave-38 utility modules — minimal ASN.1 BER (X.690) parser/encoder + minimal DHCPv6 (RFC 8415) message codec
 pub mod asn1_ber;
 pub mod dhcpv6_msg;
 // L146: wave-39 utility modules — minimal RDP negotiation-request (MS-RDPBCGR §2.2) parser + minimal BIP-39 English mnemonic codec
-pub mod bip39_wordlist;
 pub mod bip39_mnemonic;
+pub mod bip39_wordlist;
 pub mod rdp_neg;
 // L147: wave-40 utility modules — minimal RDP negotiation-request (MS-RDPBCGR §2.2) build+round-trip parity + minimal DNS query (RFC 1035 §4.1) build+round-trip parity
-pub mod rdp_neg_parity;
 pub mod dns_query_parser_parity;
+pub mod rdp_neg_parity;
 // L148: wave-41 utility modules — minimal MAPI property-entry build+round-trip parity + minimal MS-CFB / legacy .ppt header build+round-trip parity
 pub mod mapi_props_parity;
 pub mod pres_header_parity;
 // L154: substrate v0.3.0 expansion — SHA-256-backed Merkle tree with inclusion proofs + randomized Quickselect order-statistic selection + Boyer-Moore (bad-character rule) byte search + BitTorrent bencode codec
+pub mod bencode;
+pub mod boyer_moore;
 pub mod merkle_tree;
 pub mod quickselect;
-pub mod boyer_moore;
-pub mod bencode;
 // L155: substrate v0.3.0 expansion — LZW dictionary compression + LZ77 sliding-window compression + Crockford's Base32 + Fletcher-16 / Adler-32 checksums
-pub mod lzw;
-pub mod lz77;
 pub mod crockford_base32;
+pub mod lz77;
+pub mod lzw;
 pub mod simd_checksum;
 // L156: substrate v0.3.0 expansion — scrypt KDF (RFC 7914) + 1D cellular automaton + integer log helpers + Z85 base-85
-pub mod scrypt;
 pub mod cellular_automaton;
 pub mod integer_log;
+pub mod scrypt;
 pub mod z85;
 // L157: substrate v0.3.0 expansion — CRC-16/CCITT/XMODEM/KERMIT + CRC-32/IEEE + Gray code BRGC + signed-delta + ZigZag + unsigned LEB128 + MurmurHash3 x86 32-bit
 pub mod crc16;
-pub mod gray_code;
 pub mod delta_encoding;
+pub mod gray_code;
 pub mod murmur3;
 // L158: substrate v0.3.0 expansion — Keccak-p[1600] permutation + SHA3-256 + SHAKE128 + CRC-32C Castagnoli + RFC 3986 percent-encoding + TEA Tiny Encryption Algorithm
-pub mod keccak;
 pub mod crc32c;
-pub mod url_percent;
+pub mod keccak;
 pub mod tea;
+pub mod url_percent;
 // L159: substrate v0.3.0 expansion — (7,4) Hamming SEC + SECDED + XTEA 128-bit-key Feistel 32 rounds + row-major i64 matrices with transpose/matmul/det + FNV-1a 32/64/128-bit Fowler-Noll-Vo
+pub mod fnv1a;
 pub mod hamming_code;
 pub mod matrix_ops;
 pub mod xtea;
-pub mod fnv1a;
 // L160: substrate v0.3.0 expansion — RIPEMD-160 (RFC 2286) + MD4 (RFC 1320) + BLAKE2b/BLAKE2s (RFC 7693) + Wagner-Fischer edit distance
-pub mod ripemd160;
-pub mod md4;
 pub mod blake2;
 pub mod edit_distance;
+pub mod md4;
+pub mod ripemd160;
 // L161: substrate v0.3.0 expansion — Blowfish block cipher (Schneier 1993) + Fibonacci heap (Fredman & Tarjan 1987) + Aho-Corasick multi-pattern automaton (1975) + Dijkstra's shortest-path algorithm
 pub mod aho_corasick;
 pub mod blowfish;
 pub mod dijkstra_basic;
 pub mod fibonacci_heap;
 // L162: substrate v0.3.0 expansion — XXTEA corrected Block TEA + RC4 stream cipher + COBS consistent-overhead byte stuffing + Salsa20 ARX stream cipher
-pub mod xxtea;
-pub mod rc4;
 pub mod cobs_encode;
+pub mod rc4;
 pub mod salsa20;
+pub mod xxtea;
 // L163: substrate v0.3.0 expansion — Kahn's topological sort for DAGs + AVL self-balancing BST (Adelson-Velsky & Landis 1962) + run-length encoding with literal escapes + Hamilton-convention unit quaternions for 3D rotations
-pub mod topological_sort;
 pub mod avl_tree;
-pub mod rle_compress;
 pub mod quaternions;
+pub mod rle_compress;
+pub mod topological_sort;
 // L164: substrate v0.3.0 expansion — red-black self-balancing BST (Bayer 1972) + Knuth's Algorithm X with DLX dancing links for exact cover + 0/1 knapsack DP (Bellman 1957) + Mandelbrot set escape-time iteration
-pub mod red_black_tree;
 pub mod dancing_links;
 pub mod knapsack_dp;
 pub mod mandelbrot;
+pub mod red_black_tree;
 // L165: substrate v0.3.0 expansion — splay-tree-API BST (Sleator-Tarjan 1985) + A* shortest-path search (Hart-Nilsson-Raphael 1968) + Floyd-Warshall all-pairs shortest paths (1962) + longest-increasing-subsequence with O(n log n) patience-sort
-pub mod splay_tree;
 pub mod astar_basic;
 pub mod floyd_warshall;
 pub mod lis_dp;
+pub mod splay_tree;
 // L166: substrate v0.3.0 expansion — classic-American Soundex + NYSIIS (Taft 1970) phonetic encoders + Tridgell 32-bit + Adler32 (RFC 1950) rolling rsync checksums + Wilson's uniform-spanning-tree toroidal maze (STOC '96) + Dijkstra shunting-yard + postfix RPN arithmetic evaluator
-pub mod soundex_basic;
-pub mod rsync_rollsum;
-pub mod toroidal_maze;
 pub mod postfix_eval;
+pub mod rsync_rollsum;
+pub mod soundex_basic;
+pub mod toroidal_maze;
 // L167: substrate v0.3.0 expansion — Van Eck's self-describing sequence (OEIS A181391) + exact-arithmetic Gauss-Jordan elimination over the rationals + rail-fence zig-zag transposition cipher + strict ISO 8601 / RFC 3339 date / date-time / duration parser
-pub mod van_eck_sequence;
 pub mod gauss_jordan;
-pub mod rail_fence_cipher;
 pub mod iso8601_basic;
+pub mod rail_fence_cipher;
+pub mod van_eck_sequence;

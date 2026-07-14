@@ -129,7 +129,8 @@ where
             out.push(',');
         }
         let f = field.as_ref();
-        let needs_quotes = f.contains(',') || f.contains('"') || f.contains('\n') || f.contains('\r');
+        let needs_quotes =
+            f.contains(',') || f.contains('"') || f.contains('\n') || f.contains('\r');
         if needs_quotes {
             out.push('"');
             for ch in f.chars() {
@@ -207,10 +208,7 @@ mod tests {
 
     #[test]
     fn parse_single_column() {
-        assert_eq!(
-            parse("a\nb\nc\n"),
-            vec![vec!["a"], vec!["b"], vec!["c"]]
-        );
+        assert_eq!(parse("a\nb\nc\n"), vec![vec!["a"], vec!["b"], vec!["c"]]);
     }
 
     #[test]

@@ -140,7 +140,10 @@ mod tests {
     fn evaluate_array_index() {
         let d = doc();
         assert_eq!(at(&d, "/foo/0").unwrap(), Some(&Json::Number(1.0)));
-        assert_eq!(at(&d, "/foo/2").unwrap(), Some(&Json::String("three".to_string())));
+        assert_eq!(
+            at(&d, "/foo/2").unwrap(),
+            Some(&Json::String("three".to_string()))
+        );
     }
 
     #[test]
@@ -177,6 +180,9 @@ mod tests {
         let mut outer = BTreeMap::new();
         outer.insert("nested".to_string(), Json::Object(inner));
         let doc = Json::Object(outer);
-        assert_eq!(at(&doc, "/nested/k").unwrap(), Some(&Json::String("v".to_string())));
+        assert_eq!(
+            at(&doc, "/nested/k").unwrap(),
+            Some(&Json::String("v".to_string()))
+        );
     }
 }

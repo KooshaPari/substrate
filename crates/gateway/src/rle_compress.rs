@@ -157,7 +157,10 @@ pub fn encode_adaptive(data: &[u8]) -> Vec<u8> {
             let cap = (i + 4096).min(data.len());
             while chunk_end < cap {
                 let mut peek_run = 1usize;
-                while peek_run < MAX_RUN && chunk_end + peek_run < cap && data[chunk_end + peek_run] == data[chunk_end] {
+                while peek_run < MAX_RUN
+                    && chunk_end + peek_run < cap
+                    && data[chunk_end + peek_run] == data[chunk_end]
+                {
                     peek_run += 1;
                 }
                 if peek_run >= MIN_RUN {
@@ -253,7 +256,9 @@ mod tests {
 
     #[test]
     fn alternating_bytes_still_round_trip() {
-        let data: Vec<u8> = (0..50).map(|i| if i % 2 == 0 { 0xAA } else { 0x55 }).collect();
+        let data: Vec<u8> = (0..50)
+            .map(|i| if i % 2 == 0 { 0xAA } else { 0x55 })
+            .collect();
         let enc = encode(&data);
         let dec = decode(&enc).unwrap();
         assert_eq!(dec, data);
@@ -285,7 +290,10 @@ mod tests {
             data.push(x);
         }
         let enc = encode_adaptive(&data);
-        assert!(enc.len() < data.len() * 2, "adaptive encoder expanded by 2x or more");
+        assert!(
+            enc.len() < data.len() * 2,
+            "adaptive encoder expanded by 2x or more"
+        );
         let dec = decode(&enc).unwrap();
         assert_eq!(dec, data);
     }

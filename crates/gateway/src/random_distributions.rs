@@ -120,7 +120,13 @@ mod tests {
     }
 
     fn approx(a: f64, b: f64, eps: f64) {
-        assert!((a - b).abs() < eps, "{} ≈ {} (|diff|={})", a, b, (a - b).abs());
+        assert!(
+            (a - b).abs() < eps,
+            "{} ≈ {} (|diff|={})",
+            a,
+            b,
+            (a - b).abs()
+        );
     }
 
     #[test]
@@ -130,8 +136,12 @@ mod tests {
         let mut max = f64::NEG_INFINITY;
         for _ in 0..10_000 {
             let v = uniform_f64(&mut r, 5.0, 10.0);
-            if v < min { min = v; }
-            if v > max { max = v; }
+            if v < min {
+                min = v;
+            }
+            if v > max {
+                max = v;
+            }
             assert!(v >= 5.0 && v < 10.0);
         }
         assert!(min < 5.5);
@@ -200,7 +210,9 @@ mod tests {
         let mut max = 0.0_f64;
         for _ in 0..10_000 {
             let v = cauchy(&mut r, 1.0).abs();
-            if v > max { max = v; }
+            if v > max {
+                max = v;
+            }
         }
         // Cauchy has heavy tails — 10k samples should produce at least
         // one sample with magnitude > 100.

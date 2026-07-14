@@ -126,8 +126,7 @@ fn sign_base_string(base_string: &str, consumer_secret: &str, token_secret: &str
 }
 
 fn base64_encode(input: &[u8]) -> String {
-    const CHARS: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut out = String::with_capacity((input.len() + 2) / 3 * 4);
     let mut i = 0;
     while i + 3 <= input.len() {
@@ -223,13 +222,19 @@ mod tests {
         let method = "POST";
         let url = "https://api.twitter.com/1/statuses/update.json?include_entities=true";
         let params = [
-            ("status", "Hello Ladies + Gentlemen, a signed OAuth request!"),
+            (
+                "status",
+                "Hello Ladies + Gentlemen, a signed OAuth request!",
+            ),
             ("include_entities", "true"),
             ("oauth_consumer_key", "xvz1evFS4wEEPTGEFPHBog"),
             ("oauth_nonce", "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg"),
             ("oauth_signature_method", "HMAC-SHA1"),
             ("oauth_timestamp", "1318622958"),
-            ("oauth_token", "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb"),
+            (
+                "oauth_token",
+                "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
+            ),
             ("oauth_version", "1.0"),
         ];
         let s = build_base_string(method, url, &params);
@@ -248,13 +253,19 @@ mod tests {
             "POST",
             "https://api.twitter.com/1/statuses/update.json?include_entities=true",
             &[
-                ("status", "Hello Ladies + Gentlemen, a signed OAuth request!"),
+                (
+                    "status",
+                    "Hello Ladies + Gentlemen, a signed OAuth request!",
+                ),
                 ("include_entities", "true"),
                 ("oauth_consumer_key", "xvz1evFS4wEEPTGEFPHBog"),
                 ("oauth_nonce", "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg"),
                 ("oauth_signature_method", "HMAC-SHA1"),
                 ("oauth_timestamp", "1318622958"),
-                ("oauth_token", "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb"),
+                (
+                    "oauth_token",
+                    "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
+                ),
                 ("oauth_version", "1.0"),
             ],
         );

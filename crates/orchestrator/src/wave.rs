@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn parses_all_fields() {
-        let body = r#"
+        let body = r##"
             name = "sharecli-mvp"
             dispatcher = "Forge"
             parallelism = 4
@@ -217,7 +217,7 @@ mod tests {
             [[tasks.expectations]]
             kind = "CssProperty"
             value = "#3fb950"
-        "#;
+        "##;
         let f = tmp_wave(body);
         let cfg = load_wave(f.path()).expect("parse");
         assert_eq!(cfg.name, "sharecli-mvp");

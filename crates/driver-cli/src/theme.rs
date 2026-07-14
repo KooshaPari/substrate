@@ -31,7 +31,11 @@ impl Rgb {
             n = (n << 4) | v as u32;
             i += 1;
         }
-        Rgb(((n >> 16) & 0xff) as u8, ((n >> 8) & 0xff) as u8, (n & 0xff) as u8)
+        Rgb(
+            ((n >> 16) & 0xff) as u8,
+            ((n >> 8) & 0xff) as u8,
+            (n & 0xff) as u8,
+        )
     }
 
     /// ANSI 24-bit truecolor foreground escape.
@@ -51,7 +55,9 @@ pub enum ThemeVariant {
 }
 
 impl Default for ThemeVariant {
-    fn default() -> Self { ThemeVariant::Backbone2 }
+    fn default() -> Self {
+        ThemeVariant::Backbone2
+    }
 }
 
 /// Backbone-2 token set — exact mirror of tokens.css.
@@ -68,14 +74,16 @@ pub struct Tokens {
 impl Tokens {
     pub const BACKBONE2: Tokens = Tokens {
         variant: ThemeVariant::Backbone2,
-        graphite:    Rgb::from_hex("#0a0d12"),
-        panel:       Rgb::from_hex("#161b22"),
+        graphite: Rgb::from_hex("#0a0d12"),
+        panel: Rgb::from_hex("#161b22"),
         pulse_green: Rgb::from_hex("#3fb950"),
         sync_violet: Rgb::from_hex("#a371f7"),
-        warm_amber:  Rgb::from_hex("#d29922"),
+        warm_amber: Rgb::from_hex("#d29922"),
     };
 
-    pub const fn default() -> Self { Self::BACKBONE2 }
+    pub const fn default() -> Self {
+        Self::BACKBONE2
+    }
 
     pub fn from_name(name: &str) -> Option<Self> {
         match name.to_ascii_lowercase().as_str() {
@@ -102,11 +110,11 @@ mod tests {
     #[test]
     fn backbone2_constants_match_tokens_css() {
         let t = Tokens::BACKBONE2;
-        assert_eq!(t.graphite,    Rgb(0x0a, 0x0d, 0x12));
-        assert_eq!(t.panel,       Rgb(0x16, 0x1b, 0x22));
+        assert_eq!(t.graphite, Rgb(0x0a, 0x0d, 0x12));
+        assert_eq!(t.panel, Rgb(0x16, 0x1b, 0x22));
         assert_eq!(t.pulse_green, Rgb(0x3f, 0xb9, 0x50));
         assert_eq!(t.sync_violet, Rgb(0xa3, 0x71, 0xf7));
-        assert_eq!(t.warm_amber,  Rgb(0xd2, 0x99, 0x22));
+        assert_eq!(t.warm_amber, Rgb(0xd2, 0x99, 0x22));
     }
 
     #[test]
@@ -115,7 +123,7 @@ mod tests {
         let bg = Tokens::BACKBONE2.panel.ansi_bg();
         assert!(fg.starts_with("\x1b[38;2;"));
         assert!(bg.starts_with("\x1b[48;2;"));
-        assert!(fg.contains("63"));  // 0x3f
-        assert!(bg.contains("27"));  // 0x1b
+        assert!(fg.contains("63")); // 0x3f
+        assert!(bg.contains("27")); // 0x1b
     }
 }

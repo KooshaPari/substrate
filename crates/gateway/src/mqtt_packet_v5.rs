@@ -38,15 +38,21 @@ pub enum MqttError {
 /// Encode a variable-length "Remaining Length" (1..=4 bytes) and return
 /// the bytes. Caller is responsible for prepending the fixed header byte.
 pub fn encode_remaining_len(len: u32) -> Result<Vec<u8>, MqttError> {
-    if len > 0x0fff_ffff { return Err(MqttError::BadRemainingLen); }
+    if len > 0x0fff_ffff {
+        return Err(MqttError::BadRemainingLen);
+    }
     let mut out = Vec::with_capacity(4);
     let mut x = len;
     loop {
         let mut byte = (x & 0x7f) as u8;
         x >>= 7;
-        if x > 0 { byte |= 0x80; }
+        if x > 0 {
+            byte |= 0x80;
+        }
         out.push(byte);
-        if x == 0 { break; }
+        if x == 0 {
+            break;
+        }
     }
     Ok(out)
 }
@@ -58,14 +64,23 @@ pub fn decode_remaining_len(buf: &[u8]) -> Result<(u32, usize), MqttError> {
     let mut value: u32 = 0;
     let mut i = 0;
     loop {
-        if i >= buf.len() { return Err(MqttError::Truncated); }
-        if i >= 4 { return Err(MqttError::BadRemainingLen); }
+        if i >= buf.len() {
+            return Err(MqttError::Truncated);
+        }
+        if i >= 4 {
+            return Err(MqttError::BadRemainingLen);
+        }
         let b = buf[i];
-        value = value.checked_add((b & 0x7f) as u32 * multiplier)
+        value = value
+            .checked_add((b & 0x7f) as u32 * multiplier)
             .ok_or(MqttError::BadRemainingLen)?;
         i += 1;
-        if b & 0x80 == 0 { break; }
-        multiplier = multiplier.checked_mul(128).ok_or(MqttError::BadRemainingLen)?;
+        if b & 0x80 == 0 {
+            break;
+        }
+        multiplier = multiplier
+            .checked_mul(128)
+            .ok_or(MqttError::BadRemainingLen)?;
     }
     Ok((value, i))
 }
@@ -83,7 +98,7 @@ pub fn encode_connect(client_id: &str) -> Result<Vec<u8>, MqttError> {
     vh.push(0x02); // connect flags: clean session only
     vh.extend_from_slice(&0u16.to_be_bytes());
     vh.extend_from_slice(&encode_remaining_len(0)?); // empty properties
-    // Payload: client_id (2-byte length prefix + bytes).
+                                                     // Payload: client_id (2-byte length prefix + bytes).
     vh.extend_from_slice(&(client_id.len() as u16).to_be_bytes());
     vh.extend_from_slice(client_id.as_bytes());
     let mut out = vec![(PacketType::Connect as u8) << 4];
@@ -95,18 +110,28 @@ pub fn encode_connect(client_id: &str) -> Result<Vec<u8>, MqttError> {
 /// Parse a CONNACK packet. Returns the reason code and the raw
 /// `Session Present` flag from byte 1.
 pub fn decode_connack(buf: &[u8]) -> Result<(u8, bool), MqttError> {
-    if buf.len() < 4 { return Err(MqttError::Truncated); }
-    if buf[0] >> 4 != PacketType::ConnAck as u8 { return Err(MqttError::BadType(buf[0] >> 4)); }
+    if buf.len() < 4 {
+        return Err(MqttError::Truncated);
+    }
+    if buf[0] >> 4 != PacketType::ConnAck as u8 {
+        return Err(MqttError::BadType(buf[0] >> 4));
+    }
     let (remlen, used) = decode_remaining_len(&buf[1..])?;
-    if buf.len() < 1 + used + remlen as usize { return Err(MqttError::Truncated); }
+    if buf.len() < 1 + used + remlen as usize {
+        return Err(MqttError::Truncated);
+    }
     let body = &buf[1 + used..1 + used + remlen as usize];
-    if body.len() < 2 { return Err(MqttError::Truncated); }
+    if body.len() < 2 {
+        return Err(MqttError::Truncated);
+    }
     Ok((body[1], body[0] & 0x01 != 0))
 }
 
 /// Build a PUBLISH packet (QoS 0, no properties, no packet id).
 pub fn encode_publish_qos0(topic: &str, payload: &[u8]) -> Result<Vec<u8>, MqttError> {
-    if topic.is_empty() { return Err(MqttError::BadProtocol); }
+    if topic.is_empty() {
+        return Err(MqttError::BadProtocol);
+    }
     let mut vh: Vec<u8> = Vec::new();
     vh.extend_from_slice(&(topic.len() as u16).to_be_bytes());
     vh.extend_from_slice(topic.as_bytes());
@@ -122,7 +147,8 @@ pub fn encode_publish_qos0(topic: &str, payload: &[u8]) -> Result<Vec<u8>, MqttE
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn encode_decode_remaining_len_round_trip() {
+    #[test]
+    fn encode_decode_remaining_len_round_trip() {
         for &n in &[0u32, 127, 128, 16383, 16384, 0x0fff_ffff] {
             let enc = encode_remaining_len(n).unwrap();
             let (v, used) = decode_remaining_len(&enc).unwrap();
@@ -130,15 +156,21 @@ mod tests {
             assert_eq!(used, enc.len());
         }
     }
-    #[test] fn rejects_oversize_remaining_len() {
+    #[test]
+    fn rejects_oversize_remaining_len() {
         assert!(encode_remaining_len(0x1000_0000).is_err());
     }
-    #[test] fn rejects_overlong_varint() {
+    #[test]
+    fn rejects_overlong_varint() {
         // 5 continuation bytes → BadRemainingLen.
         let buf = vec![0x80, 0x80, 0x80, 0x80, 0x01];
-        assert_eq!(decode_remaining_len(&buf).err(), Some(MqttError::BadRemainingLen));
+        assert_eq!(
+            decode_remaining_len(&buf).err(),
+            Some(MqttError::BadRemainingLen)
+        );
     }
-    #[test] fn connect_minimal_packet() {
+    #[test]
+    fn connect_minimal_packet() {
         let p = encode_connect("a").unwrap();
         // p[0] = fixed-header byte = 0x10 (CONNECT).
         // p[1] = remaining-length varint = 14.
@@ -150,28 +182,32 @@ mod tests {
         assert_eq!(p[4..=7], [b'M', b'Q', b'T', b'T']);
         assert_eq!(p[8], 0x05); // MQTT v5
     }
-    #[test] fn publish_qos0_layout() {
+    #[test]
+    fn publish_qos0_layout() {
         let p = encode_publish_qos0("t", b"hi").unwrap();
         assert_eq!(p[0], 0x30); // PUBLISH, QoS 0
-        // topic length prefix (2) + 't' (1) + properties length (1) + payload (2) = 6
+                                // topic length prefix (2) + 't' (1) + properties length (1) + payload (2) = 6
         let (rem, used) = decode_remaining_len(&p[1..]).unwrap();
         assert_eq!(rem, 6);
         assert_eq!(used, 1);
         assert_eq!(p.len(), 2 + rem as usize);
     }
-    #[test] fn connack_decode() {
+    #[test]
+    fn connack_decode() {
         // CONNACK fixed header byte = 0x20, remaining length = 2, body = [0x00, 0x00].
         let p = [0x20, 0x02, 0x00, 0x00];
         let (rc, sp) = decode_connack(&p).unwrap();
         assert_eq!(rc, 0x00);
         assert_eq!(sp, false);
     }
-    #[test] fn connack_decode_session_present() {
+    #[test]
+    fn connack_decode_session_present() {
         let p = [0x20, 0x02, 0x01, 0x00];
         let (_rc, sp) = decode_connack(&p).unwrap();
         assert!(sp);
     }
-    #[test] fn empty_client_id_rejected() {
+    #[test]
+    fn empty_client_id_rejected() {
         assert!(encode_connect("").is_err());
     }
 }

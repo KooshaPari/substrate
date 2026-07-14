@@ -256,7 +256,9 @@ fn hex_to_bytes(s: &str) -> Result<Vec<u8>> {
     }
     (0..s.len())
         .step_by(2)
-        .map(|i| u8::from_str_radix(&s[i..i + 2], 16).with_context(|| format!("bad hex at byte {i}")))
+        .map(|i| {
+            u8::from_str_radix(&s[i..i + 2], 16).with_context(|| format!("bad hex at byte {i}"))
+        })
         .collect()
 }
 
@@ -330,7 +332,11 @@ fn json_from_jsvalue(v: &JsValue) -> serde_json::Value {
 
 fn run_jwt(op: &JwtCmd) -> Result<()> {
     match op {
-        JwtCmd::Sign { header, payload, secret } => {
+        JwtCmd::Sign {
+            header,
+            payload,
+            secret,
+        } => {
             let token = jwt::encode_hs256(header, payload, secret.as_bytes());
             write_stdout(token);
         }
@@ -368,7 +374,8 @@ fn run_dns(hex: &Option<String>, demo: bool) -> Result<()> {
             .ok_or_else(|| anyhow::anyhow!("--hex or --demo required"))?;
         hex_to_bytes(h)?
     };
-    let hdr = dns::parse_header(&bytes).map_err(|e| anyhow::anyhow!("header parse failed: {e:?}"))?;
+    let hdr =
+        dns::parse_header(&bytes).map_err(|e| anyhow::anyhow!("header parse failed: {e:?}"))?;
     let (question, _consumed) = dns::parse_question(&bytes, 12)
         .map_err(|e| anyhow::anyhow!("question parse failed: {e:?}"))?;
     write_stdout(format!(
@@ -393,8 +400,8 @@ fn run_redis(value: &Option<String>, demo: bool) -> Result<()> {
     let encoded = resp_encode(&v);
     write_stdout(bytes_to_hex(&encoded));
     // round-trip
-    let (back, n) = resp_parse(&encoded)
-        .map_err(|e| anyhow::anyhow!("round-trip parse failed: {e:?}"))?;
+    let (back, n) =
+        resp_parse(&encoded).map_err(|e| anyhow::anyhow!("round-trip parse failed: {e:?}"))?;
     write_stdout(format!("CONSUMED={} OK", n));
     assert_eq!(back, v);
     Ok(())
@@ -439,8 +446,7 @@ fn run_pkcs7(op: &Pkcs7Cmd) -> Result<()> {
                 let h = hex
                     .as_ref()
                     .ok_or_else(|| anyhow::anyhow!("--hex or --demo required"))?;
-                let b = block
-                    .ok_or_else(|| anyhow::anyhow!("--block or --demo required"))?;
+                let b = block.ok_or_else(|| anyhow::anyhow!("--block or --demo required"))?;
                 (hex_to_bytes(h)?, b)
             };
             let padded = p7::pad(&bytes, bs);
@@ -454,11 +460,11 @@ fn run_pkcs7(op: &Pkcs7Cmd) -> Result<()> {
                 let h = hex
                     .as_ref()
                     .ok_or_else(|| anyhow::anyhow!("--hex or --demo required"))?;
-                let b = block
-                    .ok_or_else(|| anyhow::anyhow!("--block or --demo required"))?;
+                let b = block.ok_or_else(|| anyhow::anyhow!("--block or --demo required"))?;
                 (hex_to_bytes(h)?, b)
             };
-            let unpadded = p7::unpad(&bytes, bs).map_err(|e| anyhow::anyhow!("unpad failed: {e}"))?;
+            let unpadded =
+                p7::unpad(&bytes, bs).map_err(|e| anyhow::anyhow!("unpad failed: {e}"))?;
             write_stdout(bytes_to_hex(unpadded));
         }
     }
@@ -485,11 +491,11 @@ fn run_patch(doc: &Option<String>, patch: &Option<String>, demo: bool) -> Result
         let p_str = patch
             .as_ref()
             .ok_or_else(|| anyhow::anyhow!("--patch or --demo required"))?;
-        let d_json: serde_json::Value = serde_json::from_str(d_str)
-            .with_context(|| format!("bad doc JSON: {d_str}"))?;
+        let d_json: serde_json::Value =
+            serde_json::from_str(d_str).with_context(|| format!("bad doc JSON: {d_str}"))?;
         let d = jsvalue_from_json(d_json)?;
-        let p_arr: Vec<serde_json::Value> = serde_json::from_str(p_str)
-            .with_context(|| format!("bad patch JSON: {p_str}"))?;
+        let p_arr: Vec<serde_json::Value> =
+            serde_json::from_str(p_str).with_context(|| format!("bad patch JSON: {p_str}"))?;
         let mut patches = Vec::with_capacity(p_arr.len());
         for op in p_arr {
             let path = op
@@ -526,8 +532,11 @@ fn run_metrics(demo: bool) -> Result<()> {
         anyhow::bail!("--demo is required for the metrics subcommand in this MVP");
     }
     // Real histogram -> Prometheus exposition: each bucket becomes a sample
-    let mut hist = Histogram::with_buckets(&[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0]);
-    for v in [0.001, 0.002, 0.003, 0.004, 0.006, 0.012, 0.05, 0.2, 1.5, 3.0] {
+    let mut hist =
+        Histogram::with_buckets(&[0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1.0, 2.5, 5.0]);
+    for v in [
+        0.001, 0.002, 0.003, 0.004, 0.006, 0.012, 0.05, 0.2, 1.5, 3.0,
+    ] {
         hist.record(v);
     }
     let mut samples = Vec::new();
@@ -544,10 +553,7 @@ fn run_metrics(demo: bool) -> Result<()> {
         name: "gateway_demo_total".into(),
         help: "Demo counter".into(),
         metric_type: MetricType::Counter,
-        samples: vec![(
-            vec![("route".into(), "demo".into())],
-            42.0,
-        )],
+        samples: vec![(vec![("route".into(), "demo".into())], 42.0)],
     };
     let gauge_metric = Metric {
         name: "gateway_demo_seconds".into(),
@@ -584,8 +590,8 @@ fn run_pem(op: &PemCmd) -> Result<()> {
         PemCmd::Demo => {
             let der = b"\x30\x82\x01\x0a\x02\x82\x01\x01\x00".to_vec(); // fake rsa key prefix
             let text = pem::encode_pem("EXAMPLE PUBLIC KEY", &der);
-            let (label, parsed) = pem::decode_pem(&text)
-                .map_err(|e| anyhow::anyhow!("demo decode failed: {e}"))?;
+            let (label, parsed) =
+                pem::decode_pem(&text).map_err(|e| anyhow::anyhow!("demo decode failed: {e}"))?;
             assert_eq!(label, "EXAMPLE PUBLIC KEY");
             assert_eq!(parsed, der);
             write_stdout(format!("ROUND_TRIP_OK LABEL={label}"));
@@ -774,7 +780,9 @@ fn substrate_splash() {
 fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
     vec![
         (
-            "jwt", "gateway::jwt_hs256", vec![
+            "jwt",
+            "gateway::jwt_hs256",
+            vec![
                 "fn b64url_encode(input: &[u8]) -> String",
                 "fn b64url_decode(input: &str) -> Result<Vec<u8>, _>",
                 "fn sign_hs256(header_b64: &str, payload_b64: &str, key: &[u8]) -> String",
@@ -783,7 +791,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "dns", "gateway::dns_message_parser", vec![
+            "dns",
+            "gateway::dns_message_parser",
+            vec![
                 "pub struct DnsHeader { id, flags, qdcount, ancount, nscount, arcount }",
                 "pub struct Question { qname, qtype, qclass }",
                 "fn parse_header(buf: &[u8]) -> Result<DnsHeader, _>",
@@ -792,7 +802,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "redis", "gateway::redis_resp", vec![
+            "redis",
+            "gateway::redis_resp",
+            vec![
                 "pub enum RespValue { SimpleString, Error, Integer, BulkString, Array }",
                 "fn encode(v: &RespValue) -> Vec<u8>",
                 "fn parse(input: &[u8]) -> Result<(RespValue, usize), _>",
@@ -801,7 +813,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "tls", "gateway::tls_record", vec![
+            "tls",
+            "gateway::tls_record",
+            vec![
                 "pub enum ContentType { ChangeCipherSpec, Alert, Handshake, ApplicationData }",
                 "pub struct ProtocolVersion { major: u8, minor: u8 }",
                 "fn parse_record(buf: &[u8]) -> Result<(ContentType, ProtocolVersion, &[u8]), _>",
@@ -810,7 +824,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "pkcs7", "gateway::pkcs7_padding", vec![
+            "pkcs7",
+            "gateway::pkcs7_padding",
+            vec![
                 "fn pad(data: &[u8], block: usize) -> Vec<u8>",
                 "fn unpad(data: &[u8], block: usize) -> Result<&[u8], _>",
                 "fn required_padding_len(len: usize, block: usize) -> usize",
@@ -819,7 +835,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "patch", "gateway::json_patch", vec![
+            "patch",
+            "gateway::json_patch",
+            vec![
                 "pub enum Patch { Add, Remove, Replace, Move, Copy, Test }",
                 "pub type JsValue = serde_json::Value",
                 "fn apply(doc: &mut JsValue, patch: &Patch) -> Result<(), _>",
@@ -828,7 +846,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "metrics", "gateway::prometheus_exposition", vec![
+            "metrics",
+            "gateway::prometheus_exposition",
+            vec![
                 "pub enum MetricType { Counter, Gauge, Histogram, Summary }",
                 "pub struct Metric { name, kind, labels, value }",
                 "fn render(metrics: &[Metric]) -> String",
@@ -837,7 +857,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "pem", "gateway::pem_codec", vec![
+            "pem",
+            "gateway::pem_codec",
+            vec![
                 "pub struct PemBlock { label, data }",
                 "fn encode(label: &str, der: &[u8]) -> String",
                 "fn decode(input: &str) -> Result<PemBlock, _>",
@@ -846,7 +868,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "m3u", "gateway::m3u_parser", vec![
+            "m3u",
+            "gateway::m3u_parser",
+            vec![
                 "pub struct Playlist { items: Vec<Entry> }",
                 "pub enum Entry { Path(String), ExtInfo { path, duration, title } }",
                 "fn parse(text: &str) -> Result<Playlist, _>",
@@ -855,7 +879,9 @@ fn inspect_registry() -> Vec<(&'static str, &'static str, Vec<&'static str>)> {
             ],
         ),
         (
-            "chunked", "gateway::chunked_transfer", vec![
+            "chunked",
+            "gateway::chunked_transfer",
+            vec![
                 "fn encode_chunks(data: &[u8], chunk: usize) -> Vec<Vec<u8>>",
                 "fn decode_chunks(chunks: &[Vec<u8>]) -> Vec<u8>",
                 "fn hex_chunk_header(n: usize) -> String",
@@ -875,7 +901,12 @@ fn run_inspect(module: Option<&str>) -> Result<()> {
             println!();
             println!("gateway utility modules ({} total):", reg.len());
             for (alias, path, sigs) in &reg {
-                println!("  - {:<9}  {:<32}  ({} public fns)", alias, path, sigs.len());
+                println!(
+                    "  - {:<9}  {:<32}  ({} public fns)",
+                    alias,
+                    path,
+                    sigs.len()
+                );
             }
             println!();
             println!("Usage: gateway-tools inspect <alias>     # dump top fn signatures");
@@ -886,7 +917,15 @@ fn run_inspect(module: Option<&str>) -> Result<()> {
             let entry = reg
                 .iter()
                 .find(|(alias, _, _)| *alias == name)
-                .ok_or_else(|| anyhow::anyhow!("unknown module `{name}`; try one of: {}", reg.iter().map(|(a, _, _)| *a).collect::<Vec<_>>().join(", ")))?;
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "unknown module `{name}`; try one of: {}",
+                        reg.iter()
+                            .map(|(a, _, _)| *a)
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                })?;
             let (alias, path, sigs) = entry;
             println!("# gateway module: {alias}");
             println!("path: {path}");
@@ -916,15 +955,9 @@ fn run_serve(port: u16, bind: String) -> Result<()> {
     eprintln!(
         "\x1b[38;2;163;113;247msubstrate serve\x1b[0m  listening on \x1b[38;2;210;153;34mhttp://{bind}:{port}\x1b[0m"
     );
-    eprintln!(
-        "  \x1b[38;2;163;113;247mGET /health\x1b[0m                  liveness probe"
-    );
-    eprintln!(
-        "  \x1b[38;2;163;113;247mGET /v1/modules\x1b[0m             module list (counts)"
-    );
-    eprintln!(
-        "  \x1b[38;2;163;113;247mGET /v1/modules/:name\x1b[0m       module details"
-    );
+    eprintln!("  \x1b[38;2;163;113;247mGET /health\x1b[0m                  liveness probe");
+    eprintln!("  \x1b[38;2;163;113;247mGET /v1/modules\x1b[0m             module list (counts)");
+    eprintln!("  \x1b[38;2;163;113;247mGET /v1/modules/:name\x1b[0m       module details");
     eprintln!(
         "  \x1b[38;2;163;113;247mGET /v1/splash\x1b[0m               ASCII splash (text/plain)"
     );
@@ -939,8 +972,7 @@ fn run_serve(port: u16, bind: String) -> Result<()> {
         .context("build tokio runtime")?
         .block_on(async move {
             axum::serve(
-                tokio::net::TcpListener::from_std(listener)
-                    .context("convert to tokio listener")?,
+                tokio::net::TcpListener::from_std(listener).context("convert to tokio listener")?,
                 routes::build_router(registry),
             )
             .with_graceful_shutdown(shutdown_signal())

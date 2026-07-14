@@ -249,10 +249,10 @@ impl StatusCode {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Class {
     Informational, // 1xx
-    Success,        // 2xx
-    Redirection,    // 3xx
-    ClientError,    // 4xx
-    ServerError,    // 5xx
+    Success,       // 2xx
+    Redirection,   // 3xx
+    ClientError,   // 4xx
+    ServerError,   // 5xx
     Unknown,
 }
 
@@ -371,9 +371,15 @@ mod tests {
     fn reason_phrase_common() {
         assert_eq!(reason_phrase(StatusCode::Ok), "OK");
         assert_eq!(reason_phrase(StatusCode::NotFound), "Not Found");
-        assert_eq!(reason_phrase(StatusCode::InternalServerError), "Internal Server Error");
+        assert_eq!(
+            reason_phrase(StatusCode::InternalServerError),
+            "Internal Server Error"
+        );
         assert_eq!(reason_phrase(StatusCode::Continue), "Continue");
-        assert_eq!(reason_phrase(StatusCode::SwitchingProtocols), "Switching Protocols");
+        assert_eq!(
+            reason_phrase(StatusCode::SwitchingProtocols),
+            "Switching Protocols"
+        );
     }
 
     #[test]

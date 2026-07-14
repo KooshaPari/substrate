@@ -90,7 +90,11 @@ impl AcAutomaton {
                 let mut f = parent_fail;
                 let mut child_fail: u32 = 0;
                 loop {
-                    let ns = nodes[f as usize].goto.iter().find(|(k, _)| *k == b).map(|(_, s)| *s);
+                    let ns = nodes[f as usize]
+                        .goto
+                        .iter()
+                        .find(|(k, _)| *k == b)
+                        .map(|(_, s)| *s);
                     if let Some(s) = ns {
                         child_fail = s;
                         break;

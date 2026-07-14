@@ -24,7 +24,7 @@
 use std::collections::BTreeMap;
 use std::collections::HashMap;
 
-use crate::promql_parse::{Aggregate, AggOp, BinOp, Expr, LabelMatcher, MatchOp, Metric};
+use crate::promql_parse::{AggOp, Aggregate, BinOp, Expr, LabelMatcher, MatchOp, Metric};
 
 /// A single time-series sample: a value tagged with arbitrary labels and a
 /// millisecond (or second, depending on caller) timestamp.
@@ -291,10 +291,7 @@ mod tests {
 
     #[test]
     fn single_metric_select_returns_all_samples() {
-        let e = engine_with(
-            "up",
-            vec![sample("api", "a", 1.0), sample("api", "b", 1.0)],
-        );
+        let e = engine_with("up", vec![sample("api", "a", 1.0), sample("api", "b", 1.0)]);
         let ast = parse("up").expect("parse");
         let got = e.eval(&ast).expect("eval");
         assert_eq!(got.len(), 2);

@@ -157,7 +157,8 @@ fn sha256_compress(state: &mut [u32; 8], block: &[u8; 64]) {
 
 fn sha256(data: &[u8]) -> [u8; SHA256_DIGEST] {
     let mut state: [u32; 8] = [
-        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
+        0x5be0cd19,
     ];
     let bit_len = (data.len() as u64).wrapping_mul(8);
     let mut i = 0;
@@ -365,10 +366,7 @@ mod tests {
         let key = vec![0xaau8; 80];
         let m = b"Test Using Larger Than Block-Size Key - Hash Key First";
         let mac = hmac_sha1(&key, m);
-        assert_eq!(
-            hex_lower(&mac),
-            "aa4ae5e15272d00e95705637ce8a3b55ed402112"
-        );
+        assert_eq!(hex_lower(&mac), "aa4ae5e15272d00e95705637ce8a3b55ed402112");
     }
 
     #[test]

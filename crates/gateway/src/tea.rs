@@ -18,14 +18,10 @@ pub fn encrypt_block(v0: u32, v1: u32, key: &[u32; 4]) -> (u32, u32) {
     for _ in 0..32 {
         sum = sum.wrapping_add(DELTA);
         v0 = v0.wrapping_add(
-            (v1 << 4).wrapping_add(key[2])
-                ^ v1.wrapping_add(sum)
-                ^ (v1 >> 5).wrapping_add(key[3]),
+            (v1 << 4).wrapping_add(key[2]) ^ v1.wrapping_add(sum) ^ (v1 >> 5).wrapping_add(key[3]),
         );
         v1 = v1.wrapping_add(
-            (v0 << 4).wrapping_add(key[0])
-                ^ v0.wrapping_add(sum)
-                ^ (v0 >> 5).wrapping_add(key[1]),
+            (v0 << 4).wrapping_add(key[0]) ^ v0.wrapping_add(sum) ^ (v0 >> 5).wrapping_add(key[1]),
         );
     }
     (v0, v1)
@@ -38,14 +34,10 @@ pub fn decrypt_block(v0: u32, v1: u32, key: &[u32; 4]) -> (u32, u32) {
     let mut sum: u32 = DELTA.wrapping_mul(32);
     for _ in 0..32 {
         v1 = v1.wrapping_sub(
-            (v0 << 4).wrapping_add(key[0])
-                ^ v0.wrapping_add(sum)
-                ^ (v0 >> 5).wrapping_add(key[1]),
+            (v0 << 4).wrapping_add(key[0]) ^ v0.wrapping_add(sum) ^ (v0 >> 5).wrapping_add(key[1]),
         );
         v0 = v0.wrapping_sub(
-            (v1 << 4).wrapping_add(key[2])
-                ^ v1.wrapping_add(sum)
-                ^ (v1 >> 5).wrapping_add(key[3]),
+            (v1 << 4).wrapping_add(key[2]) ^ v1.wrapping_add(sum) ^ (v1 >> 5).wrapping_add(key[3]),
         );
         sum = sum.wrapping_sub(DELTA);
     }
@@ -148,8 +140,7 @@ mod tests {
         let key = [0x1111_1111, 0x2222_2222, 0x3333_3333, 0x4444_4444];
         let iv = (0xAAAA_5555, 0x5555_AAAA);
         // 45 bytes -> pad to 48 to satisfy multiple-of-8.
-        let mut plaintext: Vec<u8> = b"the quick brown fox jumps over the lazy dog!!"
-            .to_vec();
+        let mut plaintext: Vec<u8> = b"the quick brown fox jumps over the lazy dog!!".to_vec();
         plaintext.extend_from_slice(&[0u8; 3]); // pad to 48
         let ct = encrypt_cbc(&plaintext, &key, iv);
         assert_eq!(ct.len(), plaintext.len());

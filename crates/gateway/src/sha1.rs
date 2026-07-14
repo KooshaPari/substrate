@@ -81,8 +81,7 @@ impl Hasher {
         if self.buffer_len > 0 {
             let need = 64 - self.buffer_len;
             let take = need.min(input.len());
-            self.buffer[self.buffer_len..self.buffer_len + take]
-                .copy_from_slice(&input[..take]);
+            self.buffer[self.buffer_len..self.buffer_len + take].copy_from_slice(&input[..take]);
             self.buffer_len += take;
             input = &input[take..];
             if self.buffer_len == 64 {
@@ -161,7 +160,10 @@ mod tests {
 
     #[test]
     fn abc() {
-        assert_eq!(to_hex(&hash(b"abc")), "a9993e364706816aba3e25717850c26c9cd0d89d");
+        assert_eq!(
+            to_hex(&hash(b"abc")),
+            "a9993e364706816aba3e25717850c26c9cd0d89d"
+        );
     }
 
     #[test]

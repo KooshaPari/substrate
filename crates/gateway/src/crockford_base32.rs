@@ -32,13 +32,13 @@ fn char_to_value(c: char) -> Option<u32> {
             let shifted = match c {
                 'A'..='H' => n + 10,
                 'I' => return None,
-                'J'..='K' => n + 10 - 1,    // skip I
+                'J'..='K' => n + 10 - 1, // skip I
                 'L' => return None,
-                'M'..='N' => n + 10 - 2,    // skip I, L
+                'M'..='N' => n + 10 - 2, // skip I, L
                 'O' => return None,
-                'P'..='T' => n + 10 - 3,    // skip I, L, O
+                'P'..='T' => n + 10 - 3, // skip I, L, O
                 'U' => return None,
-                'V'..='Z' => n + 10 - 4,    // skip I, L, O, U
+                'V'..='Z' => n + 10 - 4, // skip I, L, O, U
                 _ => unreachable!(),
             };
             Some(shifted)
@@ -207,10 +207,7 @@ mod tests {
         assert_eq!(decode("----").unwrap(), Vec::<u8>::new());
         // UUID-style groups: 12 chars * 5 bits = 60 bits / 8 = 7 bytes
         // (with 4 trailing bits dropped, per Crockford convention).
-        assert_eq!(
-            decode("8H3W-91JK-QMVK").unwrap().len(),
-            7
-        );
+        assert_eq!(decode("8H3W-91JK-QMVK").unwrap().len(), 7);
     }
 
     #[test]

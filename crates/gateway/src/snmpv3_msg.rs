@@ -110,10 +110,7 @@ pub fn parse(input: &[u8]) -> Result<V3Msg, String> {
         ));
     }
     if input[2] != 0x03 {
-        return Err(format!(
-            "expected msgVersion=3 (SNMPv3), got {}",
-            input[2]
-        ));
+        return Err(format!("expected msgVersion=3 (SNMPv3), got {}", input[2]));
     }
     let raw_header = input[..3].to_vec();
     let mut cursor = 3usize;
@@ -165,8 +162,8 @@ fn parse_msg_global_data(input: &[u8]) -> Result<(usize, u32, u32, u8, u32), Str
             input[0]
         ));
     }
-    let (content_consumed, content_len) = read_ber_length(&input[1..])
-        .map_err(|e| format!("msgGlobalData length: {e}"))?;
+    let (content_consumed, content_len) =
+        read_ber_length(&input[1..]).map_err(|e| format!("msgGlobalData length: {e}"))?;
     let total_consumed = 1 + content_consumed + content_len;
     if input.len() < total_consumed {
         return Err(format!(
@@ -207,8 +204,7 @@ fn parse_integer(input: &[u8], field: &str) -> Result<(usize, u32), String> {
             input[0]
         ));
     }
-    let (lc, len) =
-        read_ber_length(&input[1..]).map_err(|e| format!("{field} length: {e}"))?;
+    let (lc, len) = read_ber_length(&input[1..]).map_err(|e| format!("{field} length: {e}"))?;
     let total = 1 + lc + len;
     if input.len() < total {
         return Err(format!("{field} truncated"));
@@ -229,8 +225,7 @@ fn parse_octet_string(input: &[u8], field: &str) -> Result<(usize, Vec<u8>), Str
             input[0]
         ));
     }
-    let (lc, len) =
-        read_ber_length(&input[1..]).map_err(|e| format!("{field} length: {e}"))?;
+    let (lc, len) = read_ber_length(&input[1..]).map_err(|e| format!("{field} length: {e}"))?;
     let total = 1 + lc + len;
     if input.len() < total {
         return Err(format!("{field} truncated"));
@@ -303,8 +298,8 @@ mod tests {
             0x04, 0x01, 0x00, // msgFlags OCTET STRING (1 byte) 0x00
             0x02, 0x01, 0x03, // msgSecurityModel INTEGER 3
             0x04, 0x0c, // OCTET STRING len 12
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-            0x30, 0x07, // SEQUENCE len 7 (scopedPDU)
+            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30,
+            0x07, // SEQUENCE len 7 (scopedPDU)
             0x80, 0x02, 0x01, 0x03, 0xaa, 0xbb, 0xcc,
         ]
     }
@@ -347,12 +342,18 @@ mod tests {
         bytes[14] = 0x00; // noAuthNoPriv
         let msg = parse(&bytes).unwrap();
         assert_eq!(msg.flags, 0x00);
-        assert_eq!(msg.security_level, 1, "noAuthNoPriv maps to 1 per RFC 3414 §4");
+        assert_eq!(
+            msg.security_level, 1,
+            "noAuthNoPriv maps to 1 per RFC 3414 §4"
+        );
 
         bytes[14] = FLAG_AUTH; // 0b00000100 = auth only → authNoPriv
         let msg = parse(&bytes).unwrap();
         assert_eq!(msg.flags, FLAG_AUTH);
-        assert_eq!(msg.security_level, 2, "authNoPriv maps to 2 per RFC 3414 §4");
+        assert_eq!(
+            msg.security_level, 2,
+            "authNoPriv maps to 2 per RFC 3414 §4"
+        );
 
         bytes[14] = FLAG_AUTH | FLAG_PRIV; // 0b00000110 → authPriv
         let msg = parse(&bytes).unwrap();

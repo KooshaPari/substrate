@@ -368,8 +368,8 @@ mod tests {
         assert_eq!(u32::from_be_bytes([v[8], v[9], v[10], v[11]]), 8);
         assert_eq!(v[12], 3); // channels
         assert_eq!(v[13], 1); // colorspace
-        // Bare header (no body, no end marker beyond what's appended) should
-        // error because the body cannot yield 8*8*3 = 192 bytes.
+                              // Bare header (no body, no end marker beyond what's appended) should
+                              // error because the body cannot yield 8*8*3 = 192 bytes.
         assert!(decode(&v).is_err());
     }
 }

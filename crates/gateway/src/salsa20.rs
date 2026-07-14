@@ -64,12 +64,8 @@ pub fn state_from_parts(key: &[u8; 32], nonce: &[u8; 8], counter: u64) -> [u32; 
     state[15] = SIGMA[3];
     // Key (little-endian).
     for i in 0..8 {
-        state[1 + i] = u32::from_le_bytes([
-            key[4 * i],
-            key[4 * i + 1],
-            key[4 * i + 2],
-            key[4 * i + 3],
-        ]);
+        state[1 + i] =
+            u32::from_le_bytes([key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3]]);
     }
     // Counter (little-endian, 2 x u32).
     let c_lo = counter as u32;
@@ -158,7 +154,11 @@ mod tests {
         // Just verify the keystream is non-trivial and has the
         // expected entropy characteristics.
         let nonzero_bytes = data.iter().filter(|&&b| b != 0).count();
-        assert!(nonzero_bytes > 50, "expected at least 50 non-zero bytes, got {}", nonzero_bytes);
+        assert!(
+            nonzero_bytes > 50,
+            "expected at least 50 non-zero bytes, got {}",
+            nonzero_bytes
+        );
         // And it's deterministic.
         let mut data2 = [0u8; 64];
         apply(&mut data2, &key, &nonce, 0, 20);

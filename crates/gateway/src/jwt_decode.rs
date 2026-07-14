@@ -62,7 +62,10 @@ impl<'a> Parser<'a> {
                 self.pos += 1;
                 Ok(())
             }
-            Some(c) => Err(format!("expected {:?} at {}, got {:?}", ch as char, self.pos, c as char)),
+            Some(c) => Err(format!(
+                "expected {:?} at {}, got {:?}",
+                ch as char, self.pos, c as char
+            )),
             None => Err(format!("expected {:?} at end of input", ch as char)),
         }
     }
@@ -228,7 +231,8 @@ impl<'a> Parser<'a> {
             }
         }
         let s = &self.input[start..self.pos];
-        s.parse::<f64>().map_err(|e| format!("bad number {:?}: {}", s, e))
+        s.parse::<f64>()
+            .map_err(|e| format!("bad number {:?}: {}", s, e))
     }
 
     fn expect_keyword(&mut self, kw: &[u8]) -> Result<(), String> {
@@ -310,10 +314,10 @@ pub fn decode_unsigned(token: &str) -> Result<Jwt, String> {
     }
     let header_bytes = b64url_decode(header_b64)?;
     let payload_bytes = b64url_decode(payload_b64)?;
-    let header_str = std::str::from_utf8(&header_bytes)
-        .map_err(|e| format!("header not UTF-8: {}", e))?;
-    let payload_str = std::str::from_utf8(&payload_bytes)
-        .map_err(|e| format!("payload not UTF-8: {}", e))?;
+    let header_str =
+        std::str::from_utf8(&header_bytes).map_err(|e| format!("header not UTF-8: {}", e))?;
+    let payload_str =
+        std::str::from_utf8(&payload_bytes).map_err(|e| format!("payload not UTF-8: {}", e))?;
     Ok(Jwt {
         header: parse_json(header_str)?,
         payload: parse_json(payload_str)?,
@@ -345,7 +349,13 @@ mod tests {
     fn decode_header() {
         let jwt = decode_unsigned(SAMPLE_TOKEN).unwrap();
         let alg = match &jwt.header {
-            Json::Object(m) => m.get("alg").and_then(|v| if let Json::String(s) = v { Some(s.as_str()) } else { None }),
+            Json::Object(m) => m.get("alg").and_then(|v| {
+                if let Json::String(s) = v {
+                    Some(s.as_str())
+                } else {
+                    None
+                }
+            }),
             _ => None,
         }
         .unwrap();

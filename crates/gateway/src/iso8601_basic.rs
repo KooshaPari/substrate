@@ -44,9 +44,9 @@ pub struct Date {
 /// Hour/Minute/Second with optional UTC offset, in minutes east of UTC.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct Time {
-    pub hour: u8,         // 0..=23
-    pub minute: u8,       // 0..=59
-    pub second: u8,       // 0..=60 (leap second allowed)
+    pub hour: u8,                    // 0..=23
+    pub minute: u8,                  // 0..=59
+    pub second: u8,                  // 0..=60 (leap second allowed)
     pub offset_minutes: Option<i32>, // None == "no zone info"
 }
 
@@ -334,7 +334,14 @@ fn parse_duration(sign_prefix: &str, s: &str) -> Result<Parsed, ParseError> {
         }
         parse_duration_segment(tp, true, &mut d)?;
     }
-    if d.years == 0 && d.months == 0 && d.weeks == 0 && d.days == 0 && d.hours == 0 && d.minutes == 0 && d.seconds == 0 {
+    if d.years == 0
+        && d.months == 0
+        && d.weeks == 0
+        && d.days == 0
+        && d.hours == 0
+        && d.minutes == 0
+        && d.seconds == 0
+    {
         return Err(ParseError {
             kind: ParseErrorKind::Empty,
             message: "duration had no components".to_string(),
@@ -343,11 +350,7 @@ fn parse_duration(sign_prefix: &str, s: &str) -> Result<Parsed, ParseError> {
     Ok(Parsed::Duration(d))
 }
 
-fn parse_duration_segment(
-    body: &str,
-    is_time: bool,
-    d: &mut Duration,
-) -> Result<(), ParseError> {
+fn parse_duration_segment(body: &str, is_time: bool, d: &mut Duration) -> Result<(), ParseError> {
     let mut i = 0;
     let bytes = body.as_bytes();
     let mut any = false;
@@ -465,12 +468,7 @@ pub fn format_time(t: Time) -> String {
         Some(off) => {
             let sign = if off < 0 { '-' } else { '+' };
             let abs = off.unsigned_abs();
-            s.push_str(&format!(
-                "{}{:02}:{:02}",
-                sign,
-                abs / 60,
-                abs % 60
-            ));
+            s.push_str(&format!("{}{:02}:{:02}", sign, abs / 60, abs % 60));
         }
         None => {}
     }

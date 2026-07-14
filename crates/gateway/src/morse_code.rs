@@ -135,7 +135,10 @@ mod tests {
 
     #[test]
     fn encode_multiple_words() {
-        assert_eq!(encode("HELLO WORLD"), ".... . .-.. .-.. --- / .-- --- .-. .-.. -..");
+        assert_eq!(
+            encode("HELLO WORLD"),
+            ".... . .-.. .-.. --- / .-- --- .-. .-.. -.."
+        );
     }
 
     #[test]

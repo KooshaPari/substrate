@@ -136,11 +136,9 @@ fn decode_int(input: &[u8], cur: &mut usize) -> Result<BencodeValue, DecodeError
     if *cur >= input.len() {
         return Err(DecodeError::UnterminatedInteger);
     }
-    let s = std::str::from_utf8(&input[start..*cur])
-        .map_err(|_| DecodeError::InvalidDigit(b'?'))?;
-    let i: i64 = s
-        .parse()
-        .map_err(|_| DecodeError::InvalidDigit(b'?'))?;
+    let s =
+        std::str::from_utf8(&input[start..*cur]).map_err(|_| DecodeError::InvalidDigit(b'?'))?;
+    let i: i64 = s.parse().map_err(|_| DecodeError::InvalidDigit(b'?'))?;
     *cur += 1; // consume 'e'
     Ok(BencodeValue::Int(i))
 }
@@ -157,11 +155,9 @@ fn decode_bytes(input: &[u8], cur: &mut usize) -> Result<BencodeValue, DecodeErr
     if *cur >= input.len() {
         return Err(DecodeError::UnexpectedEof);
     }
-    let s = std::str::from_utf8(&input[start..*cur])
-        .map_err(|_| DecodeError::InvalidDigit(b'?'))?;
-    let len: usize = s
-        .parse()
-        .map_err(|_| DecodeError::InvalidDigit(b'?'))?;
+    let s =
+        std::str::from_utf8(&input[start..*cur]).map_err(|_| DecodeError::InvalidDigit(b'?'))?;
+    let len: usize = s.parse().map_err(|_| DecodeError::InvalidDigit(b'?'))?;
     *cur += 1; // consume ':'
     if len > input.len() - *cur {
         return Err(DecodeError::LengthExceedsInput(len));
@@ -293,7 +289,10 @@ mod tests {
         assert_eq!(n, r.len());
         if let BencodeValue::Dict(d) = v {
             let announce = d.get(b"announce".as_ref()).unwrap();
-            assert_eq!(announce, &BencodeValue::Bytes(b"http://tracker.example.com/".to_vec()));
+            assert_eq!(
+                announce,
+                &BencodeValue::Bytes(b"http://tracker.example.com/".to_vec())
+            );
         } else {
             panic!();
         }
@@ -361,7 +360,10 @@ mod tests {
         inner.insert(b"x".to_vec(), BencodeValue::Int(1));
         let v = BencodeValue::Dict({
             let mut m = BTreeMap::new();
-            m.insert(b"list".to_vec(), BencodeValue::List(vec![BencodeValue::Dict(inner)]));
+            m.insert(
+                b"list".to_vec(),
+                BencodeValue::List(vec![BencodeValue::Dict(inner)]),
+            );
             m
         });
         let e = encode(&v);

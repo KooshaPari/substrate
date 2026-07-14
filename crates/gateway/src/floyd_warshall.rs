@@ -25,7 +25,9 @@ pub fn build_adjacency<N: Hash + Eq + Clone, C: Copy>(
 ) -> HashMap<N, Vec<(N, C)>> {
     let mut adj: HashMap<N, Vec<(N, C)>> = HashMap::new();
     for e in edges {
-        adj.entry(e.from.clone()).or_default().push((e.to.clone(), e.cost));
+        adj.entry(e.from.clone())
+            .or_default()
+            .push((e.to.clone(), e.cost));
     }
     adj
 }
@@ -44,7 +46,9 @@ pub struct AllPairs<C> {
 
 impl<C: Copy + Default + Add<Output = C> + Ord> AllPairs<C> {
     pub fn distance(&self, from: usize, to: usize) -> Option<C> {
-        self.dist.get(from).and_then(|row| row.get(to).copied().flatten())
+        self.dist
+            .get(from)
+            .and_then(|row| row.get(to).copied().flatten())
     }
     /// Reconstruct shortest path from `from` to `to` (both node indices).
     pub fn path(&self, from: usize, to: usize) -> Option<Vec<usize>> {
@@ -84,10 +88,7 @@ impl<C: Copy + Default + Add<Output = C> + Ord> AllPairs<C> {
 ///
 /// `nodes` lists every node that may appear. Edges outside this list are
 /// ignored. Returns the `AllPairs` structure with `dist` and `next` matrices.
-pub fn floyd_warshall<N, C>(
-    nodes: &[N],
-    edges: &[Edge<N, C>],
-) -> AllPairs<C>
+pub fn floyd_warshall<N, C>(nodes: &[N], edges: &[Edge<N, C>]) -> AllPairs<C>
 where
     N: Hash + Eq + Clone,
     C: Copy + Default + Add<Output = C> + Ord,
@@ -157,8 +158,16 @@ mod tests {
     fn three_node_line() {
         let nodes = vec!["A", "B", "C"];
         let edges = vec![
-            Edge { from: "A", to: "B", cost: 1u32 },
-            Edge { from: "B", to: "C", cost: 2u32 },
+            Edge {
+                from: "A",
+                to: "B",
+                cost: 1u32,
+            },
+            Edge {
+                from: "B",
+                to: "C",
+                cost: 2u32,
+            },
         ];
         let ap = floyd_warshall(&nodes, &edges);
         assert_eq!(ap.distance(0, 2), Some(3));
@@ -171,9 +180,21 @@ mod tests {
         // A→B (1), B→C (1), A→C (5). A→B→C = 2 beats direct 5.
         let nodes = vec!["A", "B", "C"];
         let edges = vec![
-            Edge { from: "A", to: "B", cost: 1u32 },
-            Edge { from: "B", to: "C", cost: 1u32 },
-            Edge { from: "A", to: "C", cost: 5u32 },
+            Edge {
+                from: "A",
+                to: "B",
+                cost: 1u32,
+            },
+            Edge {
+                from: "B",
+                to: "C",
+                cost: 1u32,
+            },
+            Edge {
+                from: "A",
+                to: "C",
+                cost: 5u32,
+            },
         ];
         let ap = floyd_warshall(&nodes, &edges);
         assert_eq!(ap.distance(0, 2), Some(2));
@@ -183,9 +204,21 @@ mod tests {
     fn path_reconstruction() {
         let nodes = vec!["A", "B", "C", "D"];
         let edges = vec![
-            Edge { from: "A", to: "B", cost: 1u32 },
-            Edge { from: "B", to: "C", cost: 2u32 },
-            Edge { from: "C", to: "D", cost: 3u32 },
+            Edge {
+                from: "A",
+                to: "B",
+                cost: 1u32,
+            },
+            Edge {
+                from: "B",
+                to: "C",
+                cost: 2u32,
+            },
+            Edge {
+                from: "C",
+                to: "D",
+                cost: 3u32,
+            },
         ];
         let ap = floyd_warshall(&nodes, &edges);
         let path = ap.path(0, 3).unwrap();
@@ -195,7 +228,11 @@ mod tests {
     #[test]
     fn unreachable_pair() {
         let nodes = vec!["A", "B"];
-        let edges = vec![Edge { from: "A", to: "B", cost: 5u32 }];
+        let edges = vec![Edge {
+            from: "A",
+            to: "B",
+            cost: 5u32,
+        }];
         let ap = floyd_warshall(&nodes, &edges);
         assert_eq!(ap.distance(0, 1), Some(5));
         assert_eq!(ap.distance(1, 0), None);
@@ -215,9 +252,21 @@ mod tests {
     fn negative_edges_but_no_negative_cycle() {
         let nodes = vec!["A", "B", "C"];
         let edges = vec![
-            Edge { from: "A", to: "B", cost: 4i32 },
-            Edge { from: "B", to: "C", cost: -5i32 },
-            Edge { from: "A", to: "C", cost: 1i32 },
+            Edge {
+                from: "A",
+                to: "B",
+                cost: 4i32,
+            },
+            Edge {
+                from: "B",
+                to: "C",
+                cost: -5i32,
+            },
+            Edge {
+                from: "A",
+                to: "C",
+                cost: 1i32,
+            },
         ];
         let ap = floyd_warshall(&nodes, &edges);
         // A→B→C = -1 < 1
@@ -229,8 +278,16 @@ mod tests {
     fn negative_cycle_detected() {
         let nodes = vec!["A", "B"];
         let edges = vec![
-            Edge { from: "A", to: "B", cost: 1i32 },
-            Edge { from: "B", to: "A", cost: -3i32 },
+            Edge {
+                from: "A",
+                to: "B",
+                cost: 1i32,
+            },
+            Edge {
+                from: "B",
+                to: "A",
+                cost: -3i32,
+            },
         ];
         let ap = floyd_warshall(&nodes, &edges);
         assert!(ap.has_negative_cycle());
@@ -239,9 +296,21 @@ mod tests {
     #[test]
     fn build_adjacency_groups_edges() {
         let edges = vec![
-            Edge { from: "X", to: "Y", cost: 1u32 },
-            Edge { from: "X", to: "Z", cost: 2u32 },
-            Edge { from: "Y", to: "Z", cost: 3u32 },
+            Edge {
+                from: "X",
+                to: "Y",
+                cost: 1u32,
+            },
+            Edge {
+                from: "X",
+                to: "Z",
+                cost: 2u32,
+            },
+            Edge {
+                from: "Y",
+                to: "Z",
+                cost: 3u32,
+            },
         ];
         let adj = build_adjacency(&edges);
         assert_eq!(adj.get("X").unwrap().len(), 2);

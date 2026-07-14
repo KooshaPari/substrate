@@ -51,18 +51,9 @@ pub fn encode(data: u8) -> u8 {
 /// 1-indexed position of the flipped bit (`1..=7`).
 pub fn decode(codeword: u8) -> (u8, u8, Option<u8>) {
     let cw = codeword & 0x7F;
-    let s1 = ((cw >> 0) & 1)
-        ^ ((cw >> 2) & 1)
-        ^ ((cw >> 4) & 1)
-        ^ ((cw >> 6) & 1);
-    let s2 = ((cw >> 1) & 1)
-        ^ ((cw >> 2) & 1)
-        ^ ((cw >> 5) & 1)
-        ^ ((cw >> 6) & 1);
-    let s4 = ((cw >> 3) & 1)
-        ^ ((cw >> 4) & 1)
-        ^ ((cw >> 5) & 1)
-        ^ ((cw >> 6) & 1);
+    let s1 = ((cw >> 0) & 1) ^ ((cw >> 2) & 1) ^ ((cw >> 4) & 1) ^ ((cw >> 6) & 1);
+    let s2 = ((cw >> 1) & 1) ^ ((cw >> 2) & 1) ^ ((cw >> 5) & 1) ^ ((cw >> 6) & 1);
+    let s4 = ((cw >> 3) & 1) ^ ((cw >> 4) & 1) ^ ((cw >> 5) & 1) ^ ((cw >> 6) & 1);
     let syndrome = s1 | (s2 << 1) | (s4 << 2);
     let cw = if syndrome != 0 {
         cw ^ (1u8 << (syndrome - 1))
@@ -106,18 +97,9 @@ pub fn decode_secded(byte: u8) -> SecdedResult {
     let byte = byte & 0xFF;
     let overall_parity = (byte.count_ones() & 1) as u8;
     let c = byte & 0x7F;
-    let s1 = ((c >> 0) & 1)
-        ^ ((c >> 2) & 1)
-        ^ ((c >> 4) & 1)
-        ^ ((c >> 6) & 1);
-    let s2 = ((c >> 1) & 1)
-        ^ ((c >> 2) & 1)
-        ^ ((c >> 5) & 1)
-        ^ ((c >> 6) & 1);
-    let s4 = ((c >> 3) & 1)
-        ^ ((c >> 4) & 1)
-        ^ ((c >> 5) & 1)
-        ^ ((c >> 6) & 1);
+    let s1 = ((c >> 0) & 1) ^ ((c >> 2) & 1) ^ ((c >> 4) & 1) ^ ((c >> 6) & 1);
+    let s2 = ((c >> 1) & 1) ^ ((c >> 2) & 1) ^ ((c >> 5) & 1) ^ ((c >> 6) & 1);
+    let s4 = ((c >> 3) & 1) ^ ((c >> 4) & 1) ^ ((c >> 5) & 1) ^ ((c >> 6) & 1);
     let syndrome = s1 | (s2 << 1) | (s4 << 2);
     let decode_data = |cw: u8| -> u8 {
         let d1 = (cw >> 2) & 0x01;
@@ -128,16 +110,24 @@ pub fn decode_secded(byte: u8) -> SecdedResult {
     };
     match (syndrome, overall_parity) {
         // Clean codeword.
-        (0, 0) => SecdedResult::Ok { data: decode_data(c) },
+        (0, 0) => SecdedResult::Ok {
+            data: decode_data(c),
+        },
         // Syndrome nonzero AND overall parity flipped -> single-bit error
         // in the Hamming portion. Correct it.
         (s, 1) if s != 0 => {
             let corrected = c ^ (1u8 << (s - 1));
-            SecdedResult::Corrected { data: decode_data(corrected), error_bit: s }
+            SecdedResult::Corrected {
+                data: decode_data(corrected),
+                error_bit: s,
+            }
         }
         // Syndrome zero but overall parity flipped -> bit 7 (overall
         // parity bit) flipped. The Hamming portion is intact.
-        (0, _) => SecdedResult::Corrected { data: decode_data(c), error_bit: 8 },
+        (0, _) => SecdedResult::Corrected {
+            data: decode_data(c),
+            error_bit: 8,
+        },
         // Syndrome nonzero but overall parity unchanged -> two-bit
         // error pattern (errors cancel parity). Uncorrectable.
         (_, 0) => SecdedResult::DoubleError,
@@ -234,9 +224,7 @@ mod tests {
                     assert_eq!(data, d, "bit={bit}");
                     assert_eq!(error_bit, bit + 1, "bit={bit}");
                 }
-                other => panic!(
-                    "expected Corrected for d={d:04b} bit={bit}, got {other:?}"
-                ),
+                other => panic!("expected Corrected for d={d:04b} bit={bit}, got {other:?}"),
             }
         }
     }

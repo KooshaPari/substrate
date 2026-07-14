@@ -191,7 +191,7 @@ mod tests {
         v.extend_from_slice(&(file_size as u32).to_le_bytes());
         v.extend_from_slice(&[0u8; 4]); // reserved1 + reserved2
         v.extend_from_slice(&(14u32 + 40).to_le_bytes()); // pixel offset
-        // BITMAPINFOHEADER
+                                                          // BITMAPINFOHEADER
         v.extend_from_slice(&40u32.to_le_bytes());
         v.extend_from_slice(&width.to_le_bytes());
         v.extend_from_slice(&height.to_le_bytes());

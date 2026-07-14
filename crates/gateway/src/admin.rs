@@ -218,7 +218,9 @@ fn err_json(status: StatusCode, msg: impl Into<String>) -> (StatusCode, Json<ser
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{budget, cache2::TtlCache2, config_watcher::FileConfig, metrics::MetricsStore, AppState};
+    use crate::{
+        budget, cache2::TtlCache2, config_watcher::FileConfig, metrics::MetricsStore, AppState,
+    };
     use axum::{
         body::Body,
         http::{Request, StatusCode},
@@ -249,9 +251,9 @@ mod tests {
             }),
             log_store: crate::new_log_store(),
             live_config: Arc::new(TokioRwLock::new(FileConfig::default())),
-            response_cache: Arc::new(std::sync::Mutex::new(
-                TtlCache2::new(std::time::Duration::from_secs(300)),
-            )),
+            response_cache: Arc::new(std::sync::Mutex::new(TtlCache2::new(
+                std::time::Duration::from_secs(300),
+            ))),
         }
     }
 

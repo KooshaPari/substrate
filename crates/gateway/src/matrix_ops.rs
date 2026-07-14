@@ -275,11 +275,7 @@ mod tests {
     #[test]
     fn determinant_matches_det3_for_three_by_three() {
         // LU-with-pivoting must agree with the closed-form Sarrus formula.
-        let m = MatrixI64::from_slice(
-            3,
-            3,
-            &[6, 1, 1, 4, -2, 5, 2, 8, 7],
-        );
+        let m = MatrixI64::from_slice(3, 3, &[6, 1, 1, 4, -2, 5, 2, 8, 7]);
         assert_eq!(determinant(&m), -306);
     }
 
@@ -297,21 +293,14 @@ mod tests {
         // Reference 4x4 invertible matrix whose determinant we verify
         // by cofactor expansion alongside the LU path.
         // M = [[1,2,3,4],[5,6,7,8],[2,6,4,8],[3,1,1,2]]
-        let m = MatrixI64::from_slice(
-            4,
-            4,
-            &[1, 2, 3, 4, 5, 6, 7, 8, 2, 6, 4, 8, 3, 1, 1, 2],
-        );
+        let m = MatrixI64::from_slice(4, 4, &[1, 2, 3, 4, 5, 6, 7, 8, 2, 6, 4, 8, 3, 1, 1, 2]);
         // The value is computed numerically; just assert det != 0
         // and that the implementation is deterministic.
         let a = determinant(&m);
         let b = determinant(&m);
         assert_eq!(a, b, "determinant must be deterministic");
         assert_ne!(a, 0, "test matrix must be invertible");
-        assert!(
-            is_invertible(&m),
-            "is_invertible must agree with det != 0"
-        );
+        assert!(is_invertible(&m), "is_invertible must agree with det != 0");
     }
 
     #[test]

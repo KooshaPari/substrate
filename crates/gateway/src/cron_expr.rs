@@ -96,8 +96,14 @@ pub fn parse(input: &str) -> Result<CronExpr, CronError> {
 
 fn map_field(name: &'static str, e: FieldErr) -> CronError {
     match e {
-        FieldErr::BadNumber(v) => CronError::BadNumber { field: name, value: v },
-        FieldErr::OutOfRange(v) => CronError::OutOfRange { field: name, value: v },
+        FieldErr::BadNumber(v) => CronError::BadNumber {
+            field: name,
+            value: v,
+        },
+        FieldErr::OutOfRange(v) => CronError::OutOfRange {
+            field: name,
+            value: v,
+        },
         FieldErr::BadStep => CronError::BadStep { field: name },
     }
 }
@@ -115,9 +121,7 @@ fn parse_field(field: &str, min: u8, max: u8) -> Result<BTreeSet<u8>, FieldErr> 
     for part in field.split(',') {
         let (range_str, step) = match part.split_once('/') {
             Some((r, s)) => {
-                let step: u8 = s
-                    .parse()
-                    .map_err(|_| FieldErr::BadStep)?;
+                let step: u8 = s.parse().map_err(|_| FieldErr::BadStep)?;
                 if step == 0 {
                     return Err(FieldErr::BadStep);
                 }
@@ -128,8 +132,12 @@ fn parse_field(field: &str, min: u8, max: u8) -> Result<BTreeSet<u8>, FieldErr> 
         let (lo, hi) = if range_str == "*" {
             (min, max)
         } else if let Some((a, b)) = range_str.split_once('-') {
-            let a: u8 = a.parse().map_err(|_| FieldErr::BadNumber(range_str.into()))?;
-            let b: u8 = b.parse().map_err(|_| FieldErr::BadNumber(range_str.into()))?;
+            let a: u8 = a
+                .parse()
+                .map_err(|_| FieldErr::BadNumber(range_str.into()))?;
+            let b: u8 = b
+                .parse()
+                .map_err(|_| FieldErr::BadNumber(range_str.into()))?;
             (a, b)
         } else {
             let n: u8 = range_str
@@ -154,7 +162,10 @@ fn parse_field(field: &str, min: u8, max: u8) -> Result<BTreeSet<u8>, FieldErr> 
 /// day-of-week) match this cron expression.
 impl CronExpr {
     pub fn matches_time(&self, minute: u8, hour: u8, day: u8, month: u8, dow: u8) -> bool {
-        if !self.minutes.contains(&minute) || !self.hours.contains(&hour) || !self.months.contains(&month) {
+        if !self.minutes.contains(&minute)
+            || !self.hours.contains(&hour)
+            || !self.months.contains(&month)
+        {
             return false;
         }
         // Combine day-of-month and day-of-week per Unix cron semantics:

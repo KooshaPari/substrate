@@ -40,7 +40,11 @@ pub fn merkle_root(leaves: &[[u8; 32]]) -> [u8; 32] {
         let mut i = 0;
         while i < level.len() {
             let left = level[i];
-            let right = if i + 1 < level.len() { level[i + 1] } else { level[i] };
+            let right = if i + 1 < level.len() {
+                level[i + 1]
+            } else {
+                level[i]
+            };
             let mut buf = [0u8; 1 + 32 + 32];
             buf[0] = NODE_PREFIX;
             buf[1..33].copy_from_slice(&left);
@@ -112,7 +116,11 @@ pub fn build_proof(leaves: &[[u8; 32]], index: usize) -> Option<MerkleProof> {
         let mut i = 0;
         while i < level.len() {
             let left = level[i];
-            let right = if i + 1 < level.len() { level[i + 1] } else { level[i] };
+            let right = if i + 1 < level.len() {
+                level[i + 1]
+            } else {
+                level[i]
+            };
             let mut buf = [0u8; 1 + 32 + 32];
             buf[0] = NODE_PREFIX;
             buf[1..33].copy_from_slice(&left);

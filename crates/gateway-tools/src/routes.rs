@@ -84,7 +84,13 @@ pub const KNOWN_MODULES: &[ModuleEntry] = &[
     (
         "http1_request",
         "Minimal HTTP/1.1 request line + header parser.",
-        &["parse_request_line", "parse_headers", "Method", "Uri", "Version"],
+        &[
+            "parse_request_line",
+            "parse_headers",
+            "Method",
+            "Uri",
+            "Version",
+        ],
         5,
     ),
     (
@@ -149,7 +155,10 @@ impl Registry {
     pub fn new() -> Self {
         let summaries = KNOWN_MODULES
             .iter()
-            .map(|(name, _desc, _fns, fn_count)| ModuleSummary { name, fns: *fn_count })
+            .map(|(name, _desc, _fns, fn_count)| ModuleSummary {
+                name,
+                fns: *fn_count,
+            })
             .collect();
         Self(Arc::new(summaries))
     }
@@ -223,8 +232,9 @@ async fn get_module(
     axum::extract::State(reg): axum::extract::State<Registry>,
     axum::extract::Path(name): axum::extract::Path<String>,
 ) -> axum::response::Response {
-    if let Some((entry_name, desc, fns, _count)) =
-        KNOWN_MODULES.iter().find(|(n, _, _, _)| *n == name.as_str())
+    if let Some((entry_name, desc, fns, _count)) = KNOWN_MODULES
+        .iter()
+        .find(|(n, _, _, _)| *n == name.as_str())
     {
         let body = serde_json::json!({
             "name": entry_name,
@@ -481,7 +491,12 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
-        let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+        let ct = resp
+            .headers()
+            .get("content-type")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(ct.starts_with("text/plain"), "got content-type `{ct}`");
         let bytes = to_bytes(resp.into_body(), 64 * 1024).await.unwrap();
         assert!(std::str::from_utf8(&bytes).unwrap().contains("____"));
@@ -500,7 +515,12 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(resp.status(), StatusCode::OK);
-        let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+        let ct = resp
+            .headers()
+            .get("content-type")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(ct.starts_with("text/html"), "got content-type `{ct}`");
         let bytes = to_bytes(resp.into_body(), 256 * 1024).await.unwrap();
         let body = std::str::from_utf8(&bytes).unwrap();
@@ -531,7 +551,12 @@ mod tests {
         .await
         .unwrap();
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
-        let ct = resp.headers().get("content-type").unwrap().to_str().unwrap();
+        let ct = resp
+            .headers()
+            .get("content-type")
+            .unwrap()
+            .to_str()
+            .unwrap();
         assert!(ct.starts_with("text/html"), "got content-type `{ct}`");
         let bytes = to_bytes(resp.into_body(), 64 * 1024).await.unwrap();
         let body = std::str::from_utf8(&bytes).unwrap();

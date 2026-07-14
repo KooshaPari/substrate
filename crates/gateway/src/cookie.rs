@@ -187,8 +187,9 @@ mod tests {
 
     #[test]
     fn response_with_attributes() {
-        let c = parse_response_header("id=abc; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=3600")
-            .unwrap();
+        let c =
+            parse_response_header("id=abc; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=3600")
+                .unwrap();
         assert_eq!(c.name, "id");
         assert_eq!(c.path.as_deref(), Some("/"));
         assert!(c.secure);
@@ -217,8 +218,9 @@ mod tests {
 
     #[test]
     fn response_domain_and_expires() {
-        let c = parse_response_header("a=b; Domain=example.com; Expires=Wed, 21 Oct 2026 07:28:00 GMT")
-            .unwrap();
+        let c =
+            parse_response_header("a=b; Domain=example.com; Expires=Wed, 21 Oct 2026 07:28:00 GMT")
+                .unwrap();
         assert_eq!(c.domain.as_deref(), Some("example.com"));
         assert_eq!(c.expires.as_deref(), Some("Wed, 21 Oct 2026 07:28:00 GMT"));
     }

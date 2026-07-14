@@ -304,7 +304,11 @@ pub fn inverse(a: &Matrix) -> Result<Matrix, SolveError> {
     for (i, row) in a.iter().enumerate() {
         let mut r = row.clone();
         for j in 0..n {
-            r.push(if i == j { Rational::one() } else { Rational::zero() });
+            r.push(if i == j {
+                Rational::one()
+            } else {
+                Rational::zero()
+            });
         }
         aug.push(r);
     }
@@ -423,7 +427,10 @@ mod tests {
     }
 
     fn mat2(a: (i64, i64), b: (i64, i64), c: (i64, i64), d: (i64, i64)) -> Matrix {
-        vec![vec![q(a.0, a.1), q(b.0, b.1)], vec![q(c.0, c.1), q(d.0, d.1)]]
+        vec![
+            vec![q(a.0, a.1), q(b.0, b.1)],
+            vec![q(c.0, c.1), q(d.0, d.1)],
+        ]
     }
 
     fn mat3(
@@ -560,7 +567,10 @@ mod tests {
 
     #[test]
     fn inverse_non_square_rejected() {
-        let a: Matrix = vec![vec![q(1, 1), q(2, 1), q(3, 1)], vec![q(4, 1), q(5, 1), q(6, 1)]];
+        let a: Matrix = vec![
+            vec![q(1, 1), q(2, 1), q(3, 1)],
+            vec![q(4, 1), q(5, 1), q(6, 1)],
+        ];
         let err = inverse(&a).unwrap_err();
         assert_eq!(err, SolveError::NotSquare { rows: 2, cols: 2 });
     }

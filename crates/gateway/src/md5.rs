@@ -11,10 +11,9 @@
 
 const INIT: [u32; 4] = [0x67452301, 0xefcdab89, 0x98badcfe, 0x10325476];
 const SHIFT_AMOUNTS: [u32; 64] = [
-    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-    5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
-    4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-    6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
+    7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9,
+    14, 20, 5, 9, 14, 20, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 6, 10, 15,
+    21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21,
 ];
 
 // Per-round constants K[i] = floor(2^32 * abs(sin(i+1))).
@@ -104,8 +103,7 @@ impl Hasher {
         if self.buffer_len > 0 {
             let need = 64 - self.buffer_len;
             let take = need.min(input.len());
-            self.buffer[self.buffer_len..self.buffer_len + take]
-                .copy_from_slice(&input[..take]);
+            self.buffer[self.buffer_len..self.buffer_len + take].copy_from_slice(&input[..take]);
             self.buffer_len += take;
             input = &input[take..];
             if self.buffer_len == 64 {
@@ -195,7 +193,10 @@ mod tests {
 
     #[test]
     fn hello_world() {
-        assert_eq!(to_hex(&hash(b"hello world")), "5eb63bbbe01eeed093cb22bb8f5acdc3");
+        assert_eq!(
+            to_hex(&hash(b"hello world")),
+            "5eb63bbbe01eeed093cb22bb8f5acdc3"
+        );
     }
 
     #[test]
@@ -261,6 +262,8 @@ mod tests {
     fn hex_is_lowercase_32_chars() {
         let s = to_hex(&hash(b"test"));
         assert_eq!(s.len(), 32);
-        assert!(s.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()));
+        assert!(s
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()));
     }
 }

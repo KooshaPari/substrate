@@ -139,9 +139,8 @@ pub fn parse_si(s: &str, base: u32) -> Result<u64, String> {
             // Unit-only suffixes (no prefix). Common SI base units: B (bytes),
             // Hz (hertz), V/W/A (electric), s (seconds), N (newtons), J
             // (joules), F (farads), d (days — informal), etc.
-            Some('b') | Some('h') | Some('z') | Some('s') | Some('v') | Some('w')
-            | Some('a') | Some('n') | Some('j') | Some('f') | Some('d')
-            | Some('c') | Some('y') => 1,
+            Some('b') | Some('h') | Some('z') | Some('s') | Some('v') | Some('w') | Some('a')
+            | Some('n') | Some('j') | Some('f') | Some('d') | Some('c') | Some('y') => 1,
             _ => {
                 return Err(format!("unknown prefix '{}'", alpha));
             }
@@ -205,7 +204,14 @@ mod tests {
         // `format_si(0)` renders "0 B" (no prefix), and 0 round-tripped is 0,
         // which is 0% not within the 5% band. Skip the degenerate zero case.
         // The non-zero samples exercise every decimal prefix (kB, MB, GB).
-        for n in [500u64, 1000, 1500, 1_000_000, 1_500_000_000, 1_500_000_000_000] {
+        for n in [
+            500u64,
+            1000,
+            1500,
+            1_000_000,
+            1_500_000_000,
+            1_500_000_000_000,
+        ] {
             let formatted = format_si(n, 1000, "B");
             // Round-trip should be within 5% (format rounds to 2 digits).
             let parsed = parse_si(&formatted, 1000).unwrap();

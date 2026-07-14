@@ -71,12 +71,7 @@ pub fn lz77_compress_with(input: &[u8], window: usize, min_match: usize) -> Vec<
 /// `input[start..i]`. Returns `(distance, length)` where `distance`
 /// is the offset back from `i` and `length` is the match length.
 /// Returns `(0, 0)` if no match of at least `min_match` exists.
-fn find_longest_match(
-    input: &[u8],
-    start: usize,
-    i: usize,
-    min_match: usize,
-) -> (usize, usize) {
+fn find_longest_match(input: &[u8], start: usize, i: usize, min_match: usize) -> (usize, usize) {
     if i == 0 || i == start {
         return (0, 0);
     }
@@ -175,7 +170,11 @@ mod tests {
         assert_eq!(decoded, input);
         // Compressed token count should be << input length (since each
         // back-reference covers many bytes).
-        assert!(tokens.len() < 100, "expected few tokens, got {}", tokens.len());
+        assert!(
+            tokens.len() < 100,
+            "expected few tokens, got {}",
+            tokens.len()
+        );
     }
 
     #[test]
@@ -183,8 +182,10 @@ mod tests {
         let tokens = lz77_compress(b"aaaaa");
         let decoded = lz77_decompress(&tokens);
         assert_eq!(decoded, b"aaaaa");
-        let has_match = tokens.iter().any(|t| matches!(t,
-            Lz77Token::BackRef { distance, length } if *distance >= 1 && *length >= 3));
+        let has_match = tokens.iter().any(|t| {
+            matches!(t,
+            Lz77Token::BackRef { distance, length } if *distance >= 1 && *length >= 3)
+        });
         assert!(has_match, "expected a back-ref with length >= 3");
     }
 

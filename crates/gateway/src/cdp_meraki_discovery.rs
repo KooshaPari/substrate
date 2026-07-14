@@ -177,10 +177,10 @@ mod tests {
             0x02, 0xb4, // Version, TTL
             0x00, 0x00, // Checksum (zeroed)
             0x00, 0x01, 0x00, 0x0d, // TLV 0x0001 len 13
-            b'M', b'X', b'8', b'4', b'-', b'1', b'2', b'3', b'4', b'A', b'B', b'C', b'D',
-            0x00, 0x06, 0x00, 0x0b, // TLV 0x0006 len 11
-            b'M', b'e', b'r', b'a', b'k', b'i', b' ', b'M', b'X', b'8', b'4',
-            0x00, 0x03, 0x00, 0x06, // TLV 0x0003 len 6
+            b'M', b'X', b'8', b'4', b'-', b'1', b'2', b'3', b'4', b'A', b'B', b'C', b'D', 0x00,
+            0x06, 0x00, 0x0b, // TLV 0x0006 len 11
+            b'M', b'e', b'r', b'a', b'k', b'i', b' ', b'M', b'X', b'8', b'4', 0x00, 0x03, 0x00,
+            0x06, // TLV 0x0003 len 6
             b'P', b'o', b'r', b't', b' ', b'5',
         ]
     }

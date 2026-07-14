@@ -1,7 +1,7 @@
 //! `Dispatcher` trait + a `MockDispatcher` used in MVP cut-line tests.
 
-use std::sync::Arc;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 
 use async_trait::async_trait;
 

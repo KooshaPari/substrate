@@ -9,15 +9,19 @@ pub struct EventStream<T> {
     inner: std::vec::IntoIter<T>,
 }
 
+impl<T> Unpin for EventStream<T> {}
+
 impl<T> EventStream<T> {
     pub fn new(items: Vec<T>) -> Self {
-        Self { inner: items.into_iter() }
+        Self {
+            inner: items.into_iter(),
+        }
     }
 }
 
 impl<T> Stream for EventStream<T> {
     type Item = T;
-    fn poll_next(mut self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
-        Poll::Ready(self.inner.next())
+    fn poll_next(self: Pin<&mut Self>, _cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
+        Poll::Ready(self.get_mut().inner.next())
     }
 }

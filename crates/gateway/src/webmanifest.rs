@@ -46,11 +46,7 @@ const VALID_DISPLAYS: &[&str] = &[
     "window-controls-overlay",
 ];
 
-const VALID_PURPOSES: &[&str] = &[
-    "monochrome",
-    "maskable",
-    "any",
-];
+const VALID_PURPOSES: &[&str] = &["monochrome", "maskable", "any"];
 
 /// Returns `true` if `s` is a CSS hex color in one of the canonical forms:
 /// `#RGB`, `#RRGGBB`, or `#RRGGBBAA` (case-insensitive). Also accepts a small
@@ -64,33 +60,159 @@ pub fn is_css_color(s: &str) -> bool {
         let bytes = hex.len();
         return matches!(bytes, 3 | 6 | 8) && hex.bytes().all(|b| b.is_ascii_hexdigit());
     }
-    matches!(s.to_ascii_lowercase().as_str(),
-        "black" | "silver" | "gray" | "grey" | "white" | "maroon" | "red" | "purple" |
-        "fuchsia" | "magenta" | "green" | "lime" | "olive" | "yellow" | "navy" | "blue" |
-        "teal" | "aqua" | "cyan" | "orange" | "pink" | "brown" | "transparent" |
-        "aliceblue" | "antiquewhite" | "aquamarine" | "azure" | "beige" | "bisque" |
-        "blanchedalmond" | "blueviolet" | "burlywood" | "cadetblue" | "chartreuse" |
-        "chocolate" | "coral" | "cornflowerblue" | "cornsilk" | "crimson" | "darkblue" |
-        "darkcyan" | "darkgoldenrod" | "darkgray" | "darkgreen" | "darkgrey" |
-        "darkkhaki" | "darkmagenta" | "darkolivegreen" | "darkorange" | "darkorchid" |
-        "darkred" | "darksalmon" | "darkseagreen" | "darkslateblue" | "darkslategray" |
-        "darkslategrey" | "darkturquoise" | "darkviolet" | "deeppink" | "deepskyblue" |
-        "dimgray" | "dimgrey" | "dodgerblue" | "firebrick" | "floralwhite" |
-        "forestgreen" | "gainsboro" | "ghostwhite" | "gold" | "goldenrod" | "greenyellow" |
-        "honeydew" | "hotpink" | "indianred" | "indigo" | "ivory" | "khaki" | "lavender" |
-        "lavenderblush" | "lawngreen" | "lemonchiffon" | "lightblue" | "lightcoral" |
-        "lightcyan" | "lightgoldenrodyellow" | "lightgray" | "lightgreen" | "lightgrey" |
-        "lightpink" | "lightsalmon" | "lightseagreen" | "lightskyblue" | "lightslategray" |
-        "lightslategrey" | "lightsteelblue" | "lightyellow" | "limegreen" | "linen" |
-        "mediumaquamarine" | "mediumblue" | "mediumorchid" | "mediumpurple" |
-        "mediumseagreen" | "mediumslateblue" | "mediumspringgreen" | "mediumturquoise" |
-        "mediumvioletred" | "midnightblue" | "mintcream" | "mistyrose" | "moccasin" |
-        "navajowhite" | "oldlace" | "olivedrab" | "orangered" | "orchid" | "palegoldenrod" |
-        "palegreen" | "paleturquoise" | "palevioletred" | "papayawhip" | "peachpuff" | "peru" |
-        "plum" | "powderblue" | "rosybrown" | "royalblue" | "saddlebrown" | "salmon" |
-        "sandybrown" | "seagreen" | "seashell" | "sienna" | "skyblue" | "slateblue" |
-        "slategray" | "slategrey" | "snow" | "springgreen" | "steelblue" | "tan" | "thistle" |
-        "tomato" | "turquoise" | "violet" | "wheat" | "whitesmoke" | "yellowgreen" | "rebeccapurple" | "darkseagreen" | "lightseagreen"
+    matches!(
+        s.to_ascii_lowercase().as_str(),
+        "black"
+            | "silver"
+            | "gray"
+            | "grey"
+            | "white"
+            | "maroon"
+            | "red"
+            | "purple"
+            | "fuchsia"
+            | "magenta"
+            | "green"
+            | "lime"
+            | "olive"
+            | "yellow"
+            | "navy"
+            | "blue"
+            | "teal"
+            | "aqua"
+            | "cyan"
+            | "orange"
+            | "pink"
+            | "brown"
+            | "transparent"
+            | "aliceblue"
+            | "antiquewhite"
+            | "aquamarine"
+            | "azure"
+            | "beige"
+            | "bisque"
+            | "blanchedalmond"
+            | "blueviolet"
+            | "burlywood"
+            | "cadetblue"
+            | "chartreuse"
+            | "chocolate"
+            | "coral"
+            | "cornflowerblue"
+            | "cornsilk"
+            | "crimson"
+            | "darkblue"
+            | "darkcyan"
+            | "darkgoldenrod"
+            | "darkgray"
+            | "darkgreen"
+            | "darkgrey"
+            | "darkkhaki"
+            | "darkmagenta"
+            | "darkolivegreen"
+            | "darkorange"
+            | "darkorchid"
+            | "darkred"
+            | "darksalmon"
+            | "darkseagreen"
+            | "darkslateblue"
+            | "darkslategray"
+            | "darkslategrey"
+            | "darkturquoise"
+            | "darkviolet"
+            | "deeppink"
+            | "deepskyblue"
+            | "dimgray"
+            | "dimgrey"
+            | "dodgerblue"
+            | "firebrick"
+            | "floralwhite"
+            | "forestgreen"
+            | "gainsboro"
+            | "ghostwhite"
+            | "gold"
+            | "goldenrod"
+            | "greenyellow"
+            | "honeydew"
+            | "hotpink"
+            | "indianred"
+            | "indigo"
+            | "ivory"
+            | "khaki"
+            | "lavender"
+            | "lavenderblush"
+            | "lawngreen"
+            | "lemonchiffon"
+            | "lightblue"
+            | "lightcoral"
+            | "lightcyan"
+            | "lightgoldenrodyellow"
+            | "lightgray"
+            | "lightgreen"
+            | "lightgrey"
+            | "lightpink"
+            | "lightsalmon"
+            | "lightseagreen"
+            | "lightskyblue"
+            | "lightslategray"
+            | "lightslategrey"
+            | "lightsteelblue"
+            | "lightyellow"
+            | "limegreen"
+            | "linen"
+            | "mediumaquamarine"
+            | "mediumblue"
+            | "mediumorchid"
+            | "mediumpurple"
+            | "mediumseagreen"
+            | "mediumslateblue"
+            | "mediumspringgreen"
+            | "mediumturquoise"
+            | "mediumvioletred"
+            | "midnightblue"
+            | "mintcream"
+            | "mistyrose"
+            | "moccasin"
+            | "navajowhite"
+            | "oldlace"
+            | "olivedrab"
+            | "orangered"
+            | "orchid"
+            | "palegoldenrod"
+            | "palegreen"
+            | "paleturquoise"
+            | "palevioletred"
+            | "papayawhip"
+            | "peachpuff"
+            | "peru"
+            | "plum"
+            | "powderblue"
+            | "rosybrown"
+            | "royalblue"
+            | "saddlebrown"
+            | "salmon"
+            | "sandybrown"
+            | "seagreen"
+            | "seashell"
+            | "sienna"
+            | "skyblue"
+            | "slateblue"
+            | "slategray"
+            | "slategrey"
+            | "snow"
+            | "springgreen"
+            | "steelblue"
+            | "tan"
+            | "thistle"
+            | "tomato"
+            | "turquoise"
+            | "violet"
+            | "wheat"
+            | "whitesmoke"
+            | "yellowgreen"
+            | "rebeccapurple"
+            | "darkseagreen"
+            | "lightseagreen"
     )
 }
 
@@ -124,7 +246,10 @@ pub fn validate(json: &str) -> Result<Manifest, String> {
         return Err("`start_url` must not be empty".into());
     }
 
-    let display = obj.get("display").and_then(|v| v.as_str()).map(str::to_string);
+    let display = obj
+        .get("display")
+        .and_then(|v| v.as_str())
+        .map(str::to_string);
     if let Some(d) = &display {
         if !VALID_DISPLAYS.contains(&d.as_str()) {
             return Err(format!(
@@ -195,16 +320,17 @@ pub fn validate(json: &str) -> Result<Manifest, String> {
                 return Err(format!("duplicate icon entry (src={src}, sizes={sizes})"));
             }
             let r#type = e.get("type").and_then(|v| v.as_str()).map(str::to_string);
-            let purpose = e.get("purpose").and_then(|v| v.as_str()).map(str::to_string);
+            let purpose = e
+                .get("purpose")
+                .and_then(|v| v.as_str())
+                .map(str::to_string);
             if let Some(p) = &purpose {
                 // Spec allows a space-separated list; we accept any combination of
                 // VALID_PURPOSES tokens (case-insensitive).
                 for tok in p.split_whitespace() {
                     let lc = tok.to_ascii_lowercase();
                     if !VALID_PURPOSES.iter().any(|v| *v == lc) {
-                        return Err(format!(
-                            "icons[{idx}].purpose has invalid token {tok:?}"
-                        ));
+                        return Err(format!("icons[{idx}].purpose has invalid token {tok:?}"));
                     }
                 }
             }
@@ -262,7 +388,7 @@ mod tests {
         assert!(is_css_color("#ff00aa"));
         assert!(is_css_color("#FF00AA"));
         assert!(is_css_color("#11223344")); // RGBA hex
-        assert!(!is_css_color("#ff"));   // 2 hex digits invalid
+        assert!(!is_css_color("#ff")); // 2 hex digits invalid
         assert!(!is_css_color("#fffff")); // 5 hex digits invalid
         assert!(!is_css_color("#zzzzzz"));
         assert!(!is_css_color(""));
@@ -352,10 +478,7 @@ mod tests {
         assert_eq!(m.icons[0].src, "/icon-192.png");
         assert_eq!(m.icons[0].sizes, "192x192");
         assert_eq!(m.icons[0].r#type.as_deref(), Some("image/png"));
-        assert_eq!(
-            m.icons[0].purpose.as_deref(),
-            Some("any maskable")
-        );
+        assert_eq!(m.icons[0].purpose.as_deref(), Some("any maskable"));
     }
 
     #[test]
@@ -370,7 +493,8 @@ mod tests {
 
     #[test]
     fn scope_must_match_origin() {
-        let json = r#"{"name":"x","start_url":"https://a.example.com/","scope":"https://b.example.com/"}"#;
+        let json =
+            r#"{"name":"x","start_url":"https://a.example.com/","scope":"https://b.example.com/"}"#;
         let err = validate(json).unwrap_err();
         assert!(err.contains("origin"));
     }

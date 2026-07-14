@@ -13,7 +13,11 @@ pub fn parse(input: &str) -> Option<Uri> {
     let mut scheme = None;
     if let Some(colon) = rest.find(':') {
         let pre = &rest[..colon];
-        if !pre.is_empty() && pre.chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.') {
+        if !pre.is_empty()
+            && pre
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.')
+        {
             scheme = Some(pre.to_ascii_lowercase());
             rest = &rest[colon + 1..];
         }
@@ -22,7 +26,9 @@ pub fn parse(input: &str) -> Option<Uri> {
     let mut port = None;
     if rest.starts_with("//") {
         rest = &rest[2..];
-        let authority_end = rest.find(|c| c == '/' || c == '?' || c == '#').unwrap_or(rest.len());
+        let authority_end = rest
+            .find(|c| c == '/' || c == '?' || c == '#')
+            .unwrap_or(rest.len());
         let authority = &rest[..authority_end];
         rest = &rest[authority_end..];
         if let Some(at) = authority.rfind('@') {
@@ -49,13 +55,21 @@ pub fn parse(input: &str) -> Option<Uri> {
     } else {
         rest.to_string()
     };
-    Some(Uri { scheme, host, port, path, query, fragment })
+    Some(Uri {
+        scheme,
+        host,
+        port,
+        path,
+        query,
+        fragment,
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn full() {
+    #[test]
+    fn full() {
         let u = parse("https://example.com:8080/path?x=1#frag").unwrap();
         assert_eq!(u.scheme.as_deref(), Some("https"));
         assert_eq!(u.host.as_deref(), Some("example.com"));
@@ -64,29 +78,34 @@ mod tests {
         assert_eq!(u.query.as_deref(), Some("x=1"));
         assert_eq!(u.fragment.as_deref(), Some("frag"));
     }
-    #[test] fn no_scheme() {
+    #[test]
+    fn no_scheme() {
         let u = parse("/just/a/path?ok=1").unwrap();
         assert_eq!(u.scheme, None);
         assert_eq!(u.host, None);
         assert_eq!(u.path, "/just/a/path");
         assert_eq!(u.query.as_deref(), Some("ok=1"));
     }
-    #[test] fn path_only() {
+    #[test]
+    fn path_only() {
         let u = parse("/hello").unwrap();
         assert_eq!(u.path, "/hello");
         assert_eq!(u.query, None);
     }
-    #[test] fn scheme_lower() {
+    #[test]
+    fn scheme_lower() {
         let u = parse("HTTP://Example.COM/").unwrap();
         assert_eq!(u.scheme.as_deref(), Some("http"));
         assert_eq!(u.host.as_deref(), Some("Example.COM"));
     }
-    #[test] fn fragment_only() {
+    #[test]
+    fn fragment_only() {
         let u = parse("foo#bar").unwrap();
         assert_eq!(u.fragment.as_deref(), Some("bar"));
         assert_eq!(u.path, "foo");
     }
-    #[test] fn no_port() {
+    #[test]
+    fn no_port() {
         let u = parse("https://x.com/").unwrap();
         assert_eq!(u.host.as_deref(), Some("x.com"));
         assert_eq!(u.port, None);

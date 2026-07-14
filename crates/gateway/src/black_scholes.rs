@@ -29,7 +29,8 @@ pub fn norm_cdf(x: f64) -> f64 {
     let sign = if x < 0.0 { -1.0 } else { 1.0 };
     let abs_x = x.abs();
     let t = 1.0 / (1.0 + p * abs_x);
-    let y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-abs_x * abs_x / 2.0).exp();
+    let y =
+        1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * (-abs_x * abs_x / 2.0).exp();
     0.5 * (1.0 + sign * y)
 }
 
@@ -99,9 +100,8 @@ pub fn price(i: &Inputs) -> Outputs {
     let vega = i.spot * pdf_d1 * sqrt_t / 100.0;
     let call_delta = nd1;
     let put_delta = nd1 - 1.0;
-    let call_theta = (-i.spot * pdf_d1 * i.volatility / (2.0 * sqrt_t)
-        - i.rate * i.strike * disc * nd2)
-        / 365.0;
+    let call_theta =
+        (-i.spot * pdf_d1 * i.volatility / (2.0 * sqrt_t) - i.rate * i.strike * disc * nd2) / 365.0;
     let put_theta = (-i.spot * pdf_d1 * i.volatility / (2.0 * sqrt_t)
         + i.rate * i.strike * disc * npd2)
         / 365.0;

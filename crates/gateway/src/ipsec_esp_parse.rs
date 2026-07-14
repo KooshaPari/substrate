@@ -51,7 +51,10 @@ pub struct EspHeader {
 /// minimum information needed to demultiplex an SA.
 pub fn parse_fixed(input: &[u8]) -> Result<EspHeader, String> {
     if input.len() < 8 {
-        return Err(format!("ESP too short: need at least 8 bytes, got {}", input.len()));
+        return Err(format!(
+            "ESP too short: need at least 8 bytes, got {}",
+            input.len()
+        ));
     }
     let spi = u32::from_be_bytes([input[0], input[1], input[2], input[3]]);
     let seq = u32::from_be_bytes([input[4], input[5], input[6], input[7]]);
@@ -70,10 +73,7 @@ pub fn parse_fixed(input: &[u8]) -> Result<EspHeader, String> {
 /// post-decryption buffer (SPI + payload + padding + pad_length +
 /// next_header + [ICV]). This function expects `icv_len == 0` for the
 /// ICV-less case; otherwise the trailing ICV bytes are skipped.
-pub fn parse_trailer(
-    input: &[u8],
-    icv_len: usize,
-) -> Result<(EspHeader, &[u8]), String> {
+pub fn parse_trailer(input: &[u8], icv_len: usize) -> Result<(EspHeader, &[u8]), String> {
     if input.len() < 10 + icv_len {
         return Err(format!(
             "ESP too short: need at least {} bytes, got {}",
@@ -104,13 +104,7 @@ pub fn parse_trailer(
 /// RFC-4303 default-style padding + 1-byte pad length + 1-byte next
 /// header). `icv` is appended verbatim if `Some`; otherwise the packet
 /// ends after Next Header. Returns the assembled byte vector.
-pub fn encode(
-    spi: u32,
-    seq: u32,
-    payload: &[u8],
-    next_header: u8,
-    icv: Option<&[u8]>,
-) -> Vec<u8> {
+pub fn encode(spi: u32, seq: u32, payload: &[u8], next_header: u8, icv: Option<&[u8]>) -> Vec<u8> {
     // Default-padding per RFC 4303 §2.4.1: contiguous pad bytes 1..=n.
     let pad_byte_seq: Vec<u8> = (1..=16).cycle().take(16).collect();
     // Trim down so total length (header + payload + padding + trailer + icv)
@@ -207,10 +201,7 @@ mod tests {
         // SPI=0x11223344, Seq=0x55667788, payload=[0xDE, 0xAD],
         // pad (RFC-default sequence: 1, 2), pad_len=2, nh=4 (IPv4).
         let bytes = vec![
-            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88,
-            0xDE, 0xAD,
-            0x01, 0x02,
-            0x02, 0x04,
+            0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77, 0x88, 0xDE, 0xAD, 0x01, 0x02, 0x02, 0x04,
         ];
         let (hdr, payload) = parse_trailer(&bytes, 0).unwrap();
         assert_eq!(hdr.spi, 0x11_22_33_44);

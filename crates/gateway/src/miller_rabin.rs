@@ -232,14 +232,18 @@ mod tests {
 
     #[test]
     fn small_primes() {
-        for p in [2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71] {
+        for p in [
+            2u64, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71,
+        ] {
             assert!(is_prime_u64(p), "{} should be prime", p);
         }
     }
 
     #[test]
     fn small_composites() {
-        for c in [4u64, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 30] {
+        for c in [
+            4u64, 6, 8, 9, 10, 12, 14, 15, 16, 18, 20, 21, 22, 24, 25, 26, 27, 28, 30,
+        ] {
             assert!(!is_prime_u64(c), "{} should be composite", c);
         }
     }
@@ -266,11 +270,7 @@ mod tests {
 
     #[test]
     fn larger_composites() {
-        for c in [
-            1_000_000u64,
-            2_147_483_644,
-            1_000_004,
-        ] {
+        for c in [1_000_000u64, 2_147_483_644, 1_000_004] {
             assert!(!is_prime_u64(c), "{} should be composite", c);
         }
     }

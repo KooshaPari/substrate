@@ -99,9 +99,9 @@ pub fn assert_round_trip(tag: u32, flags: u16, value: &[u8], expected_value: &[u
 mod tests {
     use super::*;
     use crate::mapi_props::{
-        PTYP_BINARY, PTYP_BOOLEAN, PTYP_FLOATING32, PTYP_FLOATING64, PTYP_FLOATING_DATE,
-        PTYP_INTEGER16, PTYP_INTEGER32, PTYP_INTEGER64, PTYP_STRING, PTYP_STRING8, PTYP_TIME,
-        PTYP_FLAG_ARRAY, PTYP_FLAG_PRESENT,
+        PTYP_BINARY, PTYP_BOOLEAN, PTYP_FLAG_ARRAY, PTYP_FLAG_PRESENT, PTYP_FLOATING32,
+        PTYP_FLOATING64, PTYP_FLOATING_DATE, PTYP_INTEGER16, PTYP_INTEGER32, PTYP_INTEGER64,
+        PTYP_STRING, PTYP_STRING8, PTYP_TIME,
     };
 
     // Helper: build a 32-bit PropertyTag from (PropertyId, PropertyType).
@@ -112,7 +112,12 @@ mod tests {
     #[test]
     fn build_boolean_present_round_trips() {
         // [MS-OXCDATA] 2.11.1: PtypBoolean is a fixed-size 1-byte value.
-        assert_round_trip(tag(0x0001, PTYP_BOOLEAN), PTYP_FLAG_PRESENT, &[0x01], &[0x01]);
+        assert_round_trip(
+            tag(0x0001, PTYP_BOOLEAN),
+            PTYP_FLAG_PRESENT,
+            &[0x01],
+            &[0x01],
+        );
     }
 
     #[test]
@@ -165,12 +170,7 @@ mod tests {
     fn build_floating_date_present_round_trips() {
         // PtypFloatingDate — f64 LE OADate.
         let v = 45000.5_f64.to_le_bytes();
-        assert_round_trip(
-            tag(0x0060, PTYP_FLOATING_DATE),
-            PTYP_FLAG_PRESENT,
-            &v,
-            &v,
-        );
+        assert_round_trip(tag(0x0060, PTYP_FLOATING_DATE), PTYP_FLAG_PRESENT, &v, &v);
     }
 
     #[test]

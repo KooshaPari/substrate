@@ -30,7 +30,9 @@ impl RetryConfig {
 
 pub struct RetryPolicy;
 impl RetryPolicy {
-    pub fn default_policy() -> RetryConfig { RetryConfig::default() }
+    pub fn default_policy() -> RetryConfig {
+        RetryConfig::default()
+    }
 }
 
 pub struct RetryableError {
@@ -38,16 +40,26 @@ pub struct RetryableError {
 }
 
 impl RetryableError {
-    pub fn retryable(msg: impl Into<String>) -> Self { Self { msg: msg.into() } }
-    pub fn from_status(status: u16, _body: &str, _provider: &str) -> Self {
-        Self { msg: format!("upstream HTTP {}", status) }
+    pub fn retryable(msg: impl Into<String>) -> Self {
+        Self { msg: msg.into() }
     }
-    pub fn permanent(msg: impl Into<String>) -> Self { Self { msg: msg.into() } }
-    pub fn message(&self) -> &str { &self.msg }
+    pub fn from_status(status: u16, _body: &str, _provider: &str) -> Self {
+        Self {
+            msg: format!("upstream HTTP {}", status),
+        }
+    }
+    pub fn permanent(msg: impl Into<String>) -> Self {
+        Self { msg: msg.into() }
+    }
+    pub fn message(&self) -> &str {
+        &self.msg
+    }
 }
 
 impl From<RetryableError> for String {
-    fn from(e: RetryableError) -> Self { e.msg }
+    fn from(e: RetryableError) -> Self {
+        e.msg
+    }
 }
 
 impl std::fmt::Display for RetryableError {
@@ -79,16 +91,31 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn no_retry_past_max() { assert!(!RetryConfig::default().should_retry(3, 500)); }
-    #[test] fn retry_429() { assert!(RetryConfig::default().should_retry(0, 429)); }
-    #[test] fn no_retry_404() { assert!(!RetryConfig::default().should_retry(0, 404)); }
-    #[test] fn delay_doubles() {
+    #[test]
+    fn no_retry_past_max() {
+        assert!(!RetryConfig::default().should_retry(3, 500));
+    }
+    #[test]
+    fn retry_429() {
+        assert!(RetryConfig::default().should_retry(0, 429));
+    }
+    #[test]
+    fn no_retry_404() {
+        assert!(!RetryConfig::default().should_retry(0, 404));
+    }
+    #[test]
+    fn delay_doubles() {
         let c = RetryConfig::default();
         assert_eq!(c.delay(0).as_millis(), 100);
         assert_eq!(c.delay(1).as_millis(), 200);
     }
-    #[test] fn delay_capped() {
-        let c = RetryConfig { base_ms: 1000, max_ms: 2000, ..Default::default() };
+    #[test]
+    fn delay_capped() {
+        let c = RetryConfig {
+            base_ms: 1000,
+            max_ms: 2000,
+            ..Default::default()
+        };
         assert_eq!(c.delay(5).as_millis(), 2000);
     }
 }

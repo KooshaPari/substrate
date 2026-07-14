@@ -91,7 +91,9 @@ pub fn parse(input: &str) -> Result<Vec<Cue>, String> {
     if sig == "WEBVTT" || sig.starts_with("WEBVTT ") || sig.starts_with("WEBVTT\t") {
         // ok
     } else {
-        return Err(format!("missing WEBVTT signature (first line was: {sig:?})"));
+        return Err(format!(
+            "missing WEBVTT signature (first line was: {sig:?})"
+        ));
     }
 
     let mut cues: Vec<Cue> = Vec::new();
@@ -301,7 +303,8 @@ mod tests {
 
     #[test]
     fn cue_with_settings() {
-        let input = "WEBVTT\n\n00:00:00.000 --> 00:00:05.000 align:start line:50%\nBottom-aligned text\n";
+        let input =
+            "WEBVTT\n\n00:00:00.000 --> 00:00:05.000 align:start line:50%\nBottom-aligned text\n";
         let cues = parse(input).unwrap();
         assert_eq!(cues.len(), 1);
         assert_eq!(cues[0].settings, "align:start line:50%");
@@ -320,7 +323,8 @@ mod tests {
 
     #[test]
     fn note_block_is_skipped() {
-        let input = "WEBVTT\n\nNOTE this is a single-line note\n\n00:00:00.000 --> 00:00:01.000\nCue\n";
+        let input =
+            "WEBVTT\n\nNOTE this is a single-line note\n\n00:00:00.000 --> 00:00:01.000\nCue\n";
         let cues = parse(input).unwrap();
         assert_eq!(cues.len(), 1);
         assert_eq!(cues[0].payload, "Cue");

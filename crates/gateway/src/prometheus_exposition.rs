@@ -145,7 +145,11 @@ fn format_value(v: f64) -> String {
     if v.is_nan() {
         "NaN".to_string()
     } else if v.is_infinite() {
-        if v > 0.0 { "+Inf".to_string() } else { "-Inf".to_string() }
+        if v > 0.0 {
+            "+Inf".to_string()
+        } else {
+            "-Inf".to_string()
+        }
     } else if v == v.trunc() && v.abs() < 1e16 {
         format!("{}", v as i64)
     } else {
@@ -286,10 +290,7 @@ memory_bytes 1024
             name: "x_total".to_string(),
             help: "".to_string(),
             metric_type: MetricType::Counter,
-            samples: vec![(
-                vec![("path".to_string(), r#"a\b"c"#.to_string())],
-                1.0,
-            )],
+            samples: vec![(vec![("path".to_string(), r#"a\b"c"#.to_string())], 1.0)],
         };
         let out = render(&[m]);
         assert!(out.contains(r##"x_total{path="a\\b\"c"} 1"##));

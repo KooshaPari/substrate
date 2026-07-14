@@ -53,11 +53,10 @@ pub fn decode(s: &str) -> Result<u32, String> {
     let mut result: u32 = 0;
     let mut chars = upper.chars().peekable();
     while let Some(c) = chars.next() {
-        let current = single_value(c)
-            .ok_or_else(|| format!("invalid character '{}'", c))?;
+        let current = single_value(c).ok_or_else(|| format!("invalid character '{}'", c))?;
         if let Some(&next_c) = chars.peek() {
-            let next = single_value(next_c)
-                .ok_or_else(|| format!("invalid character '{}'", next_c))?;
+            let next =
+                single_value(next_c).ok_or_else(|| format!("invalid character '{}'", next_c))?;
             if current < next {
                 // Subtractive: IV, IX, XL, XC, CD, CM
                 if !is_valid_subtractive(c, next_c) {
@@ -73,7 +72,10 @@ pub fn decode(s: &str) -> Result<u32, String> {
         }
     }
     if result < MIN || result > MAX {
-        return Err(format!("decoded value {} is outside [{}, {}]", result, MIN, MAX));
+        return Err(format!(
+            "decoded value {} is outside [{}, {}]",
+            result, MIN, MAX
+        ));
     }
     Ok(result)
 }
@@ -92,7 +94,8 @@ fn single_value(c: char) -> Option<u32> {
 }
 
 fn is_valid_subtractive(small: char, big: char) -> bool {
-    matches!((small, big),
+    matches!(
+        (small, big),
         ('I', 'V') | ('I', 'X') | ('X', 'L') | ('X', 'C') | ('C', 'D') | ('C', 'M')
     )
 }

@@ -96,11 +96,12 @@ fn decode_one(bytes: &[u8]) -> Option<(char, usize)> {
     if bytes.len() < n {
         return None;
     }
-    let mut cp: u32 = (b0 & match n {
-        2 => 0x1F,
-        3 => 0x0F,
-        _ => 0x07,
-    }) as u32;
+    let mut cp: u32 = (b0
+        & match n {
+            2 => 0x1F,
+            3 => 0x0F,
+            _ => 0x07,
+        }) as u32;
     for i in 1..n {
         let b = bytes[i];
         if (b & 0xC0) != 0x80 {
@@ -135,18 +136,14 @@ mod tests {
     #[test]
     fn lossy_iter_valid_string() {
         let bytes = "abc".as_bytes();
-        let collected: Vec<_> = chars_iter_bytes_lossy(bytes)
-            .map(|r| r.unwrap())
-            .collect();
+        let collected: Vec<_> = chars_iter_bytes_lossy(bytes).map(|r| r.unwrap()).collect();
         assert_eq!(collected, vec!['a', 'b', 'c']);
     }
 
     #[test]
     fn lossy_iter_multibyte() {
         let bytes = "héllo".as_bytes();
-        let collected: Vec<_> = chars_iter_bytes_lossy(bytes)
-            .map(|r| r.unwrap())
-            .collect();
+        let collected: Vec<_> = chars_iter_bytes_lossy(bytes).map(|r| r.unwrap()).collect();
         assert_eq!(collected, vec!['h', 'é', 'l', 'l', 'o']);
     }
 

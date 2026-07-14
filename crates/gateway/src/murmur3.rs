@@ -95,8 +95,12 @@ mod tests {
     fn empty_input_arbitrary_seed() {
         // seed != 0, len = 0 -> fmix32(seed)
         for seed in [1u32, 0x1234_5678, 0xDEAD_BEEF, u32::MAX] {
-            assert_eq!(hash32(b"", seed), fmix32(seed),
-                "empty input must equal fmix32(seed) for seed={:#x}", seed);
+            assert_eq!(
+                hash32(b"", seed),
+                fmix32(seed),
+                "empty input must equal fmix32(seed) for seed={:#x}",
+                seed
+            );
         }
     }
 
@@ -202,8 +206,18 @@ mod tests {
         // a non-trivial output for a non-trivial input, without pinning
         // to a specific fingerprint.
         for x in [1u32, 0xDEAD_BEEF, 0x1234_5678, 0xFFFF_FFFF, 0xC0FFEE00] {
-            assert_eq!(fmix32(x), fmix32(x), "fmix32 must be deterministic at x={:#x}", x);
-            assert_ne!(fmix32(x), x, "fmix32 must scramble non-trivial inputs at x={:#x}", x);
+            assert_eq!(
+                fmix32(x),
+                fmix32(x),
+                "fmix32 must be deterministic at x={:#x}",
+                x
+            );
+            assert_ne!(
+                fmix32(x),
+                x,
+                "fmix32 must scramble non-trivial inputs at x={:#x}",
+                x
+            );
         }
     }
 }

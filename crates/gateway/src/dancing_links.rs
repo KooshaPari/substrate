@@ -44,14 +44,21 @@ impl Dlx {
             root: 0,
         };
         dlx.nodes.push(Node {
-            up: 0, down: 0, left: 0, right: 0,
-            col: usize::MAX, row: usize::MAX,
+            up: 0,
+            down: 0,
+            left: 0,
+            right: 0,
+            col: usize::MAX,
+            row: usize::MAX,
         });
         for c in 0..n {
             dlx.nodes.push(Node {
-                up: c + 1, down: c + 1,
-                left: c, right: c + 2,
-                col: c + 1, row: usize::MAX,
+                up: c + 1,
+                down: c + 1,
+                left: c,
+                right: c + 2,
+                col: c + 1,
+                row: usize::MAX,
             });
             dlx.cols.push(ColHeader { size: 0 });
         }
@@ -79,8 +86,10 @@ impl Dlx {
             self.nodes.push(Node {
                 up: bottom,
                 down: col_idx,
-                left: 0, right: 0,
-                col: col_idx, row,
+                left: 0,
+                right: 0,
+                col: col_idx,
+                row,
             });
             self.nodes[bottom].down = nidx;
             self.nodes[col_idx].up = nidx;

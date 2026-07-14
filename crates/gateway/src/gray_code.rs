@@ -49,7 +49,11 @@ pub fn decode_u64(g: u64) -> u64 {
 #[inline]
 pub fn encode_n(b: u64, width: u32) -> u64 {
     assert!(width > 0 && width <= 64, "width must be in 1..=64");
-    let mask = if width == 64 { u64::MAX } else { (1u64 << width) - 1 };
+    let mask = if width == 64 {
+        u64::MAX
+    } else {
+        (1u64 << width) - 1
+    };
     let b = b & mask;
     (b ^ (b >> 1)) & mask
 }
@@ -58,7 +62,11 @@ pub fn encode_n(b: u64, width: u32) -> u64 {
 #[inline]
 pub fn decode_n(g: u64, width: u32) -> u64 {
     assert!(width > 0 && width <= 64, "width must be in 1..=64");
-    let mask = if width == 64 { u64::MAX } else { (1u64 << width) - 1 };
+    let mask = if width == 64 {
+        u64::MAX
+    } else {
+        (1u64 << width) - 1
+    };
     decode_u64(g) & mask
 }
 
@@ -111,9 +119,36 @@ mod tests {
     fn encode_decode_roundtrip_u64() {
         // Round-trip a bunch of values including boundaries and powers of two.
         let cases: &[u64] = &[
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 15, 16, 31, 32, 63, 64, 127, 128, 255, 256,
-            1023, 1024, 4095, 65535, 65536, 1u64 << 31, 1u64 << 32, 1u64 << 63,
-            u64::MAX, u64::MAX - 1, 0xDEAD_BEEF_CAFE_BABE,
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            15,
+            16,
+            31,
+            32,
+            63,
+            64,
+            127,
+            128,
+            255,
+            256,
+            1023,
+            1024,
+            4095,
+            65535,
+            65536,
+            1u64 << 31,
+            1u64 << 32,
+            1u64 << 63,
+            u64::MAX,
+            u64::MAX - 1,
+            0xDEAD_BEEF_CAFE_BABE,
         ];
         for &b in cases {
             let g = encode_u64(b);
@@ -143,10 +178,22 @@ mod tests {
         //  14   1001
         //  15   1000
         let table: &[(u64, u64)] = &[
-            (0, 0b0000), (1, 0b0001), (2, 0b0011), (3, 0b0010),
-            (4, 0b0110), (5, 0b0111), (6, 0b0101), (7, 0b0100),
-            (8, 0b1100), (9, 0b1101), (10, 0b1111), (11, 0b1110),
-            (12, 0b1010), (13, 0b1011), (14, 0b1001), (15, 0b1000),
+            (0, 0b0000),
+            (1, 0b0001),
+            (2, 0b0011),
+            (3, 0b0010),
+            (4, 0b0110),
+            (5, 0b0111),
+            (6, 0b0101),
+            (7, 0b0100),
+            (8, 0b1100),
+            (9, 0b1101),
+            (10, 0b1111),
+            (11, 0b1110),
+            (12, 0b1010),
+            (13, 0b1011),
+            (14, 0b1001),
+            (15, 0b1000),
         ];
         for &(b, g) in table {
             assert_eq!(encode_n(b, 4), g, "encode mismatch at b={}", b);
@@ -161,10 +208,16 @@ mod tests {
         let codes: Vec<u64> = sequence(256);
         for w in codes.windows(2) {
             let diff = w[0] ^ w[1];
-            assert!(diff.is_power_of_two(),
+            assert!(
+                diff.is_power_of_two(),
                 "consecutive Gray codes differ in more than one bit: \
                  g({})={:#x} g({})={:#x} diff={:#x}",
-                0u64, w[0], 1u64, w[1], diff);
+                0u64,
+                w[0],
+                1u64,
+                w[1],
+                diff
+            );
         }
     }
 
@@ -174,7 +227,11 @@ mod tests {
         let mut sorted: Vec<u64> = codes.clone();
         sorted.sort_unstable();
         sorted.dedup();
-        assert_eq!(sorted.len(), codes.len(), "duplicate codes in BRGC sequence");
+        assert_eq!(
+            sorted.len(),
+            codes.len(),
+            "duplicate codes in BRGC sequence"
+        );
     }
 
     #[test]

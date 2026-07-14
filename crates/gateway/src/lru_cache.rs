@@ -274,7 +274,7 @@ mod tests {
         c.put(1, "a");
         c.put(2, "b");
         c.get(&1); // promote 1 to MRU
-        // Now insert 3 — should evict 2 (LRU), not 1.
+                   // Now insert 3 — should evict 2 (LRU), not 1.
         let evicted = c.put(3, "c");
         assert_eq!(evicted, Some((2, "b")));
         assert_eq!(c.get(&1), Some(&"a"));

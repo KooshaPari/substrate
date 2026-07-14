@@ -11,8 +11,7 @@
 
 use crate::mac_hmac::hmac_sha1;
 
-const BASE64_CHARS: &[u8; 64] =
-    b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+const BASE64_CHARS: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 /// Percent-encode a string per RFC 3986: unreserved set `[A-Za-z0-9\-._~]`.
 /// All other bytes are encoded as `%XX` (uppercase hex).
@@ -112,11 +111,7 @@ pub fn normalize_url(url: &str) -> String {
 /// `params` is a slice of (key, value) pairs already in the order they will be sent.
 /// Any query string in the URL is parsed and merged with `params` before sorting,
 /// per §3.4.1.3.1 (request parameters = query params + body params + oauth_* params).
-pub fn build_signature_base_string(
-    method: &str,
-    url: &str,
-    params: &[(&str, &str)],
-) -> String {
+pub fn build_signature_base_string(method: &str, url: &str, params: &[(&str, &str)]) -> String {
     // Split URL into base + query; merge query into params.
     let (url_base, query) = split_url_query(url);
     let normalized_url = normalize_url(&url_base);
@@ -323,14 +318,8 @@ mod tests {
 
     #[test]
     fn signing_key_basic() {
-        assert_eq!(
-            build_signing_key("cs", "ts"),
-            "cs&ts"
-        );
-        assert_eq!(
-            build_signing_key("cs&", "ts="),
-            "cs%26&ts%3D"
-        );
+        assert_eq!(build_signing_key("cs", "ts"), "cs&ts");
+        assert_eq!(build_signing_key("cs&", "ts="), "cs%26&ts%3D");
     }
 
     // RFC 5849 §3.4.1.1 reference example (simplified)
@@ -339,13 +328,19 @@ mod tests {
         // From RFC 5849 §3.4.1.1 example
         let url = "https://api.twitter.com/1/statuses/update.json?include_entities=true";
         let params = [
-            ("status", "Hello Ladies + Gentlemen, a signed OAuth request!"),
+            (
+                "status",
+                "Hello Ladies + Gentlemen, a signed OAuth request!",
+            ),
             ("include_entities", "true"),
             ("oauth_consumer_key", "xvz1evFS4wEEPTGEFPHBog"),
             ("oauth_nonce", "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg"),
             ("oauth_signature_method", "HMAC-SHA1"),
             ("oauth_timestamp", "1318622958"),
-            ("oauth_token", "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb"),
+            (
+                "oauth_token",
+                "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
+            ),
             ("oauth_version", "1.0"),
         ];
         let s = build_signature_base_string("POST", url, &params);
@@ -362,13 +357,19 @@ mod tests {
     fn sign_reference_signature() {
         let url = "https://api.twitter.com/1/statuses/update.json?include_entities=true";
         let params = [
-            ("status", "Hello Ladies + Gentlemen, a signed OAuth request!"),
+            (
+                "status",
+                "Hello Ladies + Gentlemen, a signed OAuth request!",
+            ),
             ("include_entities", "true"),
             ("oauth_consumer_key", "xvz1evFS4wEEPTGEFPHBog"),
             ("oauth_nonce", "kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg"),
             ("oauth_signature_method", "HMAC-SHA1"),
             ("oauth_timestamp", "1318622958"),
-            ("oauth_token", "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb"),
+            (
+                "oauth_token",
+                "370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb",
+            ),
             ("oauth_version", "1.0"),
         ];
         let sig = sign(
@@ -393,7 +394,14 @@ mod tests {
             ("x", "y"),
         ];
         let sig = sign("GET", "https://example.com/path?x=y", &params, "cs", "ts");
-        assert!(verify("GET", "https://example.com/path?x=y", &params, "cs", "ts", &sig));
+        assert!(verify(
+            "GET",
+            "https://example.com/path?x=y",
+            &params,
+            "cs",
+            "ts",
+            &sig
+        ));
     }
 
     #[test]
@@ -404,7 +412,14 @@ mod tests {
         let mut bad = sig.into_bytes();
         bad[0] = if bad[0] == b'A' { b'B' } else { b'A' };
         let bad_str = String::from_utf8(bad).unwrap();
-        assert!(!verify("GET", "https://example.com/p", &params, "cs", "ts", &bad_str));
+        assert!(!verify(
+            "GET",
+            "https://example.com/p",
+            &params,
+            "cs",
+            "ts",
+            &bad_str
+        ));
     }
 
     #[test]

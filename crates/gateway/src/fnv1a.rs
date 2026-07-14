@@ -84,7 +84,9 @@ pub struct Fnv1a32 {
 
 impl Default for Fnv1a32 {
     fn default() -> Self {
-        Self { state: FNV_32_OFFSET }
+        Self {
+            state: FNV_32_OFFSET,
+        }
     }
 }
 

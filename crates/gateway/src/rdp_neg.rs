@@ -119,9 +119,10 @@ pub fn parse_cotp_cr(input: &[u8]) -> Result<(&[u8], &[u8]), String> {
     // Generic: scan for the 0xE0 byte and treat everything after as
     // the negotiation payload. Accept the position immediately after
     // the fixed X.224 header.
-    let pos = input.iter().position(|&b| b == 0xE0).ok_or_else(|| {
-        format!("cotp: 0xE0 (Connection Request) marker not found")
-    })?;
+    let pos = input
+        .iter()
+        .position(|&b| b == 0xE0)
+        .ok_or_else(|| format!("cotp: 0xE0 (Connection Request) marker not found"))?;
     let body = &input[pos + 1..];
     let hdr_len = pos + 1 + {
         // CR TPDU length-prefix convention: if the first byte >= 2 and
@@ -155,8 +156,7 @@ pub fn parse_rdp_neg_req(input: &[u8]) -> Result<(RdpNegReq, &[u8]), String> {
             input.len()
         ));
     }
-    let rdp_protocols =
-        u32::from_le_bytes([input[4], input[5], input[6], input[7]]);
+    let rdp_protocols = u32::from_le_bytes([input[4], input[5], input[6], input[7]]);
     // `flags & 0x0F` distinguishes request vs response in
     // RDP_NEG_REQ/RSP combined types — checked against the type byte
     // below.
@@ -172,7 +172,14 @@ pub fn parse_rdp_neg_req(input: &[u8]) -> Result<(RdpNegReq, &[u8]), String> {
     } else {
         (None, false)
     };
-    Ok((RdpNegReq { rdp_protocols, cookie, has_cookie_magic }, &input[length..]))
+    Ok((
+        RdpNegReq {
+            rdp_protocols,
+            cookie,
+            has_cookie_magic,
+        },
+        &input[length..],
+    ))
 }
 
 #[cfg(test)]
@@ -238,10 +245,7 @@ mod tests {
 
     #[test]
     fn parses_hybrid_protocol_set() {
-        let bytes = build_request(
-            protocol::PROTOCOL_SSL | protocol::PROTOCOL_HYBRID,
-            None,
-        );
+        let bytes = build_request(protocol::PROTOCOL_SSL | protocol::PROTOCOL_HYBRID, None);
         let (req, _) = parse_request(&bytes).expect("parse");
         assert_ne!(
             req.rdp_protocols & protocol::PROTOCOL_HYBRID,

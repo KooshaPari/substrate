@@ -36,9 +36,7 @@ impl Rc4 {
         }
         let mut j: u8 = 0;
         for i in 0..STATE_LEN {
-            j = j
-                .wrapping_add(s[i])
-                .wrapping_add(key[i % key.len()]);
+            j = j.wrapping_add(s[i]).wrapping_add(key[i % key.len()]);
             s.swap(i, j as usize);
         }
         Rc4 { s, i: 0, j: 0 }
@@ -135,10 +133,7 @@ mod tests {
         rc4.apply_keystream(&mut via_apply);
 
         let mut rc4b = Rc4::new(key);
-        let via_next: Vec<u8> = plaintext
-            .iter()
-            .map(|b| b ^ rc4b.next_byte())
-            .collect();
+        let via_next: Vec<u8> = plaintext.iter().map(|b| b ^ rc4b.next_byte()).collect();
         assert_eq!(via_apply, via_next);
     }
 

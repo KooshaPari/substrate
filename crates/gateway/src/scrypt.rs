@@ -168,7 +168,14 @@ fn romix(b: &mut [u8], n: usize, r: usize) {
 }
 
 /// scrypt mix: PBKDF2-derive B, ROMix B, PBKDF2-derive final (dk_len bytes).
-fn scrypt_mix(password: &[u8], salt: &[u8], n: usize, r: usize, p: usize, dk_len: usize) -> Vec<u8> {
+fn scrypt_mix(
+    password: &[u8],
+    salt: &[u8],
+    n: usize,
+    r: usize,
+    p: usize,
+    dk_len: usize,
+) -> Vec<u8> {
     let block_bytes = 128 * r;
     let mut b = pbkdf2(password, salt, 1, p * block_bytes);
     for i in 0..p {
@@ -195,7 +202,14 @@ fn scrypt_mix(password: &[u8], salt: &[u8], n: usize, r: usize, p: usize, dk_len
 /// # Panics
 /// Panics if `n` is not a power of two, or `n * r * 128` overflows, or
 /// `dk_len == 0`.
-pub fn scrypt(password: &[u8], salt: &[u8], n: usize, r: usize, p: usize, dk_len: usize) -> Vec<u8> {
+pub fn scrypt(
+    password: &[u8],
+    salt: &[u8],
+    n: usize,
+    r: usize,
+    p: usize,
+    dk_len: usize,
+) -> Vec<u8> {
     assert!(n > 1, "scrypt: n must be > 1");
     assert!(n & (n - 1) == 0, "scrypt: n must be a power of two");
     assert!(r >= 1, "scrypt: r must be >= 1");
@@ -224,10 +238,9 @@ mod tests {
         // module is not RFC-pinned; see docs); we assert determinism and
         // bijectivity (Salsa20/8 is a permutation, not a hash).
         let mut a: [u32; 16] = [
-            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-            0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
-            0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
-            0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+            0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab,
+            0x5be0cd19, 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
+            0x923f82a4, 0xab1c5ed5,
         ];
         let mut b = a;
         salsa20_8(&mut a);

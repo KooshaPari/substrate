@@ -26,9 +26,15 @@ pub struct ProtocolVersion {
     pub minor: u8,
 }
 impl ProtocolVersion {
-    pub fn tls_1_2() -> Self { Self { major: 3, minor: 3 } }
-    pub fn tls_1_3() -> Self { Self { major: 3, minor: 3 } }
-    pub fn to_be_bytes(self) -> [u8; 2] { [self.major, self.minor] }
+    pub fn tls_1_2() -> Self {
+        Self { major: 3, minor: 3 }
+    }
+    pub fn tls_1_3() -> Self {
+        Self { major: 3, minor: 3 }
+    }
+    pub fn to_be_bytes(self) -> [u8; 2] {
+        [self.major, self.minor]
+    }
 }
 #[derive(Debug, PartialEq)]
 pub struct TlsRecord<'a> {
@@ -44,19 +50,33 @@ pub enum TlsError {
     Truncated,
 }
 pub fn parse_record(input: &[u8]) -> Result<TlsRecord, TlsError> {
-    if input.len() < TLS_HEADER_LEN { return Err(TlsError::TooShort); }
+    if input.len() < TLS_HEADER_LEN {
+        return Err(TlsError::TooShort);
+    }
     let content_type = ContentType::from_u8(input[0]).ok_or(TlsError::BadContentType)?;
-    let version = ProtocolVersion { major: input[1], minor: input[2] };
+    let version = ProtocolVersion {
+        major: input[1],
+        minor: input[2],
+    };
     let length = u16::from_be_bytes([input[3], input[4]]) as usize;
-    if length > 16384 + 2048 { return Err(TlsError::BadLength); }
-    if input.len() < TLS_HEADER_LEN + length { return Err(TlsError::Truncated); }
+    if length > 16384 + 2048 {
+        return Err(TlsError::BadLength);
+    }
+    if input.len() < TLS_HEADER_LEN + length {
+        return Err(TlsError::Truncated);
+    }
     Ok(TlsRecord {
         content_type,
         version,
         payload: &input[TLS_HEADER_LEN..TLS_HEADER_LEN + length],
     })
 }
-pub fn write_record(content_type: ContentType, version: ProtocolVersion, payload: &[u8], out: &mut Vec<u8>) {
+pub fn write_record(
+    content_type: ContentType,
+    version: ProtocolVersion,
+    payload: &[u8],
+    out: &mut Vec<u8>,
+) {
     out.push(content_type as u8);
     out.extend_from_slice(&version.to_be_bytes());
     let len = payload.len().min(16384 + 2048) as u16;
@@ -120,21 +140,34 @@ mod tests {
     #[test]
     fn write_basic() {
         let mut out = Vec::new();
-        write_record(ContentType::ApplicationData, ProtocolVersion::tls_1_2(), b"world", &mut out);
+        write_record(
+            ContentType::ApplicationData,
+            ProtocolVersion::tls_1_2(),
+            b"world",
+            &mut out,
+        );
         assert_eq!(out, vec![23, 3, 3, 0, 5, b'w', b'o', b'r', b'l', b'd']);
     }
     #[test]
     fn write_then_parse_roundtrip() {
         let mut out = Vec::new();
         let payload = &[1u8, 2, 3, 4, 5, 6, 7, 8];
-        write_record(ContentType::Handshake, ProtocolVersion { major: 3, minor: 3 }, payload, &mut out);
+        write_record(
+            ContentType::Handshake,
+            ProtocolVersion { major: 3, minor: 3 },
+            payload,
+            &mut out,
+        );
         let r = parse_record(&out).unwrap();
         assert_eq!(r.content_type, ContentType::Handshake);
         assert_eq!(r.payload, payload);
     }
     #[test]
     fn content_type_from_u8() {
-        assert_eq!(ContentType::from_u8(20), Some(ContentType::ChangeCipherSpec));
+        assert_eq!(
+            ContentType::from_u8(20),
+            Some(ContentType::ChangeCipherSpec)
+        );
         assert_eq!(ContentType::from_u8(23), Some(ContentType::ApplicationData));
         assert_eq!(ContentType::from_u8(0), None);
     }

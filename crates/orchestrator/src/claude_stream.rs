@@ -173,7 +173,10 @@ mod tests {
             other => panic!("unexpected 1: {other:?}"),
         }
         match &v[2] {
-            Ok(ClaudeEvent::Result { duration_ms, cost_usd }) => {
+            Ok(ClaudeEvent::Result {
+                duration_ms,
+                cost_usd,
+            }) => {
                 assert_eq!(*duration_ms, 1234);
                 assert!((cost_usd - 0.0023).abs() < 1e-9);
             }
@@ -186,7 +189,10 @@ mod tests {
         disable_gate();
         let body = r#"{"type":"result","duration_ms":1,"cost_usd":0.0}"#;
         let mut cursor = Cursor::new(body.as_bytes());
-        let err = parse_claude_stream_json(&mut cursor).unwrap_err();
+        let err = match parse_claude_stream_json(&mut cursor) {
+            Ok(_) => panic!("expected Claude integration gate error"),
+            Err(err) => err,
+        };
         assert!(matches!(err, OrchestratorError::ClaudeIntegrationGated));
     }
 

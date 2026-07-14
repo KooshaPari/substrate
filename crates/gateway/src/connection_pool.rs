@@ -135,11 +135,12 @@ impl Drop for PoolGuard {
     fn drop(&mut self) {
         // Drop is infallible; saturating_sub guards against double-release
         // bugs (which would otherwise underflow).
-        let prev = self.pool.in_use.fetch_update(
-            Ordering::SeqCst,
-            Ordering::SeqCst,
-            |v| Some(v.saturating_sub(1)),
-        );
+        let prev = self
+            .pool
+            .in_use
+            .fetch_update(Ordering::SeqCst, Ordering::SeqCst, |v| {
+                Some(v.saturating_sub(1))
+            });
         debug_assert!(prev.is_ok(), "pool in_use went negative");
     }
 }

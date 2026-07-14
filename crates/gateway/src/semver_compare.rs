@@ -104,10 +104,14 @@ impl std::fmt::Display for SemVer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}.{}", self.major, self.minor, self.patch)?;
         if !self.pre.is_empty() {
-            let parts: Vec<String> = self.pre.iter().map(|i| match i {
-                Ident::Number(n) => n.to_string(),
-                Ident::Text(t) => t.clone(),
-            }).collect();
+            let parts: Vec<String> = self
+                .pre
+                .iter()
+                .map(|i| match i {
+                    Ident::Number(n) => n.to_string(),
+                    Ident::Text(t) => t.clone(),
+                })
+                .collect();
             write!(f, "-{}", parts.join("."))?;
         }
         if !self.build.is_empty() {
@@ -145,10 +149,7 @@ pub fn parse(input: &str) -> Result<SemVer, SemVerError> {
     let build = if build.is_empty() {
         Vec::new()
     } else {
-        build
-            .split('.')
-            .map(|s| s.to_string())
-            .collect()
+        build.split('.').map(|s| s.to_string()).collect()
     };
     Ok(SemVer {
         major,
@@ -166,7 +167,8 @@ fn parse_u64(s: &str) -> Result<u64, SemVerError> {
     if s.len() > 1 && s.starts_with('0') {
         return Err(SemVerError::LeadingZero(s.into()));
     }
-    s.parse::<u64>().map_err(|_| SemVerError::BadFormat(s.into()))
+    s.parse::<u64>()
+        .map_err(|_| SemVerError::BadFormat(s.into()))
 }
 
 fn parse_idents(s: &str) -> Result<Vec<Ident>, SemVerError> {
@@ -178,10 +180,7 @@ fn parse_idents(s: &str) -> Result<Vec<Ident>, SemVerError> {
             if part.is_empty() {
                 return Err(SemVerError::BadIdent(part.into()));
             }
-            if !part
-                .chars()
-                .all(|c| c.is_ascii_alphanumeric() || c == '-')
-            {
+            if !part.chars().all(|c| c.is_ascii_alphanumeric() || c == '-') {
                 return Err(SemVerError::BadIdent(part.into()));
             }
             if part.chars().all(|c| c.is_ascii_digit()) {
@@ -189,7 +188,9 @@ fn parse_idents(s: &str) -> Result<Vec<Ident>, SemVerError> {
                 if part.len() > 1 && part.starts_with('0') {
                     return Err(SemVerError::LeadingZero(part.into()));
                 }
-                let n: u64 = part.parse().map_err(|_| SemVerError::BadIdent(part.into()))?;
+                let n: u64 = part
+                    .parse()
+                    .map_err(|_| SemVerError::BadIdent(part.into()))?;
                 Ok(Ident::Number(n))
             } else {
                 Ok(Ident::Text(part.to_string()))

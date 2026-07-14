@@ -11,8 +11,8 @@
 //! Reference: Fan, Andersen, Kaminsky, Mitzenmacher, "Cuckoo Filter:
 //! Practically Better Than Bloom" (CoNEXT 2014).
 
-use std::hash::{Hash, Hasher};
 use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
 
 const FINGERPRINT_BITS: u32 = 8;
 const FINGERPRINT_MASK: u64 = (1 << FINGERPRINT_BITS) - 1;
@@ -36,8 +36,7 @@ impl CuckooFilter {
     /// for cheap bitmask indexing.
     pub fn new(capacity: usize) -> Self {
         let num_buckets = (capacity.max(1)).next_power_of_two();
-        Self::with_bucket_size(capacity, 4)
-            .into_num_buckets(num_buckets)
+        Self::with_bucket_size(capacity, 4).into_num_buckets(num_buckets)
     }
 
     fn with_bucket_size(capacity: usize, bucket_size: usize) -> Self {

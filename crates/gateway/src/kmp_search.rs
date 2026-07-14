@@ -73,8 +73,7 @@ pub fn kmp_find_first(haystack: &[u8], needle: &[u8]) -> Option<usize> {
 /// Convenience wrapper for string slices. Returns `Some((start, end))`
 /// byte offsets for the first match, or `None`.
 pub fn kmp_str<'a>(haystack: &'a str, needle: &str) -> Option<(usize, usize)> {
-    kmp_find_first(haystack.as_bytes(), needle.as_bytes())
-        .map(|i| (i, i + needle.len()))
+    kmp_find_first(haystack.as_bytes(), needle.as_bytes()).map(|i| (i, i + needle.len()))
 }
 
 #[cfg(test)]
@@ -158,9 +157,6 @@ mod tests {
     #[test]
     fn larger_text() {
         let text = "the quick brown fox jumps over the lazy dog the quick brown fox";
-        assert_eq!(
-            kmp_find(text.as_bytes(), b"quick"),
-            vec![4, 48]
-        );
+        assert_eq!(kmp_find(text.as_bytes(), b"quick"), vec![4, 48]);
     }
 }

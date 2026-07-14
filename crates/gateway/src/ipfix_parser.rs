@@ -54,21 +54,29 @@ pub enum Set {
 }
 
 pub fn parse_message(input: &[u8]) -> Result<Message, String> {
-    if input.len() < 16 { return Err("IPFIX header truncated".into()); }
+    if input.len() < 16 {
+        return Err("IPFIX header truncated".into());
+    }
     let version = read_u16(&input[0..2]);
     let length = read_u16(&input[2..4]);
     let export_time = read_u32(&input[4..8]);
     let sequence_number = read_u32(&input[8..12]);
     let observation_domain_id = read_u32(&input[12..16]);
-    if version != IPFIX_VERSION { return Err(format!("unsupported IPFIX version {}", version)); }
-    if length as usize > input.len() { return Err("length exceeds input".into()); }
+    if version != IPFIX_VERSION {
+        return Err(format!("unsupported IPFIX version {}", version));
+    }
+    if length as usize > input.len() {
+        return Err("length exceeds input".into());
+    }
     let mut sets = Vec::new();
     let mut pos = 16usize;
     while pos + 4 <= length as usize {
-        let set_id = read_u16(&input[pos..pos+2]);
-        let set_len = read_u16(&input[pos+2..pos+4]) as usize;
-        if set_len < 4 || pos + set_len > length as usize { return Err("bad set length".into()); }
-        let payload = &input[pos+4..pos+set_len];
+        let set_id = read_u16(&input[pos..pos + 2]);
+        let set_len = read_u16(&input[pos + 2..pos + 4]) as usize;
+        if set_len < 4 || pos + set_len > length as usize {
+            return Err("bad set length".into());
+        }
+        let payload = &input[pos + 4..pos + set_len];
         match set_id {
             SET_ID_TEMPLATE => sets.push(Set::Template(parse_template_set(payload)?)),
             SET_ID_OPTIONS_TEMPLATE => sets.push(Set::OptionsTemplate(payload.to_vec())),
@@ -76,25 +84,37 @@ pub fn parse_message(input: &[u8]) -> Result<Message, String> {
         }
         pos += set_len;
     }
-    Ok(Message { version, length, export_time, sequence_number, observation_domain_id, sets })
+    Ok(Message {
+        version,
+        length,
+        export_time,
+        sequence_number,
+        observation_domain_id,
+        sets,
+    })
 }
 
 fn parse_template_set(payload: &[u8]) -> Result<Vec<TemplateRecord>, String> {
     let mut templates = Vec::new();
     let mut pos = 0usize;
     while pos + 4 <= payload.len() {
-        let template_id = read_u16(&payload[pos..pos+2]);
-        let field_count = read_u16(&payload[pos+2..pos+4]);
+        let template_id = read_u16(&payload[pos..pos + 2]);
+        let field_count = read_u16(&payload[pos + 2..pos + 4]);
         pos += 4;
         let mut fields = Vec::with_capacity(field_count as usize);
         for _ in 0..field_count {
-            if pos + 4 > payload.len() { return Err("template field truncated".into()); }
-            let id = read_u16(&payload[pos..pos+2]);
-            let length = read_u16(&payload[pos+2..pos+4]);
+            if pos + 4 > payload.len() {
+                return Err("template field truncated".into());
+            }
+            let id = read_u16(&payload[pos..pos + 2]);
+            let length = read_u16(&payload[pos + 2..pos + 4]);
             fields.push(FieldSpec { id, length });
             pos += 4;
         }
-        templates.push(TemplateRecord { template_id, fields });
+        templates.push(TemplateRecord {
+            template_id,
+            fields,
+        });
     }
     Ok(templates)
 }
@@ -103,18 +123,30 @@ fn parse_data_set(_template_id: u16, _payload: &[u8]) -> Result<Set, String> {
     Ok(Set::Data(Vec::new()))
 }
 
-pub fn parse_data_records(payload: &[u8], template: &TemplateRecord) -> Result<Vec<DataRecord>, String> {
+pub fn parse_data_records(
+    payload: &[u8],
+    template: &TemplateRecord,
+) -> Result<Vec<DataRecord>, String> {
     let mut records = Vec::new();
     let mut pos = 0usize;
     while pos < payload.len() {
         let mut fields = Vec::new();
         for spec in &template.fields {
-            if pos + spec.length as usize > payload.len() { return Err("record truncated".into()); }
+            if pos + spec.length as usize > payload.len() {
+                return Err("record truncated".into());
+            }
             let value = payload[pos..pos + spec.length as usize].to_vec();
-            fields.push(Field { id: spec.id, length: spec.length, value });
+            fields.push(Field {
+                id: spec.id,
+                length: spec.length,
+                value,
+            });
             pos += spec.length as usize;
         }
-        records.push(DataRecord { template_id: template.template_id, fields });
+        records.push(DataRecord {
+            template_id: template.template_id,
+            fields,
+        });
     }
     Ok(records)
 }
@@ -123,8 +155,12 @@ pub fn template_for<'a>(templates: &'a [TemplateRecord], id: u16) -> Option<&'a 
     templates.iter().find(|t| t.template_id == id)
 }
 
-fn read_u16(b: &[u8]) -> u16 { u16::from_be_bytes([b[0], b[1]]) }
-fn read_u32(b: &[u8]) -> u32 { u32::from_be_bytes([b[0], b[1], b[2], b[3]]) }
+fn read_u16(b: &[u8]) -> u16 {
+    u16::from_be_bytes([b[0], b[1]])
+}
+fn read_u32(b: &[u8]) -> u32 {
+    u32::from_be_bytes([b[0], b[1], b[2], b[3]])
+}
 
 #[cfg(test)]
 mod tests {
@@ -136,12 +172,15 @@ mod tests {
         body.extend_from_slice(&export_time.to_be_bytes());
         body.extend_from_slice(&seq.to_be_bytes());
         body.extend_from_slice(&odid.to_be_bytes());
-        for s in sets { body.extend_from_slice(s); }
+        for s in sets {
+            body.extend_from_slice(s);
+        }
         let len = body.len() as u16;
         body[2..4].copy_from_slice(&len.to_be_bytes());
         body
     }
-    #[test] fn parse_header_only() {
+    #[test]
+    fn parse_header_only() {
         let msg = mk_msg(IPFIX_VERSION, 1234, 5678, 99, &[]);
         let m = parse_message(&msg).unwrap();
         assert_eq!(m.version, IPFIX_VERSION);
@@ -149,14 +188,17 @@ mod tests {
         assert_eq!(m.sequence_number, 5678);
         assert_eq!(m.observation_domain_id, 99);
     }
-    #[test] fn rejects_wrong_version() {
+    #[test]
+    fn rejects_wrong_version() {
         let msg = mk_msg(9, 0, 0, 0, &[]);
         assert!(parse_message(&msg).is_err());
     }
-    #[test] fn truncated_header() {
+    #[test]
+    fn truncated_header() {
         assert!(parse_message(&[0u8; 10]).is_err());
     }
-    #[test] fn template_set_with_two_fields() {
+    #[test]
+    fn template_set_with_two_fields() {
         // template_id=256, field_count=2, field1: octetDeltaCount(1) len=8, field2: packetDeltaCount(2) len=8
         let mut s = vec![0u8; 12];
         s[0..2].copy_from_slice(&256u16.to_be_bytes());
@@ -172,10 +214,14 @@ mod tests {
         assert_eq!(templates[0].fields[0].id, 1);
         assert_eq!(templates[0].fields[1].id, 2);
     }
-    #[test] fn parse_data_records_with_template() {
+    #[test]
+    fn parse_data_records_with_template() {
         let tmpl = TemplateRecord {
             template_id: 256,
-            fields: vec![FieldSpec { id: 1, length: 8 }, FieldSpec { id: 2, length: 8 }],
+            fields: vec![
+                FieldSpec { id: 1, length: 8 },
+                FieldSpec { id: 2, length: 8 },
+            ],
         };
         let mut payload = Vec::new();
         payload.extend_from_slice(&100u64.to_be_bytes());
@@ -186,12 +232,23 @@ mod tests {
         assert_eq!(recs[0].fields[0].value, 100u64.to_be_bytes());
         assert_eq!(recs[0].fields[1].value, 5u64.to_be_bytes());
     }
-    #[test] fn template_for_lookup() {
-        let tmpls = vec![TemplateRecord { template_id: 256, fields: vec![] }, TemplateRecord { template_id: 257, fields: vec![] }];
+    #[test]
+    fn template_for_lookup() {
+        let tmpls = vec![
+            TemplateRecord {
+                template_id: 256,
+                fields: vec![],
+            },
+            TemplateRecord {
+                template_id: 257,
+                fields: vec![],
+            },
+        ];
         assert_eq!(template_for(&tmpls, 257).unwrap().template_id, 257);
         assert!(template_for(&tmpls, 999).is_none());
     }
-    #[test] fn full_message_with_template_and_data() {
+    #[test]
+    fn full_message_with_template_and_data() {
         let mut template_set = vec![0u8; 8];
         template_set[0..2].copy_from_slice(&256u16.to_be_bytes());
         template_set[2..4].copy_from_slice(&1u16.to_be_bytes());
@@ -210,9 +267,19 @@ mod tests {
         data_set.extend_from_slice(&data_set_len.to_be_bytes());
         data_set.extend_from_slice(&data_payload);
 
-        let msg = mk_msg(IPFIX_VERSION, 1000, 1, 42, &[&template_set_with_header, &data_set]);
+        let msg = mk_msg(
+            IPFIX_VERSION,
+            1000,
+            1,
+            42,
+            &[&template_set_with_header, &data_set],
+        );
         let m = parse_message(&msg).unwrap();
         assert_eq!(m.sets.len(), 2);
-        if let Set::Template(t) = &m.sets[0] { assert_eq!(t[0].template_id, 256); } else { panic!(); }
+        if let Set::Template(t) = &m.sets[0] {
+            assert_eq!(t[0].template_id, 256);
+        } else {
+            panic!();
+        }
     }
 }

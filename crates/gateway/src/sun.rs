@@ -17,28 +17,45 @@ fn day_of_year(year: i32, month: u32, day: u32) -> u32 {
     let mut total = 0;
     for m in 0..(month - 1) as usize {
         total += days_in_month[m];
-        if m == 1 && leap { total += 1; }
+        if m == 1 && leap {
+            total += 1;
+        }
     }
     total + day
 }
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn equinox() {
+    #[test]
+    fn equinox() {
         let (s, e) = sunrise_sunset(2024, 3, 20, 0.0, 0.0);
         assert!(s < e);
         assert!((s - 6.0).abs() < 0.5);
         assert!((e - 18.0).abs() < 0.5);
     }
-    #[test] fn summer_daylight_longer() {
+    #[test]
+    fn summer_daylight_longer() {
         let (_, e_summer) = sunrise_sunset(2024, 6, 21, 40.0, -74.0);
         let (_, e_winter) = sunrise_sunset(2024, 12, 21, 40.0, -74.0);
-        let summer_len = if e_summer < 12.0 { e_summer + 24.0 - sunrise_sunset(2024, 6, 21, 40.0, -74.0).0 } else { e_summer - sunrise_sunset(2024, 6, 21, 40.0, -74.0).0 };
-        assert!(summer_len > 9.0, "summer daylight expected >9h, got {}", summer_len);
+        let summer_len = if e_summer < 12.0 {
+            e_summer + 24.0 - sunrise_sunset(2024, 6, 21, 40.0, -74.0).0
+        } else {
+            e_summer - sunrise_sunset(2024, 6, 21, 40.0, -74.0).0
+        };
+        assert!(
+            summer_len > 9.0,
+            "summer daylight expected >9h, got {}",
+            summer_len
+        );
     }
-    #[test] fn winter_daylight_shorter() {
+    #[test]
+    fn winter_daylight_shorter() {
         let (s_w, e_w) = sunrise_sunset(2024, 12, 21, 40.0, -74.0);
         let winter_len = e_w - s_w;
-        assert!(winter_len > 9.0 && winter_len < 15.5, "winter daylight expected 9-15.5h, got {}", winter_len);
+        assert!(
+            winter_len > 9.0 && winter_len < 15.5,
+            "winter daylight expected 9-15.5h, got {}",
+            winter_len
+        );
     }
 }

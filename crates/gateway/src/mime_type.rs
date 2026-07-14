@@ -138,10 +138,7 @@ const MIME_TABLE: &[(&str, &str)] = &[
 /// without the leading dot). Returns None if no mapping is known.
 pub fn lookup_by_extension(ext: &str) -> Option<&'static str> {
     let e = ext.trim_start_matches('.').to_ascii_lowercase();
-    MIME_TABLE
-        .iter()
-        .find(|(k, _)| *k == e)
-        .map(|(_, v)| *v)
+    MIME_TABLE.iter().find(|(k, _)| *k == e).map(|(_, v)| *v)
 }
 
 #[cfg(test)]
@@ -167,7 +164,10 @@ mod tests {
     fn parse_with_charset() {
         let m = parse("text/plain; charset=UTF-8").unwrap();
         assert_eq!(m.type_, "text");
-        assert_eq!(m.parameters.get("charset").map(|s| s.as_str()), Some("UTF-8"));
+        assert_eq!(
+            m.parameters.get("charset").map(|s| s.as_str()),
+            Some("UTF-8")
+        );
     }
 
     #[test]
@@ -175,7 +175,10 @@ mod tests {
         let m = parse(r#"multipart/form-data; boundary="abc 123""#).unwrap();
         assert_eq!(m.type_, "multipart");
         assert_eq!(m.subtype, "form-data");
-        assert_eq!(m.parameters.get("boundary").map(|s| s.as_str()), Some("abc 123"));
+        assert_eq!(
+            m.parameters.get("boundary").map(|s| s.as_str()),
+            Some("abc 123")
+        );
     }
 
     #[test]

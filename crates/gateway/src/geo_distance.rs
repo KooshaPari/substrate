@@ -76,7 +76,10 @@ const GEOHASH_ALPHABET: &[u8; 32] = b"0123456789bcdefghjkmnpqrstuvwxyz";
 /// Encode a coordinate as a base-32 geohash with the given precision
 /// (1..=12 characters). Higher precision ≈ smaller cell.
 pub fn geohash_encode(p: LatLon, precision: usize) -> String {
-    assert!(precision >= 1 && precision <= 12, "precision must be 1..=12");
+    assert!(
+        precision >= 1 && precision <= 12,
+        "precision must be 1..=12"
+    );
     let mut lat_range = [-90.0_f64, 90.0_f64];
     let mut lon_range = [-180.0_f64, 180.0_f64];
     let mut hash = String::with_capacity(precision);
@@ -183,7 +186,13 @@ mod tests {
     use super::*;
 
     fn approx(a: f64, b: f64, eps: f64) {
-        assert!((a - b).abs() < eps, "expected {} ≈ {} (|diff|={})", a, b, (a - b).abs());
+        assert!(
+            (a - b).abs() < eps,
+            "expected {} ≈ {} (|diff|={})",
+            a,
+            b,
+            (a - b).abs()
+        );
     }
 
     #[test]
@@ -207,7 +216,11 @@ mod tests {
         let nyc = LatLon::new(40.7128, -74.0060);
         let tokyo = LatLon::new(35.6762, 139.6503);
         let d = haversine_km(nyc, tokyo);
-        assert!((d - 10_870.0).abs() < 100.0, "expected ~10870 km, got {}", d);
+        assert!(
+            (d - 10_870.0).abs() < 100.0,
+            "expected ~10870 km, got {}",
+            d
+        );
     }
 
     #[test]

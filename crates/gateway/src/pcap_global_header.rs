@@ -29,7 +29,9 @@ pub struct PcapRecordHeader {
 }
 
 pub fn parse_global_header(input: &[u8]) -> Result<PcapGlobalHeader, String> {
-    if input.len() < 24 { return Err("pcap header truncated".into()); }
+    if input.len() < 24 {
+        return Err("pcap header truncated".into());
+    }
     let magic_le = u32::from_le_bytes([input[0], input[1], input[2], input[3]]);
     let magic_be = u32::from_be_bytes([input[0], input[1], input[2], input[3]]);
     let (magic, swapped) = match (magic_le, magic_be) {
@@ -41,19 +43,29 @@ pub fn parse_global_header(input: &[u8]) -> Result<PcapGlobalHeader, String> {
     };
     let nano = magic == 0xa1b23c4d;
     let read_u16 = |off: usize| -> u16 {
-        if swapped { u16::from_be_bytes([input[off], input[off+1]]) }
-        else { u16::from_le_bytes([input[off], input[off+1]]) }
+        if swapped {
+            u16::from_be_bytes([input[off], input[off + 1]])
+        } else {
+            u16::from_le_bytes([input[off], input[off + 1]])
+        }
     };
     let read_u32 = |off: usize| -> u32 {
-        if swapped { u32::from_be_bytes([input[off], input[off+1], input[off+2], input[off+3]]) }
-        else { u32::from_le_bytes([input[off], input[off+1], input[off+2], input[off+3]]) }
+        if swapped {
+            u32::from_be_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+        } else {
+            u32::from_le_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+        }
     };
     let read_i32 = |off: usize| -> i32 {
-        if swapped { i32::from_be_bytes([input[off], input[off+1], input[off+2], input[off+3]]) }
-        else { i32::from_le_bytes([input[off], input[off+1], input[off+2], input[off+3]]) }
+        if swapped {
+            i32::from_be_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+        } else {
+            i32::from_le_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+        }
     };
     Ok(PcapGlobalHeader {
-        magic, nanosecond_timestamps: nano,
+        magic,
+        nanosecond_timestamps: nano,
         version_major: read_u16(4),
         version_minor: read_u16(6),
         thiszone: read_i32(8),
@@ -63,12 +75,22 @@ pub fn parse_global_header(input: &[u8]) -> Result<PcapGlobalHeader, String> {
     })
 }
 
-pub fn parse_record<'a>(input: &'a [u8], header: &PcapGlobalHeader) -> Result<(PcapRecordHeader, &'a [u8]), String> {
-    if input.len() < 16 { return Err("record header truncated".into()); }
-    let swapped = header.magic == u32::from_be_bytes(header.magic.to_le_bytes()) && header.magic != 0xa1b2c3d4 && header.magic != 0xa1b23c4d;
+pub fn parse_record<'a>(
+    input: &'a [u8],
+    header: &PcapGlobalHeader,
+) -> Result<(PcapRecordHeader, &'a [u8]), String> {
+    if input.len() < 16 {
+        return Err("record header truncated".into());
+    }
+    let swapped = header.magic == u32::from_be_bytes(header.magic.to_le_bytes())
+        && header.magic != 0xa1b2c3d4
+        && header.magic != 0xa1b23c4d;
     let read_u32 = |off: usize| -> u32 {
-        if swapped { u32::from_be_bytes([input[off], input[off+1], input[off+2], input[off+3]]) }
-        else { u32::from_le_bytes([input[off], input[off+1], input[off+2], input[off+3]]) }
+        if swapped {
+            u32::from_be_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+        } else {
+            u32::from_le_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+        }
     };
     let ts_sec = read_u32(0);
     let ts_usec = read_u32(4);
@@ -79,7 +101,16 @@ pub fn parse_record<'a>(input: &'a [u8], header: &PcapGlobalHeader) -> Result<(P
     }
     let payload = input[16..16 + incl_len as usize].to_vec();
     let rest = &input[16 + incl_len as usize..];
-    Ok((PcapRecordHeader { ts_sec, ts_usec_or_nsec: ts_usec, incl_len, orig_len, payload }, rest))
+    Ok((
+        PcapRecordHeader {
+            ts_sec,
+            ts_usec_or_nsec: ts_usec,
+            incl_len,
+            orig_len,
+            payload,
+        },
+        rest,
+    ))
 }
 
 #[cfg(test)]
@@ -96,7 +127,8 @@ mod tests {
         v.extend_from_slice(&network.to_le_bytes());
         v
     }
-    #[test] fn parse_le_micro() {
+    #[test]
+    fn parse_le_micro() {
         let buf = mk_pcap_le(0xa1b2c3d4, 1, 65535);
         let h = parse_global_header(&buf).unwrap();
         assert_eq!(h.magic, 0xa1b2c3d4);
@@ -105,13 +137,15 @@ mod tests {
         assert_eq!(h.snaplen, 65535);
         assert_eq!(h.version_major, 2);
     }
-    #[test] fn parse_le_nano() {
+    #[test]
+    fn parse_le_nano() {
         let buf = mk_pcap_le(0xa1b23c4d, 101, 262144);
         let h = parse_global_header(&buf).unwrap();
         assert!(h.nanosecond_timestamps);
         assert_eq!(h.network, 101);
     }
-    #[test] fn parse_be_micro() {
+    #[test]
+    fn parse_be_micro() {
         // swapped-endian header
         let mut buf = Vec::new();
         buf.extend_from_slice(&0xa1b2c3d4u32.to_be_bytes());
@@ -125,14 +159,17 @@ mod tests {
         assert_eq!(h.network, 113);
         assert_eq!(h.thiszone, -1);
     }
-    #[test] fn truncated() {
+    #[test]
+    fn truncated() {
         assert!(parse_global_header(&[0u8; 10]).is_err());
     }
-    #[test] fn bad_magic() {
+    #[test]
+    fn bad_magic() {
         let buf = mk_pcap_le(0xdeadbeef, 1, 65535);
         assert!(parse_global_header(&buf).is_err());
     }
-    #[test] fn parse_record_basic() {
+    #[test]
+    fn parse_record_basic() {
         let buf = mk_pcap_le(0xa1b2c3d4, 1, 65535);
         let h = parse_global_header(&buf).unwrap();
         let mut rec = Vec::new();
@@ -148,7 +185,8 @@ mod tests {
         assert_eq!(rh.payload, b"hello");
         assert!(rest.is_empty());
     }
-    #[test] fn parse_record_truncated_payload() {
+    #[test]
+    fn parse_record_truncated_payload() {
         let buf = mk_pcap_le(0xa1b2c3d4, 1, 65535);
         let h = parse_global_header(&buf).unwrap();
         let mut rec = Vec::new();
@@ -159,7 +197,8 @@ mod tests {
         rec.extend_from_slice(b"short");
         assert!(parse_record(&rec, &h).is_err());
     }
-    #[test] fn parse_multiple_records() {
+    #[test]
+    fn parse_multiple_records() {
         let buf = mk_pcap_le(0xa1b2c3d4, 1, 65535);
         let h = parse_global_header(&buf).unwrap();
         let mut data = Vec::new();

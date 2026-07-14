@@ -74,10 +74,7 @@
 /// If the input contains **no** letters (or consists only of skipped
 /// characters), [`Soundex::empty`] is returned.
 pub fn soundex(name: &str) -> String {
-    let cleaned: String = name
-        .chars()
-        .filter(|c| c.is_ascii_alphabetic())
-        .collect();
+    let cleaned: String = name.chars().filter(|c| c.is_ascii_alphabetic()).collect();
     if cleaned.is_empty() {
         return soundex_consts::empty_code();
     }

@@ -62,17 +62,17 @@ pub fn parse_exposition(
             // HELP <name> <text> — record help but do not emit a sample.
             // We do not currently surface help text in the parsed result; we
             // simply consume the line so the parser advances.
-            let _ = split_metric_name(rest).ok_or_else(|| {
-                format!("line {}: malformed # HELP directive", line_no + 1)
-            })?;
+            let _ = split_metric_name(rest)
+                .ok_or_else(|| format!("line {}: malformed # HELP directive", line_no + 1))?;
             continue;
         }
 
         if let Some(rest) = line.strip_prefix("# TYPE ") {
             let (name, kind_str) = split_metric_name(rest)
                 .ok_or_else(|| format!("line {}: malformed # TYPE directive", line_no + 1))?;
-            let kind = parse_kind(kind_str)
-                .ok_or_else(|| format!("line {}: unknown metric kind `{}`", line_no + 1, kind_str))?;
+            let kind = parse_kind(kind_str).ok_or_else(|| {
+                format!("line {}: unknown metric kind `{}`", line_no + 1, kind_str)
+            })?;
             default_kind = kind;
             kind_for_name.insert(name.to_string(), kind);
             continue;
@@ -214,7 +214,7 @@ fn parse_labels(inner: &str, line_no: usize) -> Result<Vec<(String, String)>, St
         }
         let key = inner[key_start..i].trim().to_string();
         i += 1; // consume '='
-        // expect opening quote
+                // expect opening quote
         if i >= bytes.len() || bytes[i] != b'"' {
             return Err(format!("line {line_no}: label value must be quoted"));
         }

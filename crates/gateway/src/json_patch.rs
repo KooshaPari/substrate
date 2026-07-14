@@ -141,14 +141,15 @@ fn parse_pointer(ptr: &str) -> Result<Vec<String>, String> {
         return Ok(Vec::new());
     }
     if !ptr.starts_with('/') {
-        return Err(format!("pointer must start with '/' or be empty: '{}'", ptr));
+        return Err(format!(
+            "pointer must start with '/' or be empty: '{}'",
+            ptr
+        ));
     }
     let parts: Vec<&str> = ptr.split('/').collect();
     let mut tokens = Vec::with_capacity(parts.len() - 1);
     for raw in &parts[1..] {
-        let unescaped = raw
-            .replace("~1", "/")
-            .replace("~0", "~");
+        let unescaped = raw.replace("~1", "/").replace("~0", "~");
         tokens.push(unescaped);
     }
     Ok(tokens)
@@ -263,7 +264,11 @@ fn add_at(doc: &mut JsValue, ptr: &str, value: JsValue) -> Result<(), String> {
         JsValue::Array(items) => {
             let idx = parse_index(last, items.len())?;
             if idx > items.len() {
-                return Err(format!("array index {} out of bounds (len={})", idx, items.len()));
+                return Err(format!(
+                    "array index {} out of bounds (len={})",
+                    idx,
+                    items.len()
+                ));
             }
             items.insert(idx, value);
             Ok(())
@@ -286,7 +291,11 @@ fn remove_at(doc: &mut JsValue, ptr: &str) -> Result<(), String> {
         ResolvedMut::Root(_) => Err("cannot remove document root".to_string()),
         ResolvedMut::ArrayIndex(items, idx) => {
             if idx >= items.len() {
-                return Err(format!("array index {} out of bounds (len={})", idx, items.len()));
+                return Err(format!(
+                    "array index {} out of bounds (len={})",
+                    idx,
+                    items.len()
+                ));
             }
             items.remove(idx);
             Ok(())
@@ -307,7 +316,11 @@ fn replace_at(doc: &mut JsValue, ptr: &str, value: JsValue) -> Result<(), String
         }
         ResolvedMut::ArrayIndex(items, idx) => {
             if idx >= items.len() {
-                return Err(format!("array index {} out of bounds (len={})", idx, items.len()));
+                return Err(format!(
+                    "array index {} out of bounds (len={})",
+                    idx,
+                    items.len()
+                ));
             }
             items[idx] = value;
             Ok(())
@@ -459,11 +472,7 @@ mod tests {
             ("a", JsValue::from_number(1.0)),
             ("b", JsValue::from_number(2.0)),
         ]);
-        apply(
-            &mut doc,
-            &[Patch::Move("/a".to_string(), "/c".to_string())],
-        )
-        .unwrap();
+        apply(&mut doc, &[Patch::Move("/a".to_string(), "/c".to_string())]).unwrap();
         assert_eq!(
             doc,
             obj(vec![
@@ -479,11 +488,7 @@ mod tests {
             ("a", JsValue::from_number(1.0)),
             ("b", JsValue::from_number(2.0)),
         ]);
-        apply(
-            &mut doc,
-            &[Patch::Copy("/a".to_string(), "/c".to_string())],
-        )
-        .unwrap();
+        apply(&mut doc, &[Patch::Copy("/a".to_string(), "/c".to_string())]).unwrap();
         assert_eq!(
             doc,
             obj(vec![
@@ -517,10 +522,7 @@ mod tests {
 
     #[test]
     fn pointer_with_escaped_slash() {
-        let mut doc = obj(vec![(
-            "a/b",
-            JsValue::from_number(1.0),
-        )]);
+        let mut doc = obj(vec![("a/b", JsValue::from_number(1.0))]);
         apply(
             &mut doc,
             &[Patch::Replace(
@@ -529,10 +531,7 @@ mod tests {
             )],
         )
         .unwrap();
-        let expected = obj(vec![(
-            "a/b",
-            JsValue::from_number(2.0),
-        )]);
+        let expected = obj(vec![("a/b", JsValue::from_number(2.0))]);
         assert_eq!(doc, expected);
     }
 }

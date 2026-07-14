@@ -289,10 +289,7 @@ mod tests {
         // "aple" is dist 1 (drop p), both within max_dist 2.
         assert_eq!(
             out,
-            vec![
-                ("aple".to_string(), 1),
-                ("apply".to_string(), 1),
-            ]
+            vec![("aple".to_string(), 1), ("apply".to_string(), 1),]
         );
     }
 

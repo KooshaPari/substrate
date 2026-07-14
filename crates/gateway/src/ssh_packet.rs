@@ -183,7 +183,12 @@ mod tests {
             let pkt = encode(&payload);
             let (decoded, consumed) = decode(&pkt).expect("decode should succeed");
             assert_eq!(decoded, payload, "round trip mismatch for n={}", n);
-            assert_eq!(consumed, pkt.len(), "consumed should equal pkt.len() for n={}", n);
+            assert_eq!(
+                consumed,
+                pkt.len(),
+                "consumed should equal pkt.len() for n={}",
+                n
+            );
         }
     }
 

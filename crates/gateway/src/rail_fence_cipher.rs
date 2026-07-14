@@ -190,20 +190,14 @@ mod tests {
         // Manually computed zig-zag pattern for rails=3:
         // 0 1 2 1 0 1 2 1 0 1 2 1 0 ...
         let order = zig_zag_order(13, 3);
-        assert_eq!(
-            order,
-            vec![0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0]
-        );
+        assert_eq!(order, vec![0, 1, 2, 1, 0, 1, 2, 1, 0, 1, 2, 1, 0]);
     }
 
     #[test]
     fn zig_zag_indices_rails_4() {
         // rails=4: 0,1,2,3,2,1,0,1,2,3,2,1,0
         let order = zig_zag_order(13, 4);
-        assert_eq!(
-            order,
-            vec![0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0]
-        );
+        assert_eq!(order, vec![0, 1, 2, 3, 2, 1, 0, 1, 2, 3, 2, 1, 0]);
     }
 
     #[test]

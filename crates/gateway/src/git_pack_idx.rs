@@ -71,10 +71,7 @@ pub fn parse(data: &[u8]) -> Result<PackIdx, String> {
     }
     // Magic.
     if &data[..4] != b"\xfftOc" {
-        return Err(format!(
-            "pack index magic mismatch: got {:?}",
-            &data[..4]
-        ));
+        return Err(format!("pack index magic mismatch: got {:?}", &data[..4]));
     }
     // Version: 4-byte integer in network byte order. Spec mandates 2.
     let version = u32::from_be_bytes(data[4..8].try_into().unwrap());
@@ -120,22 +117,31 @@ pub fn parse(data: &[u8]) -> Result<PackIdx, String> {
     let mut crcs = Vec::with_capacity(n);
     for i in 0..n {
         let start = crc_start + i * 4;
-        crcs.push(u32::from_be_bytes(data[start..start + 4].try_into().unwrap()));
+        crcs.push(u32::from_be_bytes(
+            data[start..start + 4].try_into().unwrap(),
+        ));
     }
     let mut offsets = Vec::with_capacity(n);
     for i in 0..n {
         let start = off_start + i * 4;
-        offsets.push(u32::from_be_bytes(data[start..start + 4].try_into().unwrap()));
+        offsets.push(u32::from_be_bytes(
+            data[start..start + 4].try_into().unwrap(),
+        ));
     }
 
     // Large offsets: count how many entries have the sentinel, and either
     // expect a contiguous run of `count × u64` BE values, or none at all.
-    let large_count = offsets.iter().filter(|o| **o == LARGE_OFFSET_SENTINEL).count();
+    let large_count = offsets
+        .iter()
+        .filter(|o| **o == LARGE_OFFSET_SENTINEL)
+        .count();
     let large_offsets_end = off_end + large_count * 8;
     let mut large_offsets = Vec::with_capacity(large_count);
     for i in 0..large_count {
         let start = off_end + i * 8;
-        large_offsets.push(u64::from_be_bytes(data[start..start + 8].try_into().unwrap()));
+        large_offsets.push(u64::from_be_bytes(
+            data[start..start + 8].try_into().unwrap(),
+        ));
     }
 
     if data.len() < large_offsets_end + 40 {
@@ -183,7 +189,11 @@ pub fn lookup(idx: &PackIdx, sha: &[u8; 20]) -> Option<u64> {
     // full binary search; the fanout prefix speeds things up only on
     // unindexed SHAs.
     let first = sha[0] as usize;
-    let lo = if first == 0 { 0 } else { idx.fanout[first - 1] as usize };
+    let lo = if first == 0 {
+        0
+    } else {
+        idx.fanout[first - 1] as usize
+    };
     let hi = idx.fanout[first] as usize;
     for i in lo..hi {
         if &idx.object_shas[i] == sha {
@@ -208,7 +218,10 @@ pub mod builder {
     /// don't need a SHA-1 implementation; if you want to validate them, run
     /// the real `sha-1` over the bytes you assembled.
     pub fn build(objects: &[([u8; 20], u32)]) -> Vec<u8> {
-        assert!(objects.len() <= u32::MAX as usize, "too many objects for u32 fanout");
+        assert!(
+            objects.len() <= u32::MAX as usize,
+            "too many objects for u32 fanout"
+        );
         // Sort by SHA lexicographically; pack indices are always sorted.
         let mut objs = objects.to_vec();
         objs.sort_by(|a, b| a.0.cmp(&b.0));
@@ -357,7 +370,11 @@ mod tests {
     #[test]
     fn multi_object_lookup_iterates_correctly() {
         let shas: Vec<[u8; 20]> = (0u8..16).map(sha).collect();
-        let pairs: Vec<([u8; 20], u32)> = shas.iter().enumerate().map(|(i, s)| (*s, (i as u32) * 8)).collect();
+        let pairs: Vec<([u8; 20], u32)> = shas
+            .iter()
+            .enumerate()
+            .map(|(i, s)| (*s, (i as u32) * 8))
+            .collect();
         let bytes = build(&pairs);
         let idx = parse(&bytes).expect("parse");
         assert_eq!(idx.object_shas.len(), 16);

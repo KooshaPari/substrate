@@ -50,7 +50,12 @@ impl FenwickTree {
     /// Add `delta` to the element at index `i` (0-based). Panics
     /// if `i >= n`.
     pub fn add(&mut self, i: usize, delta: u64) {
-        assert!(i < self.n, "fenwick add index {} out of range {}", i, self.n);
+        assert!(
+            i < self.n,
+            "fenwick add index {} out of range {}",
+            i,
+            self.n
+        );
         let mut idx = i + 1; // 1-based
         while idx <= self.n {
             // Wrapping add: u64 wraps around, but that would be a bug
@@ -67,7 +72,12 @@ impl FenwickTree {
 
     /// Sum of elements in `[0..=i]`. Panics if `i >= n`.
     pub fn prefix_sum(&self, i: usize) -> u64 {
-        assert!(i < self.n, "fenwick prefix sum index {} out of range {}", i, self.n);
+        assert!(
+            i < self.n,
+            "fenwick prefix sum index {} out of range {}",
+            i,
+            self.n
+        );
         let mut idx = i + 1;
         let mut sum: u64 = 0;
         while idx > 0 {
@@ -82,7 +92,12 @@ impl FenwickTree {
         if lo > hi {
             return 0;
         }
-        assert!(hi < self.n, "fenwick range_sum hi {} out of range {}", hi, self.n);
+        assert!(
+            hi < self.n,
+            "fenwick range_sum hi {} out of range {}",
+            hi,
+            self.n
+        );
         if lo == 0 {
             self.prefix_sum(hi)
         } else {

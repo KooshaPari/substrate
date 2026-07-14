@@ -221,12 +221,7 @@ mod tests {
     use super::*;
 
     /// Helper: build a single-record capture blob with arbitrary fields.
-    fn build_one(
-        ts: u64,
-        src: u16,
-        dst: u16,
-        payload: &[u8],
-    ) -> Vec<u8> {
+    fn build_one(ts: u64, src: u16, dst: u16, payload: &[u8]) -> Vec<u8> {
         let mut v = Vec::new();
         v.extend_from_slice(MAGIC);
         v.extend_from_slice(&SUPPORTED_VERSION.to_le_bytes());
@@ -349,6 +344,10 @@ mod tests {
     #[test]
     fn rejects_input_shorter_than_header() {
         let err = parse(&[0u8; 4]).expect_err("short input should fail");
-        assert!(err.contains("shorter than header"), "unexpected error: {}", err);
+        assert!(
+            err.contains("shorter than header"),
+            "unexpected error: {}",
+            err
+        );
     }
 }

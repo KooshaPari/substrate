@@ -1,3 +1,3 @@
 pub mod keybindings;
-pub mod sla_panel;
 pub mod provider_panel;
+pub mod sla_panel;

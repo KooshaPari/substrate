@@ -63,7 +63,11 @@ pub fn solve(items: &[Item], capacity: u32) -> Solution {
         }
     }
     chosen.reverse();
-    Solution { total_value: dp[n][w], total_weight, chosen }
+    Solution {
+        total_value: dp[n][w],
+        total_weight,
+        chosen,
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]

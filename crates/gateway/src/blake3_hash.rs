@@ -18,13 +18,10 @@ const BLOCK_LEN: usize = 64;
 const CHUNK_LEN: usize = 1024;
 
 const IV: [u32; 8] = [
-    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A,
-    0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
+    0x6A09E667, 0xBB67AE85, 0x3C6EF372, 0xA54FF53A, 0x510E527F, 0x9B05688C, 0x1F83D9AB, 0x5BE0CD19,
 ];
 
-const MSG_PERMUTATION: [usize; 16] = [
-    2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8,
-];
+const MSG_PERMUTATION: [usize; 16] = [2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8];
 
 const FLAGS_CHUNK_START: u8 = 1 << 0;
 const FLAGS_CHUNK_END: u8 = 1 << 1;
@@ -80,10 +77,22 @@ fn compress(
     let low = counter as u32;
     let high = (counter >> 32) as u32;
     let mut state = [
-        cv[0], cv[1], cv[2], cv[3],
-        cv[4], cv[5], cv[6], cv[7],
-        IV[0], IV[1], IV[2], IV[3],
-        low, high, block_len as u32, flags as u32,
+        cv[0],
+        cv[1],
+        cv[2],
+        cv[3],
+        cv[4],
+        cv[5],
+        cv[6],
+        cv[7],
+        IV[0],
+        IV[1],
+        IV[2],
+        IV[3],
+        low,
+        high,
+        block_len as u32,
+        flags as u32,
     ];
 
     round_fn(&mut state, &block_words);

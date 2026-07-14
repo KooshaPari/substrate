@@ -113,12 +113,7 @@ pub fn parse(input: &[u8], as_32bit: bool) -> Result<Vec<MapiProp>, String> {
                 input.len() - off
             ));
         }
-        let tag = u32::from_le_bytes([
-            input[off],
-            input[off + 1],
-            input[off + 2],
-            input[off + 3],
-        ]);
+        let tag = u32::from_le_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]]);
         let flags = u16::from_le_bytes([input[off + 4], input[off + 5]]);
         off += 6;
 
@@ -140,9 +135,7 @@ pub fn parse(input: &[u8], as_32bit: bool) -> Result<Vec<MapiProp>, String> {
             // Multi-valued fixed-size: 4-byte count + count * fixed.
             if is_multi {
                 if input.len() - off < 4 {
-                    return Err(format!(
-                        "mapi_props: truncated array-count at offset {off}"
-                    ));
+                    return Err(format!("mapi_props: truncated array-count at offset {off}"));
                 }
                 let count = u32::from_le_bytes([
                     input[off],
@@ -162,11 +155,7 @@ pub fn parse(input: &[u8], as_32bit: bool) -> Result<Vec<MapiProp>, String> {
                 }
                 let value = input[off..off + total].to_vec();
                 off += total;
-                out.push(MapiProp {
-                    tag,
-                    flags,
-                    value,
-                });
+                out.push(MapiProp { tag, flags, value });
             } else {
                 if input.len() - off < flen {
                     return Err(format!(
@@ -175,11 +164,7 @@ pub fn parse(input: &[u8], as_32bit: bool) -> Result<Vec<MapiProp>, String> {
                 }
                 let value = input[off..off + flen].to_vec();
                 off += flen;
-                out.push(MapiProp {
-                    tag,
-                    flags,
-                    value,
-                });
+                out.push(MapiProp { tag, flags, value });
             }
         } else if property_type == PTYP_STRING
             || property_type == PTYP_STRING8
@@ -192,12 +177,9 @@ pub fn parse(input: &[u8], as_32bit: bool) -> Result<Vec<MapiProp>, String> {
                     "mapi_props: truncated length-prefix at offset {off}"
                 ));
             }
-            let count = u32::from_le_bytes([
-                input[off],
-                input[off + 1],
-                input[off + 2],
-                input[off + 3],
-            ]) as usize;
+            let count =
+                u32::from_le_bytes([input[off], input[off + 1], input[off + 2], input[off + 3]])
+                    as usize;
             off += 4;
             if input.len() - off < count {
                 return Err(format!(
@@ -206,11 +188,7 @@ pub fn parse(input: &[u8], as_32bit: bool) -> Result<Vec<MapiProp>, String> {
             }
             let value = input[off..off + count].to_vec();
             off += count;
-            out.push(MapiProp {
-                tag,
-                flags,
-                value,
-            });
+            out.push(MapiProp { tag, flags, value });
         } else {
             return Err(format!(
                 "mapi_props: unknown property type 0x{property_type:04x} in tag 0x{tag:08x}"

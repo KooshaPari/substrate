@@ -35,11 +35,7 @@ fn build_table(poly: u32) -> [u32; 256] {
     for i in 0..256u32 {
         let mut c = i;
         for _ in 0..8 {
-            c = if c & 1 != 0 {
-                (c >> 1) ^ poly
-            } else {
-                c >> 1
-            };
+            c = if c & 1 != 0 { (c >> 1) ^ poly } else { c >> 1 };
         }
         table[i as usize] = c;
     }

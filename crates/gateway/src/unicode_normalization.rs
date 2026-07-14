@@ -41,9 +41,9 @@ pub fn ascii_eq_ignore_case(a: &str, b: &str) -> bool {
     if a.len() != b.len() {
         return false;
     }
-    a.bytes().zip(b.bytes()).all(|(x, y)| {
-        x.eq_ignore_ascii_case(&y)
-    })
+    a.bytes()
+        .zip(b.bytes())
+        .all(|(x, y)| x.eq_ignore_ascii_case(&y))
 }
 
 /// Case-insensitive ASCII prefix check.

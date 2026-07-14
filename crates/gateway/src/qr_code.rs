@@ -112,8 +112,8 @@ pub fn build_matrix(version: usize) -> QrMatrix {
 fn place_finder(modules: &mut Vec<Vec<bool>>, r0: usize, c0: usize) {
     for r in 0..7 {
         for c in 0..7 {
-            let dark = (r == 0 || r == 6 || c == 0 || c == 6)
-                || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
+            let dark =
+                (r == 0 || r == 6 || c == 0 || c == 6) || (r >= 2 && r <= 4 && c >= 2 && c <= 4);
             modules[r0 + r][c0 + c] = dark;
         }
     }

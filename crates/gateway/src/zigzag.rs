@@ -17,8 +17,25 @@ pub fn decode_64(n: u64) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn zz32_pos() { assert_eq!(encode_32(5), 10); assert_eq!(decode_32(10), 5); }
-    #[test] fn zz32_neg() { assert_eq!(encode_32(-5), 9); assert_eq!(decode_32(9), -5); }
-    #[test] fn zz32_zero() { assert_eq!(encode_32(0), 0); assert_eq!(decode_32(0), 0); }
-    #[test] fn zz64_roundtrip() { for v in [-1000, -1, 0, 1, 1000] { assert_eq!(decode_64(encode_64(v)), v); } }
+    #[test]
+    fn zz32_pos() {
+        assert_eq!(encode_32(5), 10);
+        assert_eq!(decode_32(10), 5);
+    }
+    #[test]
+    fn zz32_neg() {
+        assert_eq!(encode_32(-5), 9);
+        assert_eq!(decode_32(9), -5);
+    }
+    #[test]
+    fn zz32_zero() {
+        assert_eq!(encode_32(0), 0);
+        assert_eq!(decode_32(0), 0);
+    }
+    #[test]
+    fn zz64_roundtrip() {
+        for v in [-1000, -1, 0, 1, 1000] {
+            assert_eq!(decode_64(encode_64(v)), v);
+        }
+    }
 }
