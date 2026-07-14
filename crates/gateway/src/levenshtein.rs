@@ -24,7 +24,7 @@
 //! # Examples
 //!
 //! ```
-//! use substrate_gateway::levenshtein::{distance, suggest_within};
+//! use gateway::levenshtein::{distance, suggest_within};
 //!
 //! assert_eq!(distance("kitten", "sitting"), 3);
 //! assert_eq!(distance("ab", "ba"), 2); // pure transpose, classic Levenshtein
@@ -48,7 +48,7 @@
 /// # Examples
 ///
 /// ```
-/// use substrate_gateway::levenshtein::distance;
+/// use gateway::levenshtein::distance;
 ///
 /// assert_eq!(distance("", ""), 0);
 /// assert_eq!(distance("abc", ""), 3);
@@ -119,7 +119,7 @@ pub fn distance(a: &str, b: &str) -> usize {
 /// # Examples
 ///
 /// ```
-/// use substrate_gateway::levenshtein::distance_with_cap;
+/// use gateway::levenshtein::distance_with_cap;
 ///
 /// // True distance is 3, cap is 5, so we get the exact value.
 /// assert_eq!(distance_with_cap("kitten", "sitting", 5), 3);
@@ -187,7 +187,7 @@ pub fn distance_with_cap(a: &str, b: &str, cap: usize) -> usize {
 /// # Examples
 ///
 /// ```
-/// use substrate_gateway::levenshtein::suggest_within;
+/// use gateway::levenshtein::suggest_within;
 ///
 /// let sugg = suggest_within("apple", &["apply", "aple", "banana"], 2);
 /// assert_eq!(sugg, vec![

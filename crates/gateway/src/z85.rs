@@ -12,7 +12,9 @@
 //!
 //! Alphabet (85 printable ASCII chars, no quoting required):
 //!
-//!     0..9  a..z  A..Z  .-:+=^!/*?&<>()[]{}@%$#
+//! ```text
+//! 0..9  a..z  A..Z  .-:+=^!/*?&<>()[]{}@%$#
+//! ```
 //!
 //! Reference: <https://rfc.zeromq.org/spec/32/> (Z85 specification).
 
