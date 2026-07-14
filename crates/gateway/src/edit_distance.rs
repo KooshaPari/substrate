@@ -74,19 +74,13 @@ pub fn distance_weighted(
 ) -> usize {
     let m = a.len();
     let n = b.len();
-    let mut prev: Vec<usize> = (0..=n)
-        .map(|j| j.saturating_mul(ins_cost))
-        .collect();
+    let mut prev: Vec<usize> = (0..=n).map(|j| j.saturating_mul(ins_cost)).collect();
     let mut curr: Vec<usize> = vec![0; n + 1];
 
     for i in 1..=m {
         curr[0] = prev[0].saturating_add(del_cost);
         for j in 1..=n {
-            let cost = if a[i - 1] == b[j - 1] {
-                0
-            } else {
-                sub_cost
-            };
+            let cost = if a[i - 1] == b[j - 1] { 0 } else { sub_cost };
             let del = prev[j].saturating_add(del_cost);
             let ins = curr[j - 1].saturating_add(ins_cost);
             let sub = prev[j - 1].saturating_add(cost);
@@ -282,9 +276,9 @@ mod tests {
         // UTF-8 char boundaries if they care about grapheme clusters.
         let s1 = "café".as_bytes(); // 5 bytes (é is 2)
         let s2 = "cafe".as_bytes(); // 4 bytes
-        // Length difference is 1 (delete one byte) → distance 1.
-        // We do not pin the exact value, just verify it's bounded
-        // and consistent.
+                                    // Length difference is 1 (delete one byte) → distance 1.
+                                    // We do not pin the exact value, just verify it's bounded
+                                    // and consistent.
         let d = distance(s1, s2);
         assert!(d >= 1 && d <= s1.len() + s2.len());
         // Symmetry check on the same input.

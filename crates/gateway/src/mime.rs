@@ -29,9 +29,27 @@ pub const COMMON_TYPES: &[(&str, &str)] = &[
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn html() { assert_eq!(lookup("html"), "text/html"); assert_eq!(lookup("HTML"), "text/html"); }
-    #[test] fn json() { assert_eq!(lookup("json"), "application/json"); }
-    #[test] fn unknown() { assert_eq!(lookup("xyz"), "application/octet-stream"); }
-    #[test] fn png() { assert_eq!(lookup("png"), "image/png"); }
-    #[test] fn common() { assert!(COMMON_TYPES.iter().any(|(e, m)| *e == "html" && *m == "text/html")); }
+    #[test]
+    fn html() {
+        assert_eq!(lookup("html"), "text/html");
+        assert_eq!(lookup("HTML"), "text/html");
+    }
+    #[test]
+    fn json() {
+        assert_eq!(lookup("json"), "application/json");
+    }
+    #[test]
+    fn unknown() {
+        assert_eq!(lookup("xyz"), "application/octet-stream");
+    }
+    #[test]
+    fn png() {
+        assert_eq!(lookup("png"), "image/png");
+    }
+    #[test]
+    fn common() {
+        assert!(COMMON_TYPES
+            .iter()
+            .any(|(e, m)| *e == "html" && *m == "text/html"));
+    }
 }

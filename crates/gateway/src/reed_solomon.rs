@@ -74,7 +74,10 @@ impl RsEncoder {
     /// Returns the corrected message (without parity) on success.
     pub fn decode(&self, received: &[u8]) -> Result<Vec<u8>, String> {
         let nsym = self.generator_coeffs.len() - 1;
-        assert!(received.len() == self.data_capacity + nsym, "wrong received length");
+        assert!(
+            received.len() == self.data_capacity + nsym,
+            "wrong received length"
+        );
 
         // Compute syndromes: S_i = received(alpha^i) for i in 1..=nsym
         let mut syndromes = vec![0u8; nsym];
@@ -99,7 +102,9 @@ impl RsEncoder {
         let s1 = syndromes[0];
         let s2 = syndromes[1];
         if s1 == 0 || s2 == 0 {
-            return Err("zero syndrome but non-zero elsewhere: multi-error case not implemented".into());
+            return Err(
+                "zero syndrome but non-zero elsewhere: multi-error case not implemented".into(),
+            );
         }
         let log_s1 = self.log_table[s1 as usize] as i32;
         let log_s2 = self.log_table[s2 as usize] as i32;
@@ -109,7 +114,11 @@ impl RsEncoder {
         // i.e. pos = log(alpha_i)
         let pos = log_alpha_i as usize;
         if pos >= received.len() {
-            return Err(format!("error position {} out of range {}", pos, received.len()));
+            return Err(format!(
+                "error position {} out of range {}",
+                pos,
+                received.len()
+            ));
         }
         // error magnitude: e = S_1 / alpha^i
         let log_e = (log_s1 - log_alpha_i).rem_euclid(255);
@@ -165,11 +174,7 @@ fn gf_mul(a: u8, b: u8, exp: &[u8; 512], log: &[u8; FIELD_SIZE + 1]) -> u8 {
     exp[log_a + log_b]
 }
 
-fn generator_polynomial(
-    nsym: usize,
-    exp: &[u8; 512],
-    log: &[u8; FIELD_SIZE + 1],
-) -> Vec<u8> {
+fn generator_polynomial(nsym: usize, exp: &[u8; 512], log: &[u8; FIELD_SIZE + 1]) -> Vec<u8> {
     // g(x) = (x - alpha^1)(x - alpha^2)...(x - alpha^nsym)
     // In GF(2), subtraction is XOR, so (x - alpha^i) = (x + alpha^i).
     let mut g = vec![1u8];

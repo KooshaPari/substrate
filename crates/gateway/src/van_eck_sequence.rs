@@ -125,12 +125,7 @@ impl Iterator for VanEckIter {
         }
         let prev_idx = n - 1;
         let prev_val = self.out[prev_idx - 1];
-        let next = match self
-            .last_seen
-            .get(prev_val as usize)
-            .copied()
-            .flatten()
-        {
+        let next = match self.last_seen.get(prev_val as usize).copied().flatten() {
             Some(p) => (prev_idx - p) as u64,
             None => 0u64,
         };
@@ -168,8 +163,8 @@ mod tests {
     // straightforward Python reference implementation. Any divergence
     // from these values indicates a regression in the generator.
     const OEIS_CONFIRMED: [u64; 40] = [
-        0, 0, 1, 0, 2, 0, 2, 2, 1, 6, 0, 5, 0, 2, 6, 5, 4, 0, 5, 3, 0, 3, 2, 9, 0, 4, 9, 3, 6,
-        14, 0, 6, 3, 5, 15, 0, 5, 3, 5, 2,
+        0, 0, 1, 0, 2, 0, 2, 2, 1, 6, 0, 5, 0, 2, 6, 5, 4, 0, 5, 3, 0, 3, 2, 9, 0, 4, 9, 3, 6, 14,
+        0, 6, 3, 5, 15, 0, 5, 3, 5, 2,
     ];
 
     #[test]
@@ -256,7 +251,12 @@ mod tests {
         let v = generate(500);
         for (i, x) in v.iter().enumerate() {
             let one_based = i + 1;
-            assert!(*x <= one_based as u64, "term a({}) = {} exceeds index", one_based, x);
+            assert!(
+                *x <= one_based as u64,
+                "term a({}) = {} exceeds index",
+                one_based,
+                x
+            );
         }
     }
 

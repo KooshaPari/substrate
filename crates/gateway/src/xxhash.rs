@@ -164,13 +164,17 @@ pub fn xxh64(input: &[u8], seed: u64) -> u64 {
     while pos + 8 <= len {
         let k1 = xxh64_round(0, read64(input, pos));
         h64 ^= k1;
-        h64 = rotl64(h64, 27).wrapping_mul(PRIME64_1).wrapping_add(PRIME64_4);
+        h64 = rotl64(h64, 27)
+            .wrapping_mul(PRIME64_1)
+            .wrapping_add(PRIME64_4);
         pos += 8;
     }
 
     if pos + 4 <= len {
         h64 ^= (read32(input, pos) as u64).wrapping_mul(PRIME64_1);
-        h64 = rotl64(h64, 23).wrapping_mul(PRIME64_2).wrapping_add(PRIME64_3);
+        h64 = rotl64(h64, 23)
+            .wrapping_mul(PRIME64_2)
+            .wrapping_add(PRIME64_3);
         pos += 4;
     }
 

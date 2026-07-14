@@ -95,8 +95,7 @@ fn apply_property(card: &mut VCard, name: &str, value: &str) {
                 let raw = parts.get(i).copied().unwrap_or("");
                 let decoded = unescape(raw);
                 if !decoded.is_empty() {
-                    card.structured_name
-                        .insert((*key).to_string(), decoded);
+                    card.structured_name.insert((*key).to_string(), decoded);
                 }
             }
         }

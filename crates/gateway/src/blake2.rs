@@ -29,8 +29,14 @@ const IV_B2B: [u64; 8] = [
 ];
 
 const IV_B2S: [u32; 8] = [
-    0x6B08_E647, 0xBB67_AE85, 0x3C6E_F372, 0xA54F_F53A,
-    0x510E_527F, 0x9B05_688C, 0x1F83_D9AB, 0x5BE0_CD19,
+    0x6B08_E647,
+    0xBB67_AE85,
+    0x3C6E_F372,
+    0xA54F_F53A,
+    0x510E_527F,
+    0x9B05_688C,
+    0x1F83_D9AB,
+    0x5BE0_CD19,
 ];
 
 const SIGMA_B2B: [[usize; 16]; 12] = [
@@ -100,7 +106,14 @@ fn compress_b2b(h: &mut [u64; 8], m: &[u8; 128], t0: u64, t1: u64, last: bool) {
     for i in 0..16 {
         let o = i * 8;
         msg[i] = u64::from_le_bytes([
-            m[o], m[o + 1], m[o + 2], m[o + 3], m[o + 4], m[o + 5], m[o + 6], m[o + 7],
+            m[o],
+            m[o + 1],
+            m[o + 2],
+            m[o + 3],
+            m[o + 4],
+            m[o + 5],
+            m[o + 6],
+            m[o + 7],
         ]);
     }
     for s in &SIGMA_B2B {
@@ -115,7 +128,10 @@ fn compress_b2b(h: &mut [u64; 8], m: &[u8; 128], t0: u64, t1: u64, last: bool) {
 /// means unkeyed hash; otherwise a key of 1..=64 bytes is required
 /// and the key is mixed in as a first block of length `block_size`.
 pub fn blake2b(data: &[u8], key: &[u8], outlen: usize) -> Vec<u8> {
-    assert!((1..=64).contains(&outlen), "blake2b outlen must be in 1..=64");
+    assert!(
+        (1..=64).contains(&outlen),
+        "blake2b outlen must be in 1..=64"
+    );
     assert!(key.len() <= 64, "blake2b key must be 0..=64 bytes");
     let mut h = IV_B2B;
     h[0] ^= 0x0101_0000 ^ (key.len() as u64) << 8 ^ outlen as u64;
@@ -215,7 +231,10 @@ fn compress_b2s(h: &mut [u32; 8], m: &[u8; 64], t0: u32, t1: u32, last: bool) {
 /// BLAKE2s hash of `data` to `outlen` bytes (1..=32). Empty `key`
 /// means unkeyed hash; otherwise a key of 1..=32 bytes is required.
 pub fn blake2s(data: &[u8], key: &[u8], outlen: usize) -> Vec<u8> {
-    assert!((1..=32).contains(&outlen), "blake2s outlen must be in 1..=32");
+    assert!(
+        (1..=32).contains(&outlen),
+        "blake2s outlen must be in 1..=32"
+    );
     assert!(key.len() <= 32, "blake2s key must be 0..=32 bytes");
     let mut h = IV_B2S;
     h[0] ^= 0x0101_0000 ^ (key.len() as u32) << 8 ^ outlen as u32;

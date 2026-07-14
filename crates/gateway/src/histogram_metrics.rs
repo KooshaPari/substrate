@@ -16,7 +16,11 @@ pub struct Histogram {
 
 impl Histogram {
     pub fn with_buckets(boundaries: &[f64]) -> Self {
-        let mut sorted: Vec<f64> = boundaries.iter().copied().filter(|b| b.is_finite()).collect();
+        let mut sorted: Vec<f64> = boundaries
+            .iter()
+            .copied()
+            .filter(|b| b.is_finite())
+            .collect();
         sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
         sorted.dedup();
         Self {

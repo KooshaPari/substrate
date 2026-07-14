@@ -154,9 +154,7 @@ impl<T> FibonacciHeap<T> {
         // If `id` is a root, update min if needed.
         if self.nodes[id.0].as_ref().unwrap().parent.is_none() {
             let m = self.min.unwrap();
-            if self.nodes[id.0].as_ref().unwrap().key
-                < self.nodes[m.0].as_ref().unwrap().key
-            {
+            if self.nodes[id.0].as_ref().unwrap().key < self.nodes[m.0].as_ref().unwrap().key {
                 self.min = Some(id);
             }
         }
@@ -202,9 +200,7 @@ impl<T> FibonacciHeap<T> {
             self.nodes[id.0].as_mut().unwrap().left = m_left;
             self.nodes[m_left.0].as_mut().unwrap().right = id;
             self.nodes[m.0].as_mut().unwrap().left = id;
-            if self.nodes[id.0].as_ref().unwrap().key
-                < self.nodes[m.0].as_ref().unwrap().key
-            {
+            if self.nodes[id.0].as_ref().unwrap().key < self.nodes[m.0].as_ref().unwrap().key {
                 self.min = Some(id);
             }
         } else {
@@ -264,10 +260,7 @@ impl<T> FibonacciHeap<T> {
         }
         // Pull z's key + value out before freeing the slot.
         let key = self.nodes[z.0].as_ref().unwrap().key;
-        let value = std::mem::replace(
-            &mut self.nodes[z.0].as_mut().unwrap().value,
-            T::default(),
-        );
+        let value = std::mem::replace(&mut self.nodes[z.0].as_mut().unwrap().value, T::default());
         self.nodes[z.0] = None;
         self.free.push(z.0);
         self.len -= 1;
@@ -486,8 +479,7 @@ mod tests {
         h.insert(2, 2);
         h.insert(5, 5);
         h.insert(1, 1);
-        let order: Vec<(i64, i32)> =
-            (0..4).map(|_| h.extract_min().expect("some")).collect();
+        let order: Vec<(i64, i32)> = (0..4).map(|_| h.extract_min().expect("some")).collect();
         assert_eq!(order, vec![(1, 1), (2, 2), (5, 5), (7, 7)]);
         assert!(h.is_empty());
     }
@@ -498,10 +490,8 @@ mod tests {
         for v in [7u32, 2, 5, 1, 9, 4, 8, 3, 6] {
             h.insert(v as i64, v);
         }
-        let order: Vec<(i64, u32)> =
-            (0..9).map(|_| h.extract_min().expect("some")).collect();
-        let expected: Vec<(i64, u32)> =
-            (1..=9u32).map(|v| (v as i64, v)).collect();
+        let order: Vec<(i64, u32)> = (0..9).map(|_| h.extract_min().expect("some")).collect();
+        let expected: Vec<(i64, u32)> = (1..=9u32).map(|v| (v as i64, v)).collect();
         assert_eq!(order, expected);
     }
 

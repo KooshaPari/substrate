@@ -47,11 +47,11 @@ body:
       label: Surface
       description: Where did the bug appear?
       options:
-        - CLI (psub, psub-gateway, etc.)
-        - HTTP gateway (psub-gateway /v1/...)
+        - CLI (substrate, substrate-gateway, etc.)
+        - HTTP gateway (substrate-gateway /v1/...)
         - A2A (psub-a2a /a2a/...)
         - MCP driver (driver-mcp / driver-http)
-        - Library API (psub-core, psub-dag, psub-skills, ...)
+        - Library API (substrate-core, substrate-dag, substrate-skills, ...)
         - Build / install / docs
         - Other
     validations:

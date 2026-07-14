@@ -50,7 +50,10 @@ fn step<F: Fn(u32, u32, u32) -> u32>(
     k: u32,
     f: F,
 ) {
-    *a = rotl(a.wrapping_add(f(b, c, d)).wrapping_add(x).wrapping_add(k), s);
+    *a = rotl(
+        a.wrapping_add(f(b, c, d)).wrapping_add(x).wrapping_add(k),
+        s,
+    );
 }
 
 fn process_block(state: &mut [u32; 4], block: &[u8; 64]) {
@@ -148,8 +151,7 @@ impl Hasher {
         if self.buffer_len > 0 {
             let need = 64 - self.buffer_len;
             let take = need.min(data.len());
-            self.buffer[self.buffer_len..self.buffer_len + take]
-                .copy_from_slice(&data[..take]);
+            self.buffer[self.buffer_len..self.buffer_len + take].copy_from_slice(&data[..take]);
             self.buffer_len += take;
             data = &data[take..];
             if self.buffer_len == 64 {
@@ -223,10 +225,7 @@ mod tests {
 
     #[test]
     fn init_state_correct() {
-        assert_eq!(
-            INIT,
-            [0x6745_2301, 0xEFCD_AB89, 0x98BA_DCFE, 0x1032_5476]
-        );
+        assert_eq!(INIT, [0x6745_2301, 0xEFCD_AB89, 0x98BA_DCFE, 0x1032_5476]);
     }
 
     #[test]
@@ -270,9 +269,7 @@ mod tests {
     fn rfc1320_test6_alnum() {
         // RFC 1320 §A.6: MD4("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789") =
         //   043f8582f241db351ce627e153e7f0e4
-        let h = hash(
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",
-        );
+        let h = hash(b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789");
         assert_eq!(hex(&h), "043f8582f241db351ce627e153e7f0e4");
     }
 
@@ -280,7 +277,8 @@ mod tests {
     fn rfc1320_test7_80_digits() {
         // RFC 1320 §A.7: 80 digits "1234567890"×8 =
         //   e33b4ddc9c38f2199c3e7b164fcc0536
-        let data = b"12345678901234567890123456789012345678901234567890123456789012345678901234567890";
+        let data =
+            b"12345678901234567890123456789012345678901234567890123456789012345678901234567890";
         assert_eq!(data.len(), 80);
         let h = hash(data);
         assert_eq!(hex(&h), "e33b4ddc9c38f2199c3e7b164fcc0536");

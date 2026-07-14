@@ -38,7 +38,11 @@ pub fn encode_address(hrp: &str, witver: u8, witprog: &[u8]) -> Result<String, S
     }
     // BIP-350: v0 addresses use BIP-173 (constant 1); v1+ use
     // bech32m (constant 0x2bc830a3).
-    let variant = if witver == 0 { Variant::Bech32 } else { Variant::Bech32m };
+    let variant = if witver == 0 {
+        Variant::Bech32
+    } else {
+        Variant::Bech32m
+    };
 
     // 8-bit -> 5-bit conversion of the data section.
     let mut data = Vec::with_capacity(1 + (witprog.len() * 8 + 4) / 5);
@@ -64,10 +68,7 @@ fn convert_bits(
     let max_acc: u32 = (1 << (from_bits + to_bits - 1)) - 1;
     for &v in data {
         if (v as u32) >> from_bits != 0 {
-            return Err(format!(
-                "input value {} exceeds {} bits",
-                v, from_bits
-            ));
+            return Err(format!("input value {} exceeds {} bits", v, from_bits));
         }
         acc = ((acc << from_bits) | v as u32) & max_acc;
         bits += from_bits;
@@ -108,8 +109,7 @@ mod tests {
         // BIP-173 mainnet P2WSH vector.
         let hrp = "bc";
         let witver = 0;
-        let witprog_hex =
-            "1863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262";
+        let witprog_hex = "1863143c14c5166804bd19203356da136c985678cd4d27a1b8c6329604903262";
         let witprog = hex_decode(witprog_hex);
         let addr = encode_address(hrp, witver, &witprog).unwrap();
         assert_eq!(
@@ -123,8 +123,7 @@ mod tests {
         // BIP-350 mainnet P2TR vector.
         let hrp = "bc";
         let witver = 1;
-        let witprog_hex =
-            "000000c4a5d4621a2f9c2bb6c6f5b3e0c1a0b5a3e8f0d7c2a1b9e8d7c6b5a4d3e2f1";
+        let witprog_hex = "000000c4a5d4621a2f9c2bb6c6f5b3e0c1a0b5a3e8f0d7c2a1b9e8d7c6b5a4d3e2f1";
         // 32-byte program (BIP-350 sample).
         let mut witprog = hex_decode(witprog_hex);
         witprog.truncate(32);

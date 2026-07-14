@@ -14,8 +14,8 @@
 //! [`quickselect_in_place`] (reorders the slice so the k-th smallest is at
 //! position k) are provided.
 
-use rand::{Rng, SeedableRng};
 use rand::rngs::StdRng;
+use rand::{Rng, SeedableRng};
 
 /// Returns the k-th smallest element of `arr` (0-indexed).
 ///

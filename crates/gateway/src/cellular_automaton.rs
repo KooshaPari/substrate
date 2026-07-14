@@ -54,7 +54,11 @@ pub fn step(rule: u8, cells: &mut [u8]) {
 /// `generations` rows are produced. The first row is `seed`. Returns a String
 /// suitable for printing, with each row on its own line.
 pub fn render(rule: u8, seed: &[u8], generations: usize) -> String {
-    let w = if seed.is_empty() { DEFAULT_WIDTH } else { seed.len() };
+    let w = if seed.is_empty() {
+        DEFAULT_WIDTH
+    } else {
+        seed.len()
+    };
     let mut row: Vec<u8> = if seed.is_empty() {
         let mut r = vec![0u8; w];
         r[w / 2] = 1;
@@ -223,7 +227,11 @@ mod tests {
         let s = render(0, &[1, 1, 1, 1, 1], 4);
         let lines: Vec<&str> = s.lines().collect();
         for line in &lines[1..] {
-            assert!(!line.contains('#'), "rule 0 step should be all zeros: {:?}", line);
+            assert!(
+                !line.contains('#'),
+                "rule 0 step should be all zeros: {:?}",
+                line
+            );
         }
     }
 
@@ -233,7 +241,11 @@ mod tests {
         let s = render(255, &[0, 0, 0, 0, 0], 3);
         let lines: Vec<&str> = s.lines().collect();
         for line in &lines[1..] {
-            assert!(!line.contains(' '), "rule 255 step should be all ones: {:?}", line);
+            assert!(
+                !line.contains(' '),
+                "rule 255 step should be all ones: {:?}",
+                line
+            );
         }
     }
 }

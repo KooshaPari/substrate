@@ -25,7 +25,11 @@ const ROUNDS_BASE: u32 = 32 + 52;
 /// supported.
 pub fn encrypt(data: &mut [u32], key: &[u32; 4]) {
     let n = data.len();
-    assert!(n >= 2, "xxtea: data must contain at least 2 words (got {})", n);
+    assert!(
+        n >= 2,
+        "xxtea: data must contain at least 2 words (got {})",
+        n
+    );
     let mut rounds = ROUNDS_BASE / n as u32;
     let mut sum: u32 = 0;
     let mut z = data[n - 1];
@@ -56,7 +60,11 @@ pub fn encrypt(data: &mut [u32], key: &[u32; 4]) {
 /// 128-bit key. Inverse of [`encrypt`].
 pub fn decrypt(data: &mut [u32], key: &[u32; 4]) {
     let n = data.len();
-    assert!(n >= 2, "xxtea: data must contain at least 2 words (got {})", n);
+    assert!(
+        n >= 2,
+        "xxtea: data must contain at least 2 words (got {})",
+        n
+    );
     let rounds = ROUNDS_BASE / n as u32;
     // sum starts at `rounds * DELTA` and decreases by DELTA at the END
     // of each round (matching the Needham-Wheeler 1998 corrigendum).

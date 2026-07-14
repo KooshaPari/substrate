@@ -183,12 +183,29 @@ mod tests {
     fn zigzag_roundtrip_full_range() {
         // Spot-check across the full i64 range, including MIN/MAX.
         let cases: &[i64] = &[
-            0, 1, -1, 2, -2, 3, -3, 100, -100, 1000, -1000,
-            i64::MAX, i64::MIN, i64::MIN + 1, i64::MAX - 1,
+            0,
+            1,
+            -1,
+            2,
+            -2,
+            3,
+            -3,
+            100,
+            -100,
+            1000,
+            -1000,
+            i64::MAX,
+            i64::MIN,
+            i64::MIN + 1,
+            i64::MAX - 1,
         ];
         for &n in cases {
-            assert_eq!(zigzag_decode(zigzag_encode(n)), n,
-                "zigzag round-trip failed for n={}", n);
+            assert_eq!(
+                zigzag_decode(zigzag_encode(n)),
+                n,
+                "zigzag round-trip failed for n={}",
+                n
+            );
         }
     }
 
@@ -250,9 +267,20 @@ mod tests {
     #[test]
     fn uleb128_roundtrip_full_range() {
         let cases: &[u64] = &[
-            0, 1, 127, 128, 16_383, 16_384, (1 << 21) - 1, 1 << 21,
-            (1 << 28) - 1, 1 << 28, (1 << 35) - 1, 1 << 35,
-            u64::MAX, u64::MAX - 1,
+            0,
+            1,
+            127,
+            128,
+            16_383,
+            16_384,
+            (1 << 21) - 1,
+            1 << 21,
+            (1 << 28) - 1,
+            1 << 28,
+            (1 << 35) - 1,
+            1 << 35,
+            u64::MAX,
+            u64::MAX - 1,
         ];
         for &v in cases {
             let bytes = uleb128_encode(v);

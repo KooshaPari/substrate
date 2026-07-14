@@ -60,11 +60,11 @@ mod tests {
     #[test]
     fn p50_basic() {
         let mut h = LatencyHistory::new("t");
-        for i in 1..=100u64 {
+        for i in 1..=SPARKLINE_LEN as u64 {
             h.push(i);
         }
         let p = h.p50().unwrap();
-        assert!(p >= 49 && p <= 51);
+        assert_eq!(p, 30);
     }
     #[test]
     fn p95_greater_than_p50() {

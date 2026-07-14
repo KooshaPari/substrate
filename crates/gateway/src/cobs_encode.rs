@@ -200,7 +200,10 @@ mod tests {
     fn encode_long_zero_run() {
         let input = vec![0u8; 300];
         let encoded = encode(&input);
-        assert!(!encoded.contains(&0x00), "encoded form must not contain zero bytes");
+        assert!(
+            !encoded.contains(&0x00),
+            "encoded form must not contain zero bytes"
+        );
         assert_eq!(decode(&encoded), Some(input));
     }
 

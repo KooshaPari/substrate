@@ -20,3 +20,6 @@ anyhow.workspace = true
 # the `serve` subcommand is a thin HTTP shell over the in-binary `inspect_registry()`).
 axum.workspace = true
 tokio.workspace = true
+
+[dev-dependencies]
+tower = { workspace = true, features = ["util"] }

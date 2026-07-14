@@ -95,17 +95,14 @@ pub fn parse(input: &[u8]) -> Result<Dhcp6Msg, String> {
     let mut i = 4usize;
     while i < input.len() {
         if i + 4 > input.len() {
-            return Err(format!(
-                "DHCPv6: truncated option header at offset {}",
-                i
-            ));
+            return Err(format!("DHCPv6: truncated option header at offset {}", i));
         }
         let code = u16::from_be_bytes([input[i], input[i + 1]]);
         let len = u16::from_be_bytes([input[i + 2], input[i + 3]]) as usize;
         let value_start = i + 4;
-        let value_end = value_start.checked_add(len).ok_or_else(|| {
-            format!("DHCPv6: option length overflow at offset {}", i)
-        })?;
+        let value_end = value_start
+            .checked_add(len)
+            .ok_or_else(|| format!("DHCPv6: option length overflow at offset {}", i))?;
         if value_end > input.len() {
             return Err(format!(
                 "DHCPv6: option {} value truncated (need {} bytes, have {})",
@@ -165,8 +162,7 @@ mod tests {
         // REPLY (7) with xid 0x00FFFFFF carrying a CLIENTID option (code 1)
         // whose value is 4 bytes: 0xDE 0xAD 0xBE 0xEF.
         let bytes = [
-            0x07, 0x00, 0xff, 0xff,
-            0x00, 0x01, // code = CLIENTID
+            0x07, 0x00, 0xff, 0xff, 0x00, 0x01, // code = CLIENTID
             0x00, 0x04, // length = 4
             0xde, 0xad, 0xbe, 0xef,
         ];
@@ -191,10 +187,9 @@ mod tests {
         bytes.extend_from_slice(&[
             0x00, 0x17, // DNS_SERVERS (23)
             0x00, 0x20, // length 32
-            0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
-            0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
-            0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+            0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x01, 0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x02,
         ]);
         let msg = parse(&bytes).unwrap();
         assert_eq!(msg.msg_type, msg_type::REQUEST);
@@ -307,8 +302,9 @@ mod tests {
         // DOMAIN_LIST option containing the DNS search list "example.com"
         // encoded as a single domain (length-prefixed): 07 'e' 'x' 'a' 'm'
         // 'p' 'l' 'e' 03 'c' 'o' 'm' 00
-        let domain = vec![0x07, b'e', b'x', b'a', b'm', b'p', b'l', b'e',
-                          0x03, b'c', b'o', b'm', 0x00];
+        let domain = vec![
+            0x07, b'e', b'x', b'a', b'm', b'p', b'l', b'e', 0x03, b'c', b'o', b'm', 0x00,
+        ];
         let msg = Dhcp6Msg {
             msg_type: msg_type::ADVERTISE,
             transaction_id: [0x01, 0x02, 0x03],
@@ -338,8 +334,7 @@ mod tests {
     fn parse_zero_length_option_is_legal() {
         // PREFERENCE (code 7) with zero-length value.
         let bytes = [
-            0x07, 0x10, 0x20, 0x30,
-            0x00, 0x07, // code = PREFERENCE
+            0x07, 0x10, 0x20, 0x30, 0x00, 0x07, // code = PREFERENCE
             0x00, 0x00, // length 0
         ];
         let msg = parse(&bytes).unwrap();

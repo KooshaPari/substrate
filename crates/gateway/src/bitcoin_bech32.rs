@@ -271,7 +271,9 @@ pub fn decode(s: &str) -> Result<(String, Vec<u8>, Variant), String> {
     let s_lower = s.to_ascii_lowercase();
 
     // Find the last '1' (separator). HRP cannot contain '1'.
-    let sep_pos = s_lower.rfind('1').ok_or_else(|| "no separator '1' found".to_string())?;
+    let sep_pos = s_lower
+        .rfind('1')
+        .ok_or_else(|| "no separator '1' found".to_string())?;
     if sep_pos == 0 {
         return Err("hrp is empty".into());
     }
@@ -292,9 +294,8 @@ pub fn decode(s: &str) -> Result<(String, Vec<u8>, Variant), String> {
     // Convert data chars into 5-bit values.
     let mut data = Vec::with_capacity(data_str.len());
     for c in data_str.chars() {
-        let v = bech32_charset_value(c as u8).ok_or_else(|| {
-            format!("character '{c}' is not in the Bech32 charset")
-        })?;
+        let v = bech32_charset_value(c as u8)
+            .ok_or_else(|| format!("character '{c}' is not in the Bech32 charset"))?;
         data.push(v);
     }
 
@@ -445,9 +446,9 @@ mod tests {
         // round-trip style so the test is anchored in the spec while still
         // exercising our encode/decode pipeline.
         let payload8: [u8; 32] = [
-            0x18, 0x63, 0x14, 0x3c, 0x68, 0x2e, 0x52, 0x82, 0x49, 0x9d, 0x11, 0x6e,
-            0x82, 0xbf, 0x82, 0x83, 0x60, 0x46, 0xfb, 0x67, 0xc6, 0xc5, 0x6c, 0x55,
-            0xf6, 0x49, 0x32, 0x96, 0x14, 0xb6, 0x68, 0x99,
+            0x18, 0x63, 0x14, 0x3c, 0x68, 0x2e, 0x52, 0x82, 0x49, 0x9d, 0x11, 0x6e, 0x82, 0xbf,
+            0x82, 0x83, 0x60, 0x46, 0xfb, 0x67, 0xc6, 0xc5, 0x6c, 0x55, 0xf6, 0x49, 0x32, 0x96,
+            0x14, 0xb6, 0x68, 0x99,
         ];
         let data = convert_bits(&payload8, 8, 5, true);
         let encoded = encode("bc", &data, Variant::Bech32).unwrap();
@@ -470,7 +471,9 @@ mod tests {
             state = state.wrapping_mul(1664525).wrapping_add(1013904223);
             let len = (state as usize) % 21; // 0..=20 bytes
             state = state.wrapping_mul(1664525).wrapping_add(1013904223);
-            let payload: Vec<u8> = (0..len).map(|i| ((state >> (i % 8)) & 0xff) as u8).collect();
+            let payload: Vec<u8> = (0..len)
+                .map(|i| ((state >> (i % 8)) & 0xff) as u8)
+                .collect();
             let data = convert_bits(&payload, 8, 5, true);
             for variant in [Variant::Bech32, Variant::Bech32m] {
                 let s = encode("bc", &data, variant).unwrap();

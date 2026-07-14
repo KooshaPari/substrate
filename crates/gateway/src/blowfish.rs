@@ -34,9 +34,24 @@ const ROUNDS: usize = 16;
 /// Initial P-array (Schneier 1993, derived from pi). Used as the starting
 /// point before the key schedule is mixed in.
 const P_INI: [u32; 18] = [
-    0x243F_6A88, 0x85A3_08D3, 0x1319_8A2E, 0x0370_7344, 0xA409_3822, 0x299F_31D0,
-    0x082E_FA98, 0xEC4E_6C89, 0x4528_21E6, 0x38D0_1377, 0xBE54_66CF, 0x34E9_0C6C,
-    0xC0AC_29B7, 0xC97C_50DD, 0x3F84_D5B5, 0xB547_0917, 0x9216_D5D9, 0x8979_FB1B,
+    0x243F_6A88,
+    0x85A3_08D3,
+    0x1319_8A2E,
+    0x0370_7344,
+    0xA409_3822,
+    0x299F_31D0,
+    0x082E_FA98,
+    0xEC4E_6C89,
+    0x4528_21E6,
+    0x38D0_1377,
+    0xBE54_66CF,
+    0x34E9_0C6C,
+    0xC0AC_29B7,
+    0xC97C_50DD,
+    0x3F84_D5B5,
+    0xB547_0917,
+    0x9216_D5D9,
+    0x8979_FB1B,
 ];
 
 /// Compute the Blowfish S-boxes from the first 1024 `u32` values derived
@@ -84,8 +99,8 @@ fn bf_f(x: u32, s: &[u32; 1024]) -> u32 {
     let b = (x >> 16) & 0xFF;
     let c = (x >> 8) & 0xFF;
     let d = x & 0xFF;
-    ((s[0 * 256 + a as usize].wrapping_add(s[1 * 256 + b as usize])) ^ s[2 * 256 + c as usize])
-        .wrapping_add(s[3 * 256 + d as usize])
+    ((s[a as usize].wrapping_add(s[256 + b as usize])) ^ s[512 + c as usize])
+        .wrapping_add(s[768 + d as usize])
 }
 
 #[derive(Debug, Clone)]

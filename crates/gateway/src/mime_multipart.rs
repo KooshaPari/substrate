@@ -19,19 +19,27 @@ pub struct Part {
 }
 
 pub fn parse(content_type: &str, body: &[u8]) -> Result<Vec<Part>, String> {
-    let boundary = extract_boundary(content_type).ok_or_else(|| "no boundary in Content-Type".to_string())?;
+    let boundary =
+        extract_boundary(content_type).ok_or_else(|| "no boundary in Content-Type".to_string())?;
     let delim: Vec<u8> = format!("--{}", boundary).into_bytes();
     let mut parts = Vec::new();
     let mut pos = 0usize;
     while let Some(start) = find_subsequence(&body[pos..], &delim) {
         pos += start + delim.len();
-        if body[pos..].starts_with(b"--") { break; }
-        if body[pos..].starts_with(b"\r\n") { pos += 2; }
-        else if body[pos..].starts_with(b"\n") { pos += 1; }
+        if body[pos..].starts_with(b"--") {
+            break;
+        }
+        if body[pos..].starts_with(b"\r\n") {
+            pos += 2;
+        } else if body[pos..].starts_with(b"\n") {
+            pos += 1;
+        }
         let next = find_subsequence(&body[pos..], &delim).unwrap_or(body.len() - pos);
         let part_bytes = &body[pos..pos + next];
         pos += next;
-        if let Some(p) = parse_part(part_bytes)? { parts.push(p); }
+        if let Some(p) = parse_part(part_bytes)? {
+            parts.push(p);
+        }
     }
     Ok(parts)
 }
@@ -48,18 +56,27 @@ fn extract_boundary(ct: &str) -> Option<String> {
 }
 
 fn find_subsequence(haystack: &[u8], needle: &[u8]) -> Option<usize> {
-    if needle.is_empty() || haystack.len() < needle.len() { return None; }
+    if needle.is_empty() || haystack.len() < needle.len() {
+        return None;
+    }
     for i in 0..=(haystack.len() - needle.len()) {
-        if &haystack[i..i + needle.len()] == needle { return Some(i); }
+        if &haystack[i..i + needle.len()] == needle {
+            return Some(i);
+        }
     }
     None
 }
 
 fn parse_part(part_bytes: &[u8]) -> Result<Option<Part>, String> {
-    let sep = find_subsequence(part_bytes, b"\r\n\r\n").or_else(|| find_subsequence(part_bytes, b"\n\n"));
+    let sep =
+        find_subsequence(part_bytes, b"\r\n\r\n").or_else(|| find_subsequence(part_bytes, b"\n\n"));
     let (raw_headers, body) = match sep {
         Some(s) => {
-            let header_end = if part_bytes[s..].starts_with(b"\r\n") { s + 4 } else { s + 2 };
+            let header_end = if part_bytes[s..].starts_with(b"\r\n") {
+                s + 4
+            } else {
+                s + 2
+            };
             (&part_bytes[..s], &part_bytes[header_end..])
         }
         None => return Ok(None),
@@ -68,7 +85,9 @@ fn parse_part(part_bytes: &[u8]) -> Result<Option<Part>, String> {
     let mut headers = BTreeMap::new();
     for line in header_str.split(|c| c == '\n') {
         let line = line.trim_end_matches('\r');
-        if line.is_empty() { continue; }
+        if line.is_empty() {
+            continue;
+        }
         if let Some((k, v)) = line.split_once(':') {
             headers.insert(k.trim().to_lowercase(), v.trim().to_string());
         }
@@ -86,13 +105,17 @@ fn parse_part(part_bytes: &[u8]) -> Result<Option<Part>, String> {
             }
         }
         (name, filename)
-    } else { (None, None) };
+    } else {
+        (None, None)
+    };
     let content_type = headers.get("content-type").cloned();
-    let body_trimmed = if body.len() >= 2 && body[body.len()-2..] == [b'\r', b'\n'] {
-        &body[..body.len()-2]
-    } else if body.len() >= 1 && body[body.len()-1..] == [b'\n'] {
-        &body[..body.len()-1]
-    } else { body };
+    let body_trimmed = if body.len() >= 2 && body[body.len() - 2..] == [b'\r', b'\n'] {
+        &body[..body.len() - 2]
+    } else if body.len() >= 1 && body[body.len() - 1..] == [b'\n'] {
+        &body[..body.len() - 1]
+    } else {
+        body
+    };
     Ok(Some(Part {
         headers,
         name,
@@ -105,18 +128,22 @@ fn parse_part(part_bytes: &[u8]) -> Result<Option<Part>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn extract_boundary_with_quotes() {
+    #[test]
+    fn extract_boundary_with_quotes() {
         let ct = "multipart/form-data; boundary=\"abc123\"";
         assert_eq!(extract_boundary(ct), Some("abc123".into()));
     }
-    #[test] fn extract_boundary_no_quotes() {
+    #[test]
+    fn extract_boundary_no_quotes() {
         let ct = "multipart/mixed; boundary=xyz";
         assert_eq!(extract_boundary(ct), Some("xyz".into()));
     }
-    #[test] fn extract_boundary_missing() {
+    #[test]
+    fn extract_boundary_missing() {
         assert_eq!(extract_boundary("text/plain"), None);
     }
-    #[test] fn parse_simple_form_data() {
+    #[test]
+    fn parse_simple_form_data() {
         let body = b"--abc\r\nContent-Disposition: form-data; name=\"field1\"\r\n\r\nhello\r\n--abc\r\nContent-Disposition: form-data; name=\"file1\"; filename=\"a.txt\"\r\nContent-Type: text/plain\r\n\r\nfile-bytes\r\n--abc--\r\n";
         let parts = parse("multipart/form-data; boundary=abc", body).unwrap();
         assert_eq!(parts.len(), 2);
@@ -127,27 +154,33 @@ mod tests {
         assert_eq!(parts[1].content_type.as_deref(), Some("text/plain"));
         assert_eq!(parts[1].body, b"file-bytes");
     }
-    #[test] fn parse_empty_body() {
-        let body = b"--xyz\r\nContent-Disposition: form-data; name=\"empty\"\r\n\r\n\r\n--xyz--\r\n";
+    #[test]
+    fn parse_empty_body() {
+        let body =
+            b"--xyz\r\nContent-Disposition: form-data; name=\"empty\"\r\n\r\n\r\n--xyz--\r\n";
         let parts = parse("multipart/mixed; boundary=xyz", body).unwrap();
         assert_eq!(parts.len(), 1);
         assert_eq!(parts[0].name.as_deref(), Some("empty"));
         assert_eq!(parts[0].body, b"");
     }
-    #[test] fn missing_boundary_err() {
+    #[test]
+    fn missing_boundary_err() {
         assert!(parse("text/plain", b"data").is_err());
     }
-    #[test] fn header_lowercased() {
+    #[test]
+    fn header_lowercased() {
         let body = b"--b\r\nContent-Type: text/plain\r\n\r\ndata\r\n--b--\r\n";
         let parts = parse("multipart/mixed; boundary=b", body).unwrap();
         assert_eq!(parts[0].headers.get("content-type").unwrap(), "text/plain");
     }
-    #[test] fn find_subsequence_basic() {
+    #[test]
+    fn find_subsequence_basic() {
         assert_eq!(find_subsequence(b"hello world", b"world"), Some(6));
         assert_eq!(find_subsequence(b"abc", b"x"), None);
         assert_eq!(find_subsequence(b"abc", b""), None);
     }
-    #[test] fn body_trimmed_of_trailing_newline() {
+    #[test]
+    fn body_trimmed_of_trailing_newline() {
         let body = b"--b\r\nContent-Disposition: form-data; name=\"k\"\r\n\r\nvalue\r\n--b--\r\n";
         let parts = parse("multipart/mixed; boundary=b", body).unwrap();
         assert_eq!(parts[0].body, b"value");

@@ -83,10 +83,18 @@ pub fn percent_decode(s: &str) -> Result<Vec<u8>, String> {
                 return Err(format!("trailing % at offset {}", i));
             }
             let hi = hex_val(bytes[i + 1]).ok_or_else(|| {
-                format!("invalid hex digit {:?} at offset {}", bytes[i + 1] as char, i + 1)
+                format!(
+                    "invalid hex digit {:?} at offset {}",
+                    bytes[i + 1] as char,
+                    i + 1
+                )
             })?;
             let lo = hex_val(bytes[i + 2]).ok_or_else(|| {
-                format!("invalid hex digit {:?} at offset {}", bytes[i + 2] as char, i + 2)
+                format!(
+                    "invalid hex digit {:?} at offset {}",
+                    bytes[i + 2] as char,
+                    i + 2
+                )
             })?;
             out.push((hi << 4) | lo);
             i += 3;
@@ -166,7 +174,10 @@ mod tests {
 
     #[test]
     fn decode_no_change_when_clean() {
-        assert_eq!(percent_decode("hello-world.txt").unwrap(), b"hello-world.txt");
+        assert_eq!(
+            percent_decode("hello-world.txt").unwrap(),
+            b"hello-world.txt"
+        );
     }
 
     #[test]

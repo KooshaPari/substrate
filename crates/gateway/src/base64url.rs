@@ -48,7 +48,10 @@ pub fn decode(input: &str) -> Result<Vec<u8>, String> {
     let mut buf: u32 = 0;
     let mut bits: u32 = 0;
     for &b in bytes {
-        let idx = T.iter().position(|&c| c == b).ok_or_else(|| format!("bad char 0x{b:02x}"))?;
+        let idx = T
+            .iter()
+            .position(|&c| c == b)
+            .ok_or_else(|| format!("bad char 0x{b:02x}"))?;
         buf = (buf << 6) | idx as u32;
         bits += 6;
         if bits >= 8 {

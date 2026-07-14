@@ -151,7 +151,11 @@ mod tests {
             }
         }
         // Should be well under 5% for proper parameters
-        assert!(false_positives < 500, "fp rate too high: {}", false_positives);
+        assert!(
+            false_positives < 500,
+            "fp rate too high: {}",
+            false_positives
+        );
     }
 
     #[test]

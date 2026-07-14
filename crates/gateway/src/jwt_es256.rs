@@ -185,7 +185,11 @@ fn split_token(token: &str) -> Result<(String, String, String), String> {
     if parts.len() != 3 {
         return Err(format!("expected 3 parts, got {}", parts.len()));
     }
-    Ok((parts[0].to_string(), parts[1].to_string(), parts[2].to_string()))
+    Ok((
+        parts[0].to_string(),
+        parts[1].to_string(),
+        parts[2].to_string(),
+    ))
 }
 
 fn parse_token_parts(h_b64: &str, p_b64: &str) -> Option<Token> {

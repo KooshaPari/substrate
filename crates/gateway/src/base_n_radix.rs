@@ -12,7 +12,11 @@
 ///
 /// Panics if `base < 2` or `base > 36`.
 pub fn to_base(mut n: u64, base: u32) -> String {
-    assert!(base >= 2 && base <= 36, "base must be in [2, 36], got {}", base);
+    assert!(
+        base >= 2 && base <= 36,
+        "base must be in [2, 36], got {}",
+        base
+    );
     if n == 0 {
         return "0".to_string();
     }
@@ -31,15 +35,18 @@ pub fn to_base(mut n: u64, base: u32) -> String {
 /// Case-insensitive: 'a'..='z' and 'A'..='Z' both accepted for digits
 /// >= 10. The leading sign character `+` is accepted but ignored.
 pub fn from_base(s: &str, base: u32) -> Result<u64, String> {
-    assert!(base >= 2 && base <= 36, "base must be in [2, 36], got {}", base);
+    assert!(
+        base >= 2 && base <= 36,
+        "base must be in [2, 36], got {}",
+        base
+    );
     let mut result: u64 = 0;
     let trimmed = s.trim().strip_prefix('+').unwrap_or(s.trim());
     if trimmed.is_empty() {
         return Err("empty input".into());
     }
     for c in trimmed.chars() {
-        let d = char_to_digit(c)
-            .ok_or_else(|| format!("invalid character '{}'", c))?;
+        let d = char_to_digit(c).ok_or_else(|| format!("invalid character '{}'", c))?;
         if d >= base {
             return Err(format!("digit {} >= base {}", d, base));
         }

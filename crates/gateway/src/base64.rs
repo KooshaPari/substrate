@@ -10,17 +10,40 @@ pub fn encode(input: &[u8]) -> String {
         let idx = |shift: u32, mask: u32| ((n >> shift) & mask) as usize;
         out.push(ALPHA[idx(18, 0x3f)] as char);
         out.push(ALPHA[idx(12, 0x3f)] as char);
-        if c.len() > 1 { out.push(ALPHA[idx(6, 0x3f)] as char); } else { out.push('='); }
-        if c.len() > 2 { out.push(ALPHA[idx(0, 0x3f)] as char); } else { out.push('='); }
+        if c.len() > 1 {
+            out.push(ALPHA[idx(6, 0x3f)] as char);
+        } else {
+            out.push('=');
+        }
+        if c.len() > 2 {
+            out.push(ALPHA[idx(0, 0x3f)] as char);
+        } else {
+            out.push('=');
+        }
     }
     out
 }
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn empty() { assert_eq!(encode(b""), ""); }
-    #[test] fn hi() { assert_eq!(encode(b"hi"), "aGk="); }
-    #[test] fn abc() { assert_eq!(encode(b"abc"), "YWJj"); }
-    #[test] fn a() { assert_eq!(encode(b"a"), "YQ=="); }
-    #[test] fn ab() { assert_eq!(encode(b"ab"), "YWI="); }
+    #[test]
+    fn empty() {
+        assert_eq!(encode(b""), "");
+    }
+    #[test]
+    fn hi() {
+        assert_eq!(encode(b"hi"), "aGk=");
+    }
+    #[test]
+    fn abc() {
+        assert_eq!(encode(b"abc"), "YWJj");
+    }
+    #[test]
+    fn a() {
+        assert_eq!(encode(b"a"), "YQ==");
+    }
+    #[test]
+    fn ab() {
+        assert_eq!(encode(b"ab"), "YWI=");
+    }
 }

@@ -82,10 +82,7 @@ impl<K: Ord, V> SkipList<K, V> {
     }
 
     fn node_forward_mut(&mut self, id: usize) -> &mut Vec<Option<usize>> {
-        &mut self.nodes[id]
-            .as_mut()
-            .expect("non-head slot")
-            .forward
+        &mut self.nodes[id].as_mut().expect("non-head slot").forward
     }
 
     /// Look up `key`, returning `Some(&V)` if present.
@@ -117,10 +114,8 @@ impl<K: Ord, V> SkipList<K, V> {
                 match self.nodes[next].as_ref().unwrap().key.cmp(&key) {
                     Ordering::Less => cur = next,
                     Ordering::Equal => {
-                        let old = std::mem::replace(
-                            &mut self.nodes[next].as_mut().unwrap().value,
-                            value,
-                        );
+                        let old =
+                            std::mem::replace(&mut self.nodes[next].as_mut().unwrap().value, value);
                         return Some(old);
                     }
                     Ordering::Greater => break,
@@ -130,10 +125,7 @@ impl<K: Ord, V> SkipList<K, V> {
         }
         if let Some(next) = self.forward_at(cur, 0) {
             if self.nodes[next].as_ref().unwrap().key == key {
-                let old = std::mem::replace(
-                    &mut self.nodes[next].as_mut().unwrap().value,
-                    value,
-                );
+                let old = std::mem::replace(&mut self.nodes[next].as_mut().unwrap().value, value);
                 return Some(old);
             }
         }

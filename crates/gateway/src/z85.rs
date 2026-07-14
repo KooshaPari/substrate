@@ -12,7 +12,9 @@
 //!
 //! Alphabet (85 printable ASCII chars, no quoting required):
 //!
-//!     0..9  a..z  A..Z  .-:+=^!/*?&<>()[]{}@%$#
+//! ```text
+//! 0..9  a..z  A..Z  .-:+=^!/*?&<>()[]{}@%$#
+//! ```
 //!
 //! Reference: <https://rfc.zeromq.org/spec/32/> (Z85 specification).
 
@@ -153,8 +155,10 @@ mod tests {
             &[0xDE, 0xAD, 0xBE, 0xEF],
             &[0x86, 0x4F, 0xD2, 0x6F],
             &[0x86, 0x4F, 0xD2, 0x6F, 0xB5, 0x59, 0xF7, 0x5B],
-            &[0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
-              0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f],
+            &[
+                0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d,
+                0x0e, 0x0f,
+            ],
         ];
         for input in cases {
             assert!(input.len() % 4 == 0, "test input must be 4-aligned");
@@ -189,8 +193,7 @@ mod tests {
             assert!(
                 !seen[v as usize],
                 "duplicate value {} for char {:?}",
-                v,
-                c as char
+                v, c as char
             );
             seen[v as usize] = true;
         }

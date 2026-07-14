@@ -139,7 +139,13 @@ mod tests {
     use super::*;
 
     fn approx(a: f64, b: f64) {
-        assert!((a - b).abs() < 1e-9, "{} ≈ {} (diff {})", a, b, (a - b).abs());
+        assert!(
+            (a - b).abs() < 1e-9,
+            "{} ≈ {} (diff {})",
+            a,
+            b,
+            (a - b).abs()
+        );
     }
 
     #[test]
@@ -194,7 +200,10 @@ mod tests {
         // Median of even count is the avg of two middle values.
         assert_eq!(percentile(&[1.0, 2.0, 3.0, 4.0], 50.0), Some(2.5));
         // Q1 = 1.5 for [1,2,3,4,5,6]
-        assert_eq!(percentile(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 25.0), Some(2.25));
+        assert_eq!(
+            percentile(&[1.0, 2.0, 3.0, 4.0, 5.0, 6.0], 25.0),
+            Some(2.25)
+        );
     }
 
     #[test]

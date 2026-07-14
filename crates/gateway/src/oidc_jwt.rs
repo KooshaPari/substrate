@@ -69,10 +69,7 @@ pub struct JwtPayload {
 pub fn decode(token: &str) -> Result<DecodedJwt, String> {
     let parts: Vec<&str> = token.split('.').collect();
     if parts.len() != 3 {
-        return Err(format!(
-            "expected 3 JWT segments, got {}",
-            parts.len()
-        ));
+        return Err(format!("expected 3 JWT segments, got {}", parts.len()));
     }
 
     let header_bytes = b64url_decode(parts[0])?;
@@ -143,19 +140,14 @@ fn parse_payload(v: serde_json::Value) -> JwtPayload {
         }
         Some(serde_json::Value::Array(items)) => {
             custom_fields.insert("aud".to_string(), serde_json::Value::Array(items.clone()));
-            items
-                .iter()
-                .find_map(|it| it.as_str().map(String::from))
+            items.iter().find_map(|it| it.as_str().map(String::from))
         }
         _ => None,
     };
 
     if let Some(obj) = v.as_object() {
         for (k, val) in obj {
-            if matches!(
-                k.as_str(),
-                "iss" | "sub" | "aud" | "exp" | "iat"
-            ) {
+            if matches!(k.as_str(), "iss" | "sub" | "aud" | "exp" | "iat") {
                 continue;
             }
             custom_fields.insert(k.clone(), val.clone());
@@ -212,8 +204,7 @@ fn b64url_decode(s: &str) -> Result<Vec<u8>, String> {
 }
 
 fn base64_decode_standard(s: &str) -> Result<Vec<u8>, String> {
-    const T: &[u8; 64] =
-        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     let mut lookup = [255u8; 256];
     for (i, &c) in T.iter().enumerate() {
         lookup[c as usize] = i as u8;
@@ -246,14 +237,11 @@ mod tests {
     use super::*;
 
     fn b64url_encode(data: &[u8]) -> String {
-        const T: &[u8; 64] =
-            b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        const T: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
         let mut out = String::new();
         let mut i = 0;
         while i + 3 <= data.len() {
-            let n = ((data[i] as u32) << 16)
-                | ((data[i + 1] as u32) << 8)
-                | (data[i + 2] as u32);
+            let n = ((data[i] as u32) << 16) | ((data[i + 1] as u32) << 8) | (data[i + 2] as u32);
             out.push(T[((n >> 18) & 0x3f) as usize] as char);
             out.push(T[((n >> 12) & 0x3f) as usize] as char);
             out.push(T[((n >> 6) & 0x3f) as usize] as char);
@@ -351,8 +339,7 @@ mod tests {
     #[test]
     fn payload_with_aud_array_takes_first_and_preserves_full() {
         let header = r##"{"alg":"RS256"}"##;
-        let payload =
-            r##"{"sub":"x","aud":["app1","app2"]}"##;
+        let payload = r##"{"sub":"x","aud":["app1","app2"]}"##;
         let token = make_token(header, payload, b"\x00");
         let decoded = decode(&token).unwrap();
         assert_eq!(decoded.payload.aud.as_deref(), Some("app1"));

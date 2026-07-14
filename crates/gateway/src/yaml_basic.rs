@@ -48,7 +48,10 @@ pub fn parse(input: &str) -> Result<Yaml, String> {
     if lines.is_empty() {
         return Ok(Yaml::Null);
     }
-    let mut p = Parser { lines: &lines, pos: 0 };
+    let mut p = Parser {
+        lines: &lines,
+        pos: 0,
+    };
     let v = p.parse_node(0)?;
     // Allow trailing blank lines / comments after the top-level node.
     Ok(v)
@@ -67,7 +70,10 @@ impl<'a> Parser<'a> {
         let line = self.lines[self.pos];
         let indent = count_indent(line);
         if indent < min_indent {
-            return Err(format!("line {} indent {} < min {}", self.pos, indent, min_indent));
+            return Err(format!(
+                "line {} indent {} < min {}",
+                self.pos, indent, min_indent
+            ));
         }
         let trimmed = line[indent..].trim_start();
         if trimmed.starts_with('#') {
@@ -348,7 +354,11 @@ mod tests {
     fn parse_flow_sequence() {
         assert_eq!(
             parse("[1, 2, 3]").unwrap(),
-            Yaml::Sequence(vec![Yaml::Number(1.0), Yaml::Number(2.0), Yaml::Number(3.0)])
+            Yaml::Sequence(vec![
+                Yaml::Number(1.0),
+                Yaml::Number(2.0),
+                Yaml::Number(3.0)
+            ])
         );
     }
 
@@ -381,7 +391,10 @@ mod tests {
         let y = parse(r#"greeting: "hello: world""#).unwrap();
         match y {
             Yaml::Map(m) => {
-                assert_eq!(m.get("greeting"), Some(&Yaml::String("hello: world".into())));
+                assert_eq!(
+                    m.get("greeting"),
+                    Some(&Yaml::String("hello: world".into()))
+                );
             }
             _ => panic!("expected map"),
         }

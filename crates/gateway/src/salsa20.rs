@@ -64,12 +64,8 @@ pub fn state_from_parts(key: &[u8; 32], nonce: &[u8; 8], counter: u64) -> [u32; 
     state[15] = SIGMA[3];
     // Key (little-endian).
     for i in 0..8 {
-        state[1 + i] = u32::from_le_bytes([
-            key[4 * i],
-            key[4 * i + 1],
-            key[4 * i + 2],
-            key[4 * i + 3],
-        ]);
+        state[1 + i] =
+            u32::from_le_bytes([key[4 * i], key[4 * i + 1], key[4 * i + 2], key[4 * i + 3]]);
     }
     // Counter (little-endian, 2 x u32).
     let c_lo = counter as u32;
@@ -158,7 +154,11 @@ mod tests {
         // Just verify the keystream is non-trivial and has the
         // expected entropy characteristics.
         let nonzero_bytes = data.iter().filter(|&&b| b != 0).count();
-        assert!(nonzero_bytes > 50, "expected at least 50 non-zero bytes, got {}", nonzero_bytes);
+        assert!(
+            nonzero_bytes > 50,
+            "expected at least 50 non-zero bytes, got {}",
+            nonzero_bytes
+        );
         // And it's deterministic.
         let mut data2 = [0u8; 64];
         apply(&mut data2, &key, &nonce, 0, 20);
@@ -238,10 +238,11 @@ mod tests {
     #[test]
     fn quarter_round_specific_value() {
         // Salsa20 quarter-round test from the spec: starting state
-        // 0x00000000, 0x00000000, 0x00000000, 0x00000000, after
+        // 0x00000001, 0x00000000, 0x00000000, 0x00000000, after
         // the quarter-round (a=0,b=1,c=2,d=3), state should be
         // 0x08008145, 0x00000080, 0x00010200, 0x20500000.
         let mut state = [0u32; 16];
+        state[0] = 1;
         quarter_round(&mut state, 0, 1, 2, 3);
         assert_eq!(state[0], 0x0800_8145);
         assert_eq!(state[1], 0x0000_0080);

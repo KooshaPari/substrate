@@ -79,7 +79,10 @@ struct Cursor<'a> {
 
 impl<'a> Cursor<'a> {
     fn new(s: &'a str) -> Self {
-        Self { bytes: s.as_bytes(), pos: 0 }
+        Self {
+            bytes: s.as_bytes(),
+            pos: 0,
+        }
     }
     fn peek(&self) -> Option<u8> {
         self.bytes.get(self.pos).copied()
@@ -105,8 +108,7 @@ impl<'a> Cursor<'a> {
         self.pos >= self.bytes.len()
     }
     fn slice_from(&self, start: usize) -> &'a str {
-        std::str::from_utf8(&self.bytes[start..self.pos])
-            .unwrap_or("")
+        std::str::from_utf8(&self.bytes[start..self.pos]).unwrap_or("")
     }
 }
 
@@ -223,7 +225,9 @@ fn parse_substring(attr: &str, value: &str) -> Result<Filter, String> {
         }
     }
     if initial.is_none() && final_part.is_none() && any.is_empty() {
-        return Err(format!("substring filter has no non-wildcard parts: {value:?}"));
+        return Err(format!(
+            "substring filter has no non-wildcard parts: {value:?}"
+        ));
     }
     Ok(Filter::Substring {
         attr: attr.to_string(),
@@ -336,7 +340,12 @@ mod tests {
     fn parses_substring() {
         let f = parse("(cn=foo*bar*baz)").unwrap();
         match f {
-            Filter::Substring { attr, initial, any, final_part } => {
+            Filter::Substring {
+                attr,
+                initial,
+                any,
+                final_part,
+            } => {
                 assert_eq!(attr, "cn");
                 assert_eq!(initial.as_deref(), Some("foo"));
                 assert_eq!(any, vec!["bar".to_string()]);
@@ -350,7 +359,12 @@ mod tests {
     fn parses_leading_wildcard_substring() {
         let f = parse("(cn=*foo)").unwrap();
         match f {
-            Filter::Substring { initial, any, final_part, .. } => {
+            Filter::Substring {
+                initial,
+                any,
+                final_part,
+                ..
+            } => {
                 assert_eq!(initial, None);
                 assert!(any.is_empty());
                 assert_eq!(final_part.as_deref(), Some("foo"));
@@ -363,7 +377,12 @@ mod tests {
     fn parses_trailing_wildcard_substring() {
         let f = parse("(cn=foo*)").unwrap();
         match f {
-            Filter::Substring { initial, any, final_part, .. } => {
+            Filter::Substring {
+                initial,
+                any,
+                final_part,
+                ..
+            } => {
                 assert_eq!(initial.as_deref(), Some("foo"));
                 assert!(any.is_empty());
                 assert_eq!(final_part, None);
@@ -378,7 +397,10 @@ mod tests {
         match f {
             Filter::And(list) => {
                 assert_eq!(list.len(), 2);
-                assert_eq!(list[0], Filter::Equal("objectClass".into(), "person".into()));
+                assert_eq!(
+                    list[0],
+                    Filter::Equal("objectClass".into(), "person".into())
+                );
             }
             other => panic!("expected and, got {other:?}"),
         }
@@ -408,10 +430,7 @@ mod tests {
 
     #[test]
     fn parses_nested() {
-        let f = parse(
-            "(&(objectClass=person)(|(uid=alice)(!(uid=bob))))",
-        )
-        .unwrap();
+        let f = parse("(&(objectClass=person)(|(uid=alice)(!(uid=bob))))").unwrap();
         match f {
             Filter::And(list) => {
                 assert_eq!(list.len(), 2);
@@ -469,7 +488,12 @@ mod tests {
     fn parses_middle_wildcards() {
         let f = parse("(cn=a*b*c*d*e)").unwrap();
         match f {
-            Filter::Substring { initial, any, final_part, .. } => {
+            Filter::Substring {
+                initial,
+                any,
+                final_part,
+                ..
+            } => {
                 assert_eq!(initial.as_deref(), Some("a"));
                 assert_eq!(any, vec!["b".to_string(), "c".to_string(), "d".to_string()]);
                 assert_eq!(final_part.as_deref(), Some("e"));

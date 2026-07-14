@@ -39,12 +39,8 @@ pub fn natural_compare(a: &str, b: &str) -> std::cmp::Ordering {
             let mut a_val: u64 = (ac - b'0') as u64;
             let mut b_val: u64 = (bc - b'0') as u64;
             loop {
-                let a_digit = av
-                    .get(ai)
-                    .map_or(false, |&x| x.is_ascii_digit());
-                let b_digit = bv
-                    .get(bi)
-                    .map_or(false, |&x| x.is_ascii_digit());
+                let a_digit = av.get(ai).map_or(false, |&x| x.is_ascii_digit());
+                let b_digit = bv.get(bi).map_or(false, |&x| x.is_ascii_digit());
                 if a_digit {
                     a_val = a_val
                         .saturating_mul(10)
@@ -92,7 +88,10 @@ mod tests {
     fn file_names_sort_naturally() {
         let files = vec!["file10.txt", "file2.txt", "file1.txt", "file20.txt"];
         let sorted = natural_sort(&files);
-        assert_eq!(sorted, vec!["file1.txt", "file2.txt", "file10.txt", "file20.txt"]);
+        assert_eq!(
+            sorted,
+            vec!["file1.txt", "file2.txt", "file10.txt", "file20.txt"]
+        );
     }
 
     #[test]
@@ -116,7 +115,10 @@ mod tests {
     #[test]
     fn one_is_prefix_of_other() {
         assert_eq!(natural_compare("file", "file1"), std::cmp::Ordering::Less);
-        assert_eq!(natural_compare("file1", "file"), std::cmp::Ordering::Greater);
+        assert_eq!(
+            natural_compare("file1", "file"),
+            std::cmp::Ordering::Greater
+        );
     }
 
     #[test]

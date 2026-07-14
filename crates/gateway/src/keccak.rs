@@ -10,30 +10,40 @@
 //! Extendable-Output Functions.
 
 const RC: [u64; 24] = [
-    0x0000000000000001, 0x0000000000008082, 0x800000000000808a, 0x8000000080008000,
-    0x000000000000808b, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,
-    0x000000000000008a, 0x0000000000000088, 0x0000000080008009, 0x000000008000000a,
-    0x000000008000808b, 0x800000000000008b, 0x8000000000008089, 0x8000000000008003,
-    0x8000000000008002, 0x8000000000000080, 0x000000000000800a, 0x800000008000000a,
-    0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008,
+    0x0000000000000001,
+    0x0000000000008082,
+    0x800000000000808a,
+    0x8000000080008000,
+    0x000000000000808b,
+    0x0000000080000001,
+    0x8000000080008081,
+    0x8000000000008009,
+    0x000000000000008a,
+    0x0000000000000088,
+    0x0000000080008009,
+    0x000000008000000a,
+    0x000000008000808b,
+    0x800000000000008b,
+    0x8000000000008089,
+    0x8000000000008003,
+    0x8000000000008002,
+    0x8000000000000080,
+    0x000000000000800a,
+    0x800000008000000a,
+    0x8000000080008081,
+    0x8000000000008080,
+    0x0000000080000001,
+    0x8000000080008008,
 ];
 
 /// Rotation offsets per lane, indexed by 5*y+x lane position (0..24).
 const RHO: [u32; 25] = [
-    0,  1, 62, 28, 27,
-    36, 44,  6, 55, 20,
-    3, 10, 43, 25, 39,
-    41, 45, 15, 21,  8,
-    18, 39, 41, 14,  2,
+    0, 1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39, 41, 45, 15, 21, 8, 18, 39, 41, 14, 2,
 ];
 
 /// Pi destination indices, indexed by source lane index (0..24).
 const PI: [usize; 25] = [
-    0,  6, 12, 18, 24,
-    3,  9, 10, 16, 22,
-    1,  7, 13, 19, 20,
-    4,  5, 11, 17, 23,
-    2,  8, 14, 15, 21,
+    0, 6, 12, 18, 24, 3, 9, 10, 16, 22, 1, 7, 13, 19, 20, 4, 5, 11, 17, 23, 2, 8, 14, 15, 21,
 ];
 
 #[inline]
@@ -205,9 +215,8 @@ mod tests {
         // FIPS 202 SHA3-256("") =
         // a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a
         let got = sha3_256(b"");
-        let expected = hex_decode(
-            "a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a",
-        );
+        let expected =
+            hex_decode("a7ffc6f8bf1ed76651c14756a061d662f580ff4de43b49fa82d80a4b80f8434a");
         if got.to_vec() != expected {
             // Fall back to deterministic check (length 32, not all zeros).
             assert_eq!(got.len(), 32);
@@ -222,9 +231,8 @@ mod tests {
         // FIPS 202 SHA3-256("abc") =
         // 3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532
         let got = sha3_256(b"abc");
-        let expected = hex_decode(
-            "3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532",
-        );
+        let expected =
+            hex_decode("3a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532");
         if got.to_vec() != expected {
             assert_eq!(got.len(), 32);
             assert!(got.iter().any(|&b| b != 0));
@@ -237,9 +245,8 @@ mod tests {
     fn sha3_256_long_message() {
         let input = b"abcdbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
         let got = sha3_256(input);
-        let expected = hex_decode(
-            "41c0dba2a9d6240849100376a8235e2c82e1b9998a999e21db32dd97496d3376",
-        );
+        let expected =
+            hex_decode("41c0dba2a9d6240849100376a8235e2c82e1b9998a999e21db32dd97496d3376");
         if got.to_vec() != expected {
             assert_eq!(got.len(), 32);
         } else {
@@ -269,9 +276,8 @@ mod tests {
     #[test]
     fn shake128_empty_32() {
         let got = shake128(b"", 32);
-        let expected = hex_decode(
-            "7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26",
-        );
+        let expected =
+            hex_decode("7f9c2ba4e88f827d616045507605853ed73b8093f6efbc88eb1a6eacfa66ef26");
         if got != expected {
             assert_eq!(got.len(), 32);
         } else {
@@ -282,9 +288,8 @@ mod tests {
     #[test]
     fn shake128_abc_32() {
         let got = shake128(b"abc", 32);
-        let expected = hex_decode(
-            "5881092dd818b5cf463af0c7c4189b7f4d6f9c3b5d6f0e7a8c5b3d2e1f4a6c8b",
-        );
+        let expected =
+            hex_decode("5881092dd818b5cf463af0c7c4189b7f4d6f9c3b5d6f0e7a8c5b3d2e1f4a6c8b");
         if got != expected {
             assert_eq!(got.len(), 32);
             assert!(got.iter().any(|&b| b != 0));

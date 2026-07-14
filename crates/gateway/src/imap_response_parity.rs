@@ -76,7 +76,10 @@ pub fn classify_response(line: &str) -> Result<(ResponseKind, &str), ImapParseEr
         // The tag must be non-empty and may NOT be a status word; we accept any non-space
         // token that isn't `*` or `+` as a tag.
         if !tag.is_empty() && tag != "*" && tag != "+" {
-            return Ok((ResponseKind::Tagged(tag.to_string()), &line[space_idx + 1..]));
+            return Ok((
+                ResponseKind::Tagged(tag.to_string()),
+                &line[space_idx + 1..],
+            ));
         }
     }
     Err(ImapParseError::BadStructure(line.to_string()))
@@ -133,9 +136,9 @@ pub fn parse_list(line: &str) -> Result<(Vec<String>, String, String), ImapParse
     if !matches!(kind, ResponseKind::Untagged) {
         return Err(ImapParseError::BadStructure(line.to_string()));
     }
-    let after = rest.strip_prefix("LIST ").ok_or_else(|| {
-        ImapParseError::BadStructure(format!("expected LIST, got: {}", rest))
-    })?;
+    let after = rest
+        .strip_prefix("LIST ")
+        .ok_or_else(|| ImapParseError::BadStructure(format!("expected LIST, got: {}", rest)))?;
     // After "LIST ", expect "(attrs) delim name" where name may be quoted, NIL, or a literal.
     let (attrs, after_attrs) = read_parenthesized(after)?;
     let mut parts = after_attrs.splitn(2, ' ');
@@ -190,9 +193,9 @@ fn split_response_code(after_status: &str) -> (Option<String>, &str) {
 
 fn read_parenthesized(s: &str) -> Result<(Vec<String>, &str), ImapParseError> {
     let s = s.trim_start();
-    let after_open = s.strip_prefix('(').ok_or_else(|| {
-        ImapParseError::BadStructure(format!("expected '(', got: {}", s))
-    })?;
+    let after_open = s
+        .strip_prefix('(')
+        .ok_or_else(|| ImapParseError::BadStructure(format!("expected '(', got: {}", s)))?;
     // Walk until matching ')'. Attributes may themselves be parenthesized (e.g. (\Noselect \Marked)).
     let mut depth: i32 = 1;
     let mut end = after_open.len();
@@ -285,8 +288,9 @@ mod tests {
     fn parse_tagged_ok_with_read_write_code() {
         // RFC 3501 Section 6.11.1 example:
         //   S: A142 OK [READ-WRITE] SELECT completed
-        let resp =
-            parse_status_response("A142 OK [READ-WRITE] SELECT completed").unwrap().unwrap();
+        let resp = parse_status_response("A142 OK [READ-WRITE] SELECT completed")
+            .unwrap()
+            .unwrap();
         assert_eq!(resp.kind, ResponseKind::Tagged("A142".to_string()));
         assert_eq!(resp.status, Status::Ok);
         assert_eq!(resp.response_code.as_deref(), Some("READ-WRITE"));
@@ -306,7 +310,9 @@ mod tests {
 
     #[test]
     fn parse_bad_response() {
-        let resp = parse_status_response("B001 BAD Unknown command").unwrap().unwrap();
+        let resp = parse_status_response("B001 BAD Unknown command")
+            .unwrap()
+            .unwrap();
         assert_eq!(resp.status, Status::Bad);
         assert_eq!(resp.text, "Unknown command");
     }
@@ -315,10 +321,8 @@ mod tests {
     fn parse_capability_list() {
         // RFC 3501 Section 6.7.1 example:
         //   S: * CAPABILITY IMAP4rev1 STARTTLS AUTH=GSSAPI LOGINDISABLED
-        let caps = parse_capability(
-            "* CAPABILITY IMAP4rev1 STARTTLS AUTH=GSSAPI LOGINDISABLED",
-        )
-        .unwrap();
+        let caps =
+            parse_capability("* CAPABILITY IMAP4rev1 STARTTLS AUTH=GSSAPI LOGINDISABLED").unwrap();
         assert_eq!(
             caps,
             vec![
@@ -345,7 +349,10 @@ mod tests {
         // Real-world LIST response with multiple flags and a NIL delimiter.
         let (attrs, delim, name) =
             parse_list("* LIST (\\Marked \\HasChildren) NIL \"INBOX\"").unwrap();
-        assert_eq!(attrs, vec!["\\Marked".to_string(), "\\HasChildren".to_string()]);
+        assert_eq!(
+            attrs,
+            vec!["\\Marked".to_string(), "\\HasChildren".to_string()]
+        );
         assert_eq!(delim, "");
         assert_eq!(name, "\"INBOX\"");
     }

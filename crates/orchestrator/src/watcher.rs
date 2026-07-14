@@ -44,12 +44,11 @@ pub enum WatcherSource {
 /// replayed; new ones appear as they are appended (the MVP surface — actual
 /// inotify tailing is left to the broader substrate `file-watcher` crate and
 /// is wired in when the orchestrator is promoted out of cut-line MVP).
-pub fn watch_project_tasks(
-    project_dir: &Path,
-) -> impl Stream<Item = crate::Result<ToolCall>> {
-    let entries = collect_jsonl_records(project_dir, &WatcherSource::ClaudeProjectsJsonl(
-        project_dir.to_path_buf(),
-    ));
+pub fn watch_project_tasks(project_dir: &Path) -> impl Stream<Item = crate::Result<ToolCall>> {
+    let entries = collect_jsonl_records(
+        project_dir,
+        &WatcherSource::ClaudeProjectsJsonl(project_dir.to_path_buf()),
+    );
     WatcherStream::new(entries)
 }
 
@@ -118,7 +117,9 @@ pub struct WatcherStream {
 
 impl WatcherStream {
     fn new(items: Vec<crate::Result<ToolCall>>) -> Self {
-        Self { inner: items.into_iter() }
+        Self {
+            inner: items.into_iter(),
+        }
     }
 }
 

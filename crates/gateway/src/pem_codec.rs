@@ -31,7 +31,7 @@ fn base64_encode(data: &[u8]) -> String {
     let mut out = String::new();
     let mut i = 0;
     while i + 3 <= data.len() {
-        let b = ((data[i] as u32) << 16) | ((data[i+1] as u32) << 8) | (data[i+2] as u32);
+        let b = ((data[i] as u32) << 16) | ((data[i + 1] as u32) << 8) | (data[i + 2] as u32);
         out.push(T[((b >> 18) & 0x3f) as usize] as char);
         out.push(T[((b >> 12) & 0x3f) as usize] as char);
         out.push(T[((b >> 6) & 0x3f) as usize] as char);
@@ -46,7 +46,7 @@ fn base64_encode(data: &[u8]) -> String {
         out.push('=');
         out.push('=');
     } else if rem == 2 {
-        let b = ((data[i] as u32) << 16) | ((data[i+1] as u32) << 8);
+        let b = ((data[i] as u32) << 16) | ((data[i + 1] as u32) << 8);
         out.push(T[((b >> 18) & 0x3f) as usize] as char);
         out.push(T[((b >> 12) & 0x3f) as usize] as char);
         out.push(T[((b >> 6) & 0x3f) as usize] as char);
@@ -82,47 +82,55 @@ fn base64_decode(s: &str) -> Result<Vec<u8>, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn round_trip_simple() {
+    #[test]
+    fn round_trip_simple() {
         let data = b"hello world";
         let pem = encode_pem("TEST", data);
         let (label, decoded) = decode_pem(&pem).unwrap();
         assert_eq!(label, "TEST");
         assert_eq!(decoded, data);
     }
-    #[test] fn round_trip_binary() {
+    #[test]
+    fn round_trip_binary() {
         let data: Vec<u8> = (0..255).collect();
         let pem = encode_pem("BIN", &data);
         let (label, decoded) = decode_pem(&pem).unwrap();
         assert_eq!(label, "BIN");
         assert_eq!(decoded, data);
     }
-    #[test] fn encoded_format() {
+    #[test]
+    fn encoded_format() {
         let pem = encode_pem("LABEL", b"hi");
         assert!(pem.contains("-----BEGIN LABEL-----"));
         assert!(pem.contains("-----END LABEL-----"));
         assert!(pem.ends_with('\n'));
     }
-    #[test] fn empty_data() {
+    #[test]
+    fn empty_data() {
         let pem = encode_pem("EMPTY", b"");
         let (label, decoded) = decode_pem(&pem).unwrap();
         assert_eq!(label, "EMPTY");
         assert_eq!(decoded, Vec::<u8>::new());
     }
-    #[test] fn line_wrap_64() {
+    #[test]
+    fn line_wrap_64() {
         // 100 bytes -> base64 is 136 chars -> 3 lines: 64, 64, 8
         let data = vec![0xab; 100];
         let pem = encode_pem("WRAP", &data);
-        let body_lines: Vec<&str> = pem.lines()
+        let body_lines: Vec<&str> = pem
+            .lines()
             .skip_while(|l| !l.contains("BEGIN"))
             .skip(1)
             .take_while(|l| !l.contains("END"))
             .collect();
         assert!(body_lines.iter().all(|l| l.len() <= 64));
     }
-    #[test] fn decode_missing_begin() {
+    #[test]
+    fn decode_missing_begin() {
         assert!(decode_pem("not pem").is_err());
     }
-    #[test] fn whitespace_tolerant_decode() {
+    #[test]
+    fn whitespace_tolerant_decode() {
         let pem = encode_pem("WS", b"test data here");
         let mangled = pem.replace('\n', "  \n  ");
         let (_, decoded) = decode_pem(&mangled).unwrap();

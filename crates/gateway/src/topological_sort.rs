@@ -101,7 +101,9 @@ where
 mod tests {
     use super::*;
 
-    fn make(g: &[(&'static str, &'static [&'static str])]) -> (Vec<&'static str>, HashMap<&'static str, Vec<&'static str>>) {
+    fn make(
+        g: &[(&'static str, &'static [&'static str])],
+    ) -> (Vec<&'static str>, HashMap<&'static str, Vec<&'static str>>) {
         let nodes: Vec<&'static str> = g.iter().map(|(n, _)| *n).collect();
         let mut edges: HashMap<&'static str, Vec<&'static str>> = HashMap::new();
         for (n, vs) in g {

@@ -7,7 +7,9 @@ pub fn encode(bytes: &[u8]) -> String {
 }
 
 pub fn decode(s: &str) -> Result<Vec<u8>, String> {
-    if s.len() % 2 != 0 { return Err("hex string must have even length".into()); }
+    if s.len() % 2 != 0 {
+        return Err("hex string must have even length".into());
+    }
     let mut out = Vec::with_capacity(s.len() / 2);
     let chars: Vec<char> = s.chars().collect();
     let mut i = 0;
@@ -29,15 +31,39 @@ fn hex_digit(c: char) -> Result<u8, String> {
     }
 }
 
-pub fn is_valid(s: &str) -> bool { decode(s).is_ok() }
+pub fn is_valid(s: &str) -> bool {
+    decode(s).is_ok()
+}
 #[cfg(test)]
 mod tests {
     use super::*;
-    #[test] fn test_encode() { assert_eq!(encode(&[0x12, 0xab, 0xff]), "12abff"); }
-    #[test] fn test_encode_empty() { assert_eq!(encode(&[]), ""); }
-    #[test] fn test_decode() { assert_eq!(decode("12abff").unwrap(), vec![0x12, 0xab, 0xff]); }
-    #[test] fn test_decode_upper() { assert_eq!(decode("DEADBE").unwrap(), vec![0xde, 0xad, 0xbe]); }
-    #[test] fn test_decode_odd_len() { assert!(decode("abc").is_err()); }
-    #[test] fn test_decode_invalid_char() { assert!(decode("zz").is_err()); }
-    #[test] fn test_is_valid() { assert!(is_valid("aabbcc")); assert!(!is_valid("xyz")); }
+    #[test]
+    fn test_encode() {
+        assert_eq!(encode(&[0x12, 0xab, 0xff]), "12abff");
+    }
+    #[test]
+    fn test_encode_empty() {
+        assert_eq!(encode(&[]), "");
+    }
+    #[test]
+    fn test_decode() {
+        assert_eq!(decode("12abff").unwrap(), vec![0x12, 0xab, 0xff]);
+    }
+    #[test]
+    fn test_decode_upper() {
+        assert_eq!(decode("DEADBE").unwrap(), vec![0xde, 0xad, 0xbe]);
+    }
+    #[test]
+    fn test_decode_odd_len() {
+        assert!(decode("abc").is_err());
+    }
+    #[test]
+    fn test_decode_invalid_char() {
+        assert!(decode("zz").is_err());
+    }
+    #[test]
+    fn test_is_valid() {
+        assert!(is_valid("aabbcc"));
+        assert!(!is_valid("xyz"));
+    }
 }

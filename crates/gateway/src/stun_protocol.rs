@@ -72,12 +72,7 @@ impl fmt::Display for Attribute {
             ),
             Attribute::Software(s) => write!(f, "SOFTWARE {}", s),
             Attribute::Fingerprint(c) => write!(f, "FINGERPRINT 0x{:08x}", c),
-            Attribute::Other { ty, value } => write!(
-                f,
-                "ATTR 0x{:04x} len={}",
-                ty,
-                value.len()
-            ),
+            Attribute::Other { ty, value } => write!(f, "ATTR 0x{:04x} len={}", ty, value.len()),
         }
     }
 }
@@ -351,7 +346,10 @@ mod tests {
         let msg = parse(&pkt).expect("parse ok");
         assert_eq!(msg.msg_type, BINDING_REQUEST);
         assert_eq!(msg.magic_cookie, MAGIC_COOKIE);
-        assert_eq!(msg.transaction_id, [1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]);
+        assert_eq!(
+            msg.transaction_id,
+            [1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+        );
         assert_eq!(msg.attributes.len(), 1);
         match &msg.attributes[0] {
             Attribute::Software(s) => assert_eq!(s, "hello"),

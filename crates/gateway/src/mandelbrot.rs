@@ -27,7 +27,9 @@ pub fn escape(c_re: f64, c_im: f64, max_iter: u32) -> EscapeCount {
         zr = new_zr;
         zi = new_zi;
     }
-    EscapeCount { iterations: max_iter }
+    EscapeCount {
+        iterations: max_iter,
+    }
 }
 
 /// `true` if the point is "in" the set (within the iteration cap).
@@ -37,8 +39,15 @@ pub fn in_set(c_re: f64, c_im: f64, max_iter: u32) -> bool {
 
 /// Render a `(width, height)` ASCII grid into a `String` of '.' (escaped)
 /// and '#' (in-set) characters.
-pub fn ascii_grid(x_min: f64, x_max: f64, y_min: f64, y_max: f64,
-                  width: usize, height: usize, max_iter: u32) -> String {
+pub fn ascii_grid(
+    x_min: f64,
+    x_max: f64,
+    y_min: f64,
+    y_max: f64,
+    width: usize,
+    height: usize,
+    max_iter: u32,
+) -> String {
     let mut out = String::with_capacity((width + 1) * height);
     for row in 0..height {
         for col in 0..width {

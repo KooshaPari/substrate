@@ -18,8 +18,7 @@ const K: [u32; 64] = [
 ];
 
 const INITIAL: [u32; 8] = [
-    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
-    0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
+    0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19,
 ];
 
 fn rotr(x: u32, n: u32) -> u32 {
@@ -108,8 +107,7 @@ impl Hasher {
         if self.buffer_len > 0 {
             let need = 64 - self.buffer_len;
             let take = need.min(input.len());
-            self.buffer[self.buffer_len..self.buffer_len + take]
-                .copy_from_slice(&input[..take]);
+            self.buffer[self.buffer_len..self.buffer_len + take].copy_from_slice(&input[..take]);
             self.buffer_len += take;
             input = &input[take..];
             if self.buffer_len == 64 {
@@ -243,6 +241,8 @@ mod tests {
     fn hex_is_64_lowercase_chars() {
         let s = to_hex(&hash(b"hi"));
         assert_eq!(s.len(), 64);
-        assert!(s.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()));
+        assert!(s
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit()));
     }
 }

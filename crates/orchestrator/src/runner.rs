@@ -78,10 +78,7 @@ pub struct WaveReport {
 
 /// MVP cut-line runner. Fans tasks out concurrently up to
 /// `WaveConfig::parallelism`, then assembles a [`WaveReport`].
-pub async fn run_wave(
-    config: WaveConfig,
-    dispatcher: Arc<dyn Dispatcher>,
-) -> Result<WaveReport> {
+pub async fn run_wave(config: WaveConfig, dispatcher: Arc<dyn Dispatcher>) -> Result<WaveReport> {
     if config.tasks.is_empty() {
         return Err(OrchestratorError::WaveSchema {
             path: std::path::PathBuf::from("<inline>"),
@@ -105,11 +102,9 @@ pub async fn run_wave(
             let start = Instant::now();
             let outcome = match dispatcher.dispatch(&task).await {
                 Ok(o) => o,
-                Err(e) => DispatchOutcome::failure(
-                    start.elapsed().as_millis() as u64,
-                    0.0,
-                    e.to_string(),
-                ),
+                Err(e) => {
+                    DispatchOutcome::failure(start.elapsed().as_millis() as u64, 0.0, e.to_string())
+                }
             };
             (task, outcome)
         }));

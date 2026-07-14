@@ -24,8 +24,8 @@ Surfaces, in priority order:
 
 | § | Surface | Reversibility |
 |---|---|---|
-| 1 | `psub-gateway` HTTP service | Reversible (process swap) |
-| 2 | `psub` CLI | Reversible (`cargo install --force`) |
+| 1 | `substrate-gateway` HTTP service | Reversible (process swap) |
+| 2 | `substrate` CLI | Reversible (`cargo install --force`) |
 | 3 | `driver-http` reverse proxy | Reversible (same artifact as §1) |
 | 4 | Database / on-disk state | Snapshot + restore (forward-only schema) |
 | 5 | Config changes (`SUBSTRATE_CONFIG_FILE`) | Edit the file — atomic hot reload |
@@ -34,11 +34,11 @@ Surfaces, in priority order:
 
 ---
 
-## 1. `psub-gateway` HTTP service
+## 1. `substrate-gateway` HTTP service
 
 The gateway is the only process that fronts client traffic. Three deployment
 shapes are covered — pick the one that matches your host. The Dockerfile ships
-`psub-gateway` to `/usr/local/bin/psub-gateway`; release tags publish
+`substrate-gateway` to `/usr/local/bin/substrate-gateway`; release tags publish
 `substrate-linux` (or `substrate-windows`) artifacts from
 `.github/workflows/release-binary.yml`.
 

@@ -40,7 +40,9 @@ pub fn expand(prk: &[u8; 32], info: &[u8], okm_len: usize) -> Result<Vec<u8>, St
         let block = hmac_sha256::hmac_sha256(prk, &input);
         t = block.to_vec();
         out.extend_from_slice(&t);
-        counter = counter.checked_add(1).ok_or_else(|| "counter overflow".to_string())?;
+        counter = counter
+            .checked_add(1)
+            .ok_or_else(|| "counter overflow".to_string())?;
     }
     out.truncate(okm_len);
     Ok(out)

@@ -55,9 +55,10 @@ impl IntervalTree {
         assert!(start <= end, "interval start must be <= end");
         let interval = Interval { start, end, id };
         // Binary search by (start, id) for stable insertion.
-        let idx = self.intervals.binary_search_by(|i| {
-            i.start.cmp(&start).then(i.id.cmp(&id))
-        }).unwrap_or_else(|e| e);
+        let idx = self
+            .intervals
+            .binary_search_by(|i| i.start.cmp(&start).then(i.id.cmp(&id)))
+            .unwrap_or_else(|e| e);
         self.intervals.insert(idx, interval);
         idx
     }

@@ -13,14 +13,21 @@
 //!
 //! Reference: <https://en.wikipedia.org/wiki/Huffman_coding>
 
-use std::collections::BinaryHeap;
 use std::cmp::Reverse;
+use std::collections::BinaryHeap;
 
 /// A node in the Huffman tree (either an internal branch or a leaf).
 #[derive(Debug, Clone)]
 enum Node {
-    Leaf { symbol: u8, weight: u64 },
-    Branch { weight: u64, left: Box<Node>, right: Box<Node> },
+    Leaf {
+        symbol: u8,
+        weight: u64,
+    },
+    Branch {
+        weight: u64,
+        left: Box<Node>,
+        right: Box<Node>,
+    },
 }
 
 impl Node {
@@ -56,12 +63,18 @@ fn build_tree(freqs: &[u64; 256]) -> Node {
     let mut heap: BinaryHeap<Reverse<Node>> = BinaryHeap::new();
     for (sym, &w) in freqs.iter().enumerate() {
         if w > 0 {
-            heap.push(Reverse(Node::Leaf { symbol: sym as u8, weight: w }));
+            heap.push(Reverse(Node::Leaf {
+                symbol: sym as u8,
+                weight: w,
+            }));
         }
     }
     // Edge case: empty input -> single sentinel leaf.
     if heap.is_empty() {
-        return Node::Leaf { symbol: 0, weight: 0 };
+        return Node::Leaf {
+            symbol: 0,
+            weight: 0,
+        };
     }
     // Special case: only one unique symbol -> wrap in a dummy branch so the
     // code is at least 1 bit wide (not zero-width).
@@ -70,7 +83,10 @@ fn build_tree(freqs: &[u64; 256]) -> Node {
         return Node::Branch {
             weight: only.weight(),
             left: Box::new(only),
-            right: Box::new(Node::Leaf { symbol: 0, weight: 0 }),
+            right: Box::new(Node::Leaf {
+                symbol: 0,
+                weight: 0,
+            }),
         };
     }
     while heap.len() > 1 {
@@ -118,14 +134,20 @@ fn serialize_tree(node: &Node, bits: &mut Vec<bool>, symbols: &mut Vec<u8>) {
 /// Deserialize a bitstream+symbols into a tree.
 fn deserialize_tree(bits: &[bool], pos: &mut usize, symbols: &[u8], sym_pos: &mut usize) -> Node {
     if *pos >= bits.len() {
-        return Node::Leaf { symbol: 0, weight: 0 };
+        return Node::Leaf {
+            symbol: 0,
+            weight: 0,
+        };
     }
     let bit = bits[*pos];
     *pos += 1;
     if !bit {
         let s = symbols[*sym_pos];
         *sym_pos += 1;
-        return Node::Leaf { symbol: s, weight: 1 };
+        return Node::Leaf {
+            symbol: s,
+            weight: 1,
+        };
     }
     let left = deserialize_tree(bits, pos, symbols, sym_pos);
     let right = deserialize_tree(bits, pos, symbols, sym_pos);
@@ -237,8 +259,7 @@ pub fn decode(input: &[u8]) -> Result<Vec<u8>, String> {
     if after_body + 2 > input.len() {
         return Err("huffman: missing tree header".to_string());
     }
-    let tree_bits_len =
-        u16::from_le_bytes([input[after_body], input[after_body + 1]]) as usize;
+    let tree_bits_len = u16::from_le_bytes([input[after_body], input[after_body + 1]]) as usize;
     let tree_start = after_body + 2;
     let tree_byte_count = (tree_bits_len + 7) / 8;
     let tree_end = tree_start + tree_byte_count;
@@ -253,7 +274,12 @@ pub fn decode(input: &[u8]) -> Result<Vec<u8>, String> {
     let symbols_start = tree_end;
     let mut tree_pos = 0usize;
     let mut sym_pos = 0usize;
-    let tree = deserialize_tree(&tree_bits, &mut tree_pos, &input[symbols_start..], &mut sym_pos);
+    let tree = deserialize_tree(
+        &tree_bits,
+        &mut tree_pos,
+        &input[symbols_start..],
+        &mut sym_pos,
+    );
 
     // Walk the tree consuming bits.
     let mut out = Vec::with_capacity(bit_count);

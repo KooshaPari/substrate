@@ -45,15 +45,17 @@ pub struct Request {
 /// richer error type if needed.
 pub fn parse(input: &[u8]) -> Result<(Request, &[u8]), String> {
     // Locate the end of the header block (CRLF CRLF).
-    let header_end = find_header_end(input).ok_or_else(|| "incomplete request: header terminator not found".to_string())?;
+    let header_end = find_header_end(input)
+        .ok_or_else(|| "incomplete request: header terminator not found".to_string())?;
     let header_bytes = &input[..header_end];
     let body_start = header_end + 4; // skip "\r\n\r\n"
-    // Body length is whatever sits between the header terminator and the end of
-    // the input. Downstream framing (Content-Length, chunked) decides what to
-    // actually keep; this parser is intentionally body-agnostic.
+                                     // Body length is whatever sits between the header terminator and the end of
+                                     // the input. Downstream framing (Content-Length, chunked) decides what to
+                                     // actually keep; this parser is intentionally body-agnostic.
     let body = input.get(body_start..).unwrap_or(&[]).to_vec();
 
-    let header_text = std::str::from_utf8(header_bytes).map_err(|e| format!("non-utf8 header bytes: {}", e))?;
+    let header_text =
+        std::str::from_utf8(header_bytes).map_err(|e| format!("non-utf8 header bytes: {}", e))?;
     let mut lines = header_text.split("\r\n");
     let request_line = lines.next().ok_or_else(|| "empty request".to_string())?;
     let (method, path, query, version) = parse_request_line(request_line)?;
@@ -97,8 +99,12 @@ fn find_header_end(input: &[u8]) -> Option<usize> {
 fn parse_request_line(line: &str) -> Result<(String, String, String, String), String> {
     let mut parts = line.split(' ');
     let method = parts.next().ok_or_else(|| "missing method".to_string())?;
-    let target = parts.next().ok_or_else(|| "missing request-target".to_string())?;
-    let version = parts.next().ok_or_else(|| "missing HTTP version".to_string())?;
+    let target = parts
+        .next()
+        .ok_or_else(|| "missing request-target".to_string())?;
+    let version = parts
+        .next()
+        .ok_or_else(|| "missing HTTP version".to_string())?;
     if parts.next().is_some() {
         return Err("malformed request line: too many spaces".to_string());
     }
@@ -122,7 +128,9 @@ fn split_target(target: &str) -> (String, String) {
 
 /// Parse a single header line into (name, value). The name is lower-cased.
 fn parse_header_line(line: &str) -> Result<(String, String), String> {
-    let colon = line.find(':').ok_or_else(|| format!("missing colon in header: {}", line))?;
+    let colon = line
+        .find(':')
+        .ok_or_else(|| format!("missing colon in header: {}", line))?;
     let name = &line[..colon];
     let value = &line[colon + 1..];
     if name.is_empty() {
@@ -139,8 +147,26 @@ fn parse_header_line(line: &str) -> Result<(String, String), String> {
 /// HTTP token character predicate (RFC 7230 §3.2.6 subset).
 fn is_valid_token(s: &str) -> bool {
     !s.is_empty()
-        && s.bytes()
-            .all(|b| b.is_ascii_alphanumeric() || matches!(b, b'!' | b'#' | b'$' | b'%' | b'&' | b'\'' | b'*' | b'+' | b'-' | b'.' | b'^' | b'_' | b'`' | b'|' | b'~'))
+        && s.bytes().all(|b| {
+            b.is_ascii_alphanumeric()
+                || matches!(
+                    b,
+                    b'!' | b'#'
+                        | b'$'
+                        | b'%'
+                        | b'&'
+                        | b'\''
+                        | b'*'
+                        | b'+'
+                        | b'-'
+                        | b'.'
+                        | b'^'
+                        | b'_'
+                        | b'`'
+                        | b'|'
+                        | b'~'
+                )
+        })
 }
 
 #[cfg(test)]
@@ -174,7 +200,10 @@ mod tests {
         assert_eq!(r.path, "/api/v1/echo");
         assert_eq!(r.query, "x=1&y=2");
         assert_eq!(r.headers.get("content-type").unwrap(), "application/json");
-        assert_eq!(std::str::from_utf8(&r.body).unwrap(), "{\"hello\":\"world!\"}");
+        assert_eq!(
+            std::str::from_utf8(&r.body).unwrap(),
+            "{\"hello\":\"world!\"}"
+        );
     }
 
     #[test]
@@ -184,7 +213,10 @@ mod tests {
         // Headers are stored under lower-cased names, so lookups must use the
         // lower-cased key. Last duplicate header wins on insert.
         assert_eq!(r.headers.get("x-custom-header").unwrap(), "v2");
-        assert!(r.headers.get("X-Custom-Header").is_none(), "header name must be lower-cased");
+        assert!(
+            r.headers.get("X-Custom-Header").is_none(),
+            "header name must be lower-cased"
+        );
         assert_eq!(r.headers.len(), 1);
     }
 

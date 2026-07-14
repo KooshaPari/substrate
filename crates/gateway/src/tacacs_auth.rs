@@ -76,9 +76,19 @@ pub struct AuthenStart {
 
 #[derive(Debug, PartialEq)]
 pub enum TacacsError {
-    TooShort { needed: usize, have: usize },
-    BadVersion { major: u8, minor: u8 },
-    LengthMismatch { field: &'static str, declared: u8, available: usize },
+    TooShort {
+        needed: usize,
+        have: usize,
+    },
+    BadVersion {
+        major: u8,
+        minor: u8,
+    },
+    LengthMismatch {
+        field: &'static str,
+        declared: u8,
+        available: usize,
+    },
 }
 
 /// Parse the 12-byte TACACS+ outer header.
@@ -129,7 +139,8 @@ pub fn parse_authen_start(body: &[u8]) -> Result<AuthenStart, TacacsError> {
     let rem_addr_len = body[6];
     let data_len = body[7];
 
-    let needed = 8 + (user_len as usize)
+    let needed = 8
+        + (user_len as usize)
         + (port_len as usize)
         + (rem_addr_len as usize)
         + (data_len as usize);
@@ -244,7 +255,13 @@ mod tests {
     #[test]
     fn header_minimum_bytes() {
         let err = parse_header(&[0u8; 11]).unwrap_err();
-        assert_eq!(err, TacacsError::TooShort { needed: 12, have: 11 });
+        assert_eq!(
+            err,
+            TacacsError::TooShort {
+                needed: 12,
+                have: 11
+            }
+        );
     }
 
     #[test]
@@ -252,13 +269,7 @@ mod tests {
         // Byte 0 = 0x42 -> major = 4, minor = 2 (not 0xc).
         let buf = [0x42, TAC_PLUS_AUTHEN, 0x01, 0, 0, 0, 0, 0, 0, 0, 0, 0];
         let err = parse_header(&buf).unwrap_err();
-        assert_eq!(
-            err,
-            TacacsError::BadVersion {
-                major: 4,
-                minor: 2
-            }
-        );
+        assert_eq!(err, TacacsError::BadVersion { major: 4, minor: 2 });
     }
 
     #[test]

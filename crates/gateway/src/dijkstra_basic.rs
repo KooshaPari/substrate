@@ -77,7 +77,10 @@ impl Graph {
         let mut dist: Vec<Dist> = (0..self.n)
             .map(|i| {
                 if i == src {
-                    Dist { dist: 0, pred: None }
+                    Dist {
+                        dist: 0,
+                        pred: None,
+                    }
                 } else {
                     Dist {
                         dist: INF,
@@ -193,9 +196,17 @@ mod tests {
 
     #[test]
     fn predecessor_chain_integrity() {
-        let g = Graph::from_edges(6, &[
-            (0, 1, 1), (0, 2, 1), (1, 3, 2), (2, 3, 2), (3, 4, 1), (4, 5, 1),
-        ]);
+        let g = Graph::from_edges(
+            6,
+            &[
+                (0, 1, 1),
+                (0, 2, 1),
+                (1, 3, 2),
+                (2, 3, 2),
+                (3, 4, 1),
+                (4, 5, 1),
+            ],
+        );
         let d = g.dijkstra(0);
         for i in 0..g.n {
             if i == 0 {
@@ -212,9 +223,17 @@ mod tests {
     #[test]
     fn revisit_path_sum_matches_dist() {
         // A small graph where one might double-count edges if mishandled.
-        let g = Graph::from_edges(5, &[
-            (0, 1, 4), (0, 2, 2), (1, 2, 1), (1, 3, 5), (2, 3, 8), (3, 4, 2),
-        ]);
+        let g = Graph::from_edges(
+            5,
+            &[
+                (0, 1, 4),
+                (0, 2, 2),
+                (1, 2, 1),
+                (1, 3, 5),
+                (2, 3, 8),
+                (3, 4, 2),
+            ],
+        );
         let d = g.dijkstra(0);
         for (target, expected) in [(1, 3), (2, 2), (3, 8), (4, 10)] {
             assert_eq!(

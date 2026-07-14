@@ -119,10 +119,7 @@ pub fn parse_meta(input: &[u8]) -> Result<ElfMeta, String> {
         return Err("ELF header truncated (< 18 bytes)".into());
     }
     if input[0..4] != ELF_MAGIC {
-        return Err(format!(
-            "not an ELF file (magic = {:02x?})",
-            &input[0..4]
-        ));
+        return Err(format!("not an ELF file (magic = {:02x?})", &input[0..4]));
     }
     let class = input[4];
     let data = input[5];
@@ -159,11 +156,7 @@ pub fn parse_meta(input: &[u8]) -> Result<ElfMeta, String> {
     // e_shentsize at offset 46 for ELF32, 58 for ELF64.
     // e_shnum at offset 48 for ELF32, 60 for ELF64.
     // e_shstrndx at offset 50 for ELF32, 62 for ELF64.
-    let (off_shentsize, off_shnum, off_shstrndx) = if is_64 {
-        (58, 60, 62)
-    } else {
-        (46, 48, 50)
-    };
+    let (off_shentsize, off_shnum, off_shstrndx) = if is_64 { (58, 60, 62) } else { (46, 48, 50) };
     let _shentsize = read_u16(off_shentsize);
     let e_shnum = read_u16(off_shnum);
     let e_shstrndx = read_u16(off_shstrndx);
@@ -191,7 +184,11 @@ pub fn parse_sections(input: &[u8]) -> Result<Vec<Section>, String> {
     }
 
     // Section header entry size differs between 32/64.
-    let (shentsize, header_len) = if meta.is_64 { (64usize, 64usize) } else { (40usize, 52usize) };
+    let (shentsize, header_len) = if meta.is_64 {
+        (64usize, 64usize)
+    } else {
+        (40usize, 52usize)
+    };
     if input.len() < header_len {
         return Err("ELF header truncated".into());
     }
@@ -238,7 +235,11 @@ pub fn parse_sections(input: &[u8]) -> Result<Vec<Section>, String> {
     };
 
     let total = e_shoff
-        .checked_add((meta.e_shnum as u64).checked_mul(shentsize as u64).ok_or("e_shnum overflow")?)
+        .checked_add(
+            (meta.e_shnum as u64)
+                .checked_mul(shentsize as u64)
+                .ok_or("e_shnum overflow")?,
+        )
         .ok_or("e_shoff + table size overflow")?;
     if total as usize > input.len() {
         return Err(format!(
@@ -386,7 +387,11 @@ fn read_section_entry(
     } else {
         let off = sh_offset as usize;
         let size = sh_size as usize;
-        if off.checked_add(size).map(|e| e <= input.len()).unwrap_or(false) {
+        if off
+            .checked_add(size)
+            .map(|e| e <= input.len())
+            .unwrap_or(false)
+        {
             input[off..off + size].to_vec()
         } else {
             return Err(format!(
@@ -622,7 +627,7 @@ mod tests {
         // a real toolchain emits.
         let mut buf = mk_elf64_le(0x3e, 3, 1, 64); // e_shoff patched below
         let sec_table_off = buf.len() as u64; // 64
-        // Patch e_shoff = sec_table_off (still 64 in this case).
+                                              // Patch e_shoff = sec_table_off (still 64 in this case).
         buf[40..48].copy_from_slice(&sec_table_off.to_le_bytes());
 
         // Three section entries — sh_size / sh_offset get back-patched.

@@ -19,7 +19,11 @@ use crate::theme::Tokens;
 const BACKBONE2: &str = "Backbone-2";
 
 fn color(tty: bool, code: &str, text: &str) -> String {
-    if tty { format!("\x1b[{code}m{text}\x1b[0m") } else { text.to_string() }
+    if tty {
+        format!("\x1b[{code}m{text}\x1b[0m")
+    } else {
+        text.to_string()
+    }
 }
 
 /// Derive a 6-digit ANSI 24-bit-bg payload from an Rgb token.
@@ -44,20 +48,36 @@ pub fn print_cli_splash(version: &str) {
     // 24-col panel base band — sourced from Tokens::BACKBONE2.panel.
     let t = Tokens::BACKBONE2;
     let panel_pad = "                        ";
-    let panel = if colored { bg_256(t.panel, panel_pad) } else { panel_pad.to_string() };
+    let panel = if colored {
+        bg_256(t.panel, panel_pad)
+    } else {
+        panel_pad.to_string()
+    };
     let grid = color(colored, "38;5;60", "substrate hexagonal mesh");
 
     // Line 1: Backbone-2 mark + version (sync-violet bold title, panel bg)
-    let mark  = if colored { fg_256(t.sync_violet, "  subnet ") } else { "  subnet ".to_string() };
-    let ver   = color(colored, "38;5;250", version);
+    let mark = if colored {
+        fg_256(t.sync_violet, "  subnet ")
+    } else {
+        "  subnet ".to_string()
+    };
+    let ver = color(colored, "38;5;250", version);
     println!("{panel}{mark}{ver}");
 
     // Line 2: daemon-pulse line (pulse-green from tokens)
-    let pulse = if colored { fg_256(t.pulse_green, "  p u l s e     ok ") } else { "  p u l s e     ok ".to_string() };
+    let pulse = if colored {
+        fg_256(t.pulse_green, "  p u l s e     ok ")
+    } else {
+        "  p u l s e     ok ".to_string()
+    };
     println!("{panel}{pulse}");
 
     // Line 3: reroute-up glyph (sync-violet) + thermal-cooldown accent (warm-amber)
-    let route = if colored { fg_256(t.sync_violet, "  ^ ^ ^  sync ") } else { "  ^ ^ ^  sync ".to_string() };
+    let route = if colored {
+        fg_256(t.sync_violet, "  ^ ^ ^  sync ")
+    } else {
+        "  ^ ^ ^  sync ".to_string()
+    };
     let thermal = if colored {
         fg_256(t.warm_amber, "*cooldown*")
     } else {
@@ -65,7 +85,10 @@ pub fn print_cli_splash(version: &str) {
     };
     println!("{panel}{route}{thermal}  {BACKBONE2}  {grid}");
 
-    eprintln!("{:>24}", color(colored, "38;5;245", "via forge · codex · claude · agentapi"));
+    eprintln!(
+        "{:>24}",
+        color(colored, "38;5;245", "via forge · codex · claude · agentapi")
+    );
 }
 
 /// Test-only entrypoint. Always renders regardless of TTY/NO_COLOR so
@@ -119,7 +142,10 @@ mod tests {
         let s = bg_256(t.panel, " ");
         assert!(s.starts_with("\x1b[48;2;"));
         // 0x16 = 22 ; 0x1b = 27 ; 0x22 = 34
-        assert!(s.contains("22;27;34"), "expected bb2-panel rgb 22;27;34 in payload, got: {s}");
+        assert!(
+            s.contains("22;27;34"),
+            "expected bb2-panel rgb 22;27;34 in payload, got: {s}"
+        );
     }
 
     /// Phase 2 integration: fg_256() emits an ANSI 38;2; payload derived from
@@ -130,7 +156,10 @@ mod tests {
         let s = fg_256(t.warm_amber, "*cooldown*");
         assert!(s.starts_with("\x1b[38;2;"));
         // 0xd2 = 210 ; 0x99 = 153 ; 0x22 = 34
-        assert!(s.contains("210;153;34"), "expected bb2-warm-amber rgb 210;153;34, got: {s}");
+        assert!(
+            s.contains("210;153;34"),
+            "expected bb2-warm-amber rgb 210;153;34, got: {s}"
+        );
         assert!(s.contains("*cooldown*"));
     }
 }

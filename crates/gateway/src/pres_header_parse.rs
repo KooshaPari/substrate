@@ -239,7 +239,7 @@ mod tests {
         v.extend_from_slice(&0u32.to_le_bytes()); // number_of_minifat_sectors
         v.extend_from_slice(&0xFFFFFFFEu32.to_le_bytes()); // first_difat_sector_location (NOSTREAM)
         v.extend_from_slice(&0u32.to_le_bytes()); // number_of_difat_sectors
-        // DIFAT[0..109] = 109 u32 LE entries (436 bytes).
+                                                  // DIFAT[0..109] = 109 u32 LE entries (436 bytes).
         v.extend_from_slice(&0u32.to_le_bytes()); // first FAT sector index (sector 0)
         for _ in 1..109 {
             v.extend_from_slice(&0xFFFFFFFFu32.to_le_bytes()); // FREESECT

@@ -141,7 +141,10 @@ mod tests {
         let cookie: &[u8] = b"Cookie: mstshash=foo";
         let req = build_request(PROTOCOL_SSL | PROTOCOL_HYBRID, Some(cookie));
         assert_eq!(req.len(), 8 + cookie.len());
-        assert_eq!(u16::from_le_bytes([req[2], req[3]]), 8 + cookie.len() as u16);
+        assert_eq!(
+            u16::from_le_bytes([req[2], req[3]]),
+            8 + cookie.len() as u16
+        );
         assert_eq!(&req[8..], cookie);
     }
 
@@ -160,7 +163,8 @@ mod tests {
 
     #[test]
     fn round_trip_all_protocols() {
-        let protocols = PROTOCOL_RDP | PROTOCOL_SSL | PROTOCOL_HYBRID | PROTOCOL_RDS_TLS | PROTOCOL_HYBRID_EX;
+        let protocols =
+            PROTOCOL_RDP | PROTOCOL_SSL | PROTOCOL_HYBRID | PROTOCOL_RDS_TLS | PROTOCOL_HYBRID_EX;
         let cookie: &[u8] = b"Cookie: mstshash=Administrator@host:3389";
         let req = build_request(protocols, Some(cookie));
         assert_round_trip(&req);
@@ -195,7 +199,10 @@ mod tests {
         // 7-byte buffer should be rejected with a panic. We use
         // catch_unwind because panic != test failure on stable.
         let result = std::panic::catch_unwind(|| assert_round_trip(&[0u8; 7]));
-        assert!(result.is_err(), "assert_round_trip must reject <8 byte input");
+        assert!(
+            result.is_err(),
+            "assert_round_trip must reject <8 byte input"
+        );
     }
 
     #[test]
@@ -203,7 +210,10 @@ mod tests {
         let mut req = build_request(PROTOCOL_RDP, None);
         req[0] = 0x00; // wrong type
         let result = std::panic::catch_unwind(|| assert_round_trip(&req));
-        assert!(result.is_err(), "assert_round_trip must reject non-NEG_REQ type");
+        assert!(
+            result.is_err(),
+            "assert_round_trip must reject non-NEG_REQ type"
+        );
     }
 
     #[test]
@@ -211,7 +221,10 @@ mod tests {
         let mut req = build_request(PROTOCOL_RDP, None);
         req[2] = 0x10; // length field says 0x1008 but buffer is 8 bytes
         let result = std::panic::catch_unwind(|| assert_round_trip(&req));
-        assert!(result.is_err(), "assert_round_trip must reject mismatched length");
+        assert!(
+            result.is_err(),
+            "assert_round_trip must reject mismatched length"
+        );
     }
 
     #[test]
@@ -219,6 +232,9 @@ mod tests {
         let mut req = build_request(PROTOCOL_RDP, None);
         req[4] = 0xff; // upper bits of rdpProtocols set
         let result = std::panic::catch_unwind(|| assert_round_trip(&req));
-        assert!(result.is_err(), "assert_round_trip must reject reserved protocol bits");
+        assert!(
+            result.is_err(),
+            "assert_round_trip must reject reserved protocol bits"
+        );
     }
 }

@@ -65,20 +65,20 @@ struct FieldSpec {
 }
 
 const SPECS: [FieldSpec; 14] = [
-    FieldSpec { size: 8, align: 8 },  // TSFT
-    FieldSpec { size: 1, align: 1 },  // Flags
-    FieldSpec { size: 1, align: 1 },  // Rate
-    FieldSpec { size: 4, align: 2 },  // Channel
-    FieldSpec { size: 2, align: 1 },  // FHSS
-    FieldSpec { size: 1, align: 1 },  // Antenna signal
-    FieldSpec { size: 1, align: 1 },  // Antenna noise
-    FieldSpec { size: 2, align: 2 },  // Lock quality
-    FieldSpec { size: 2, align: 2 },  // TX attenuation
-    FieldSpec { size: 2, align: 2 },  // dB TX attenuation
-    FieldSpec { size: 1, align: 1 },  // dBm TX power
-    FieldSpec { size: 1, align: 1 },  // Antenna
-    FieldSpec { size: 1, align: 1 },  // dB antenna signal
-    FieldSpec { size: 1, align: 1 },  // dB antenna noise
+    FieldSpec { size: 8, align: 8 }, // TSFT
+    FieldSpec { size: 1, align: 1 }, // Flags
+    FieldSpec { size: 1, align: 1 }, // Rate
+    FieldSpec { size: 4, align: 2 }, // Channel
+    FieldSpec { size: 2, align: 1 }, // FHSS
+    FieldSpec { size: 1, align: 1 }, // Antenna signal
+    FieldSpec { size: 1, align: 1 }, // Antenna noise
+    FieldSpec { size: 2, align: 2 }, // Lock quality
+    FieldSpec { size: 2, align: 2 }, // TX attenuation
+    FieldSpec { size: 2, align: 2 }, // dB TX attenuation
+    FieldSpec { size: 1, align: 1 }, // dBm TX power
+    FieldSpec { size: 1, align: 1 }, // Antenna
+    FieldSpec { size: 1, align: 1 }, // dB antenna signal
+    FieldSpec { size: 1, align: 1 }, // dB antenna noise
 ];
 
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -124,10 +124,7 @@ pub fn parse(input: &[u8]) -> Result<RadiotapHeader, String> {
 /// Walk the canonical field list and advance `offset` by each present
 /// field's aligned size. Returns the offsets of fields that the caller
 /// cared about. Use `for_each_field` for a simpler walk.
-pub fn for_each_field<F: FnMut(usize, usize, u32)>(
-    present: u32,
-    mut cb: F,
-) {
+pub fn for_each_field<F: FnMut(usize, usize, u32)>(present: u32, mut cb: F) {
     let mut offset = 0usize;
     for (idx, spec) in SPECS.iter().enumerate() {
         let bit = 1u32 << idx;
@@ -165,10 +162,7 @@ pub fn encode(present: u32, body: &[u8]) -> Vec<u8> {
 /// field in the present mask, plus its size. Returns
 /// `Err(String)` if the field is not present or is out of the
 /// supported range.
-pub fn field_offset(
-    present: u32,
-    field_bit: u32,
-) -> Result<(usize, usize), String> {
+pub fn field_offset(present: u32, field_bit: u32) -> Result<(usize, usize), String> {
     if field_bit == 0 || field_bit.trailing_zeros() >= SPECS.len() as u32 {
         return Err(format!("unsupported field bit 0x{field_bit:x}"));
     }

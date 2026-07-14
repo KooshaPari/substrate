@@ -55,7 +55,10 @@ pub mod qtype {
 /// oversized buffer.
 pub fn build_query(id: u16, flags: u16, qname: &str, qt: u16) -> Result<Vec<u8>, String> {
     if qname.len() > 253 {
-        return Err(format!("qname too long: {} bytes (RFC 1035 §2.3.4)", qname.len()));
+        return Err(format!(
+            "qname too long: {} bytes (RFC 1035 §2.3.4)",
+            qname.len()
+        ));
     }
     // Validate labels.
     let mut total_label_len: usize = 0;
@@ -89,8 +92,8 @@ pub fn build_query(id: u16, flags: u16, qname: &str, qt: u16) -> Result<Vec<u8>,
     buf.extend_from_slice(&0u16.to_be_bytes()); // an_count
     buf.extend_from_slice(&0u16.to_be_bytes()); // ns_count
     buf.extend_from_slice(&0u16.to_be_bytes()); // ar_count
-    // Encode qname. Split the input into label runs; a trailing dot
-    // signals the root label and adds an empty terminator.
+                                                // Encode qname. Split the input into label runs; a trailing dot
+                                                // signals the root label and adds an empty terminator.
     let trimmed = qname.trim_end_matches('.');
     if !trimmed.is_empty() {
         for label in trimmed.split('.') {
@@ -109,7 +112,13 @@ pub fn build_query(id: u16, flags: u16, qname: &str, qt: u16) -> Result<Vec<u8>,
 /// round-trip. Panics with a descriptive message on mismatch.
 ///
 /// Used as a one-line end-to-end check in tests.
-pub fn assert_round_trip_query(expected_id: u16, expected_flags: u16, expected_qname: &str, expected_qt: u16, buf: &[u8]) {
+pub fn assert_round_trip_query(
+    expected_id: u16,
+    expected_flags: u16,
+    expected_qname: &str,
+    expected_qt: u16,
+    buf: &[u8],
+) {
     let h = crate::dns_message_parser::parse_header(buf)
         .expect("dns_query_parser_parity: header parse failed");
     if h.id != expected_id {

@@ -209,7 +209,11 @@ mod tests {
     fn parse_wrong_column_count_errors() {
         let input = "1 2 3\n";
         let err = parse(input).expect_err("should reject 3-column row");
-        assert!(err.contains("expected 15 columns"), "unexpected error: {}", err);
+        assert!(
+            err.contains("expected 15 columns"),
+            "unexpected error: {}",
+            err
+        );
         assert!(err.contains("got 3"), "unexpected error: {}", err);
     }
 
@@ -224,7 +228,8 @@ mod tests {
     #[test]
     fn parse_large_values() {
         // Exercise a row with values that overflow smaller integer types.
-        let input = "999999 999999 18446744073709551610 18446744073709551610 0 0 0 0 0 0 100 0 0 0 0\n";
+        let input =
+            "999999 999999 18446744073709551610 18446744073709551610 0 0 0 0 0 0 100 0 0 0 0\n";
         let rows = parse(input).expect("large values should parse as u64");
         assert_eq!(rows.len(), 1);
         assert_eq!(rows[0].free, 18446744073709551610);

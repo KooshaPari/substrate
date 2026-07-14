@@ -80,7 +80,16 @@ pub fn utf8_string(s: &str) -> Vec<u8> {
 /// with `?` to keep the encoder total — caller should validate input
 /// before sending).
 pub fn printable_string(s: &str) -> Vec<u8> {
-    let sanitized: Vec<u8> = s.bytes().map(|b| if b.is_ascii_graphic() || b == b' ' { b } else { b'?' }).collect();
+    let sanitized: Vec<u8> = s
+        .bytes()
+        .map(|b| {
+            if b.is_ascii_graphic() || b == b' ' {
+                b
+            } else {
+                b'?'
+            }
+        })
+        .collect();
     octet_string_or(&sanitized, tag::PRINTABLE_STRING)
 }
 
@@ -182,7 +191,10 @@ mod tests {
     #[test]
     fn integer_negative() {
         // -1 encodes as 0xFF
-        assert_eq!(integer(-1), vec![0x02, 0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+        assert_eq!(
+            integer(-1),
+            vec![0x02, 0x08, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]
+        );
     }
 
     #[test]
@@ -230,13 +242,19 @@ mod tests {
     fn utf8_string_multibyte() {
         let encoded = utf8_string("héllo");
         // 'h' 'é' (0xc3 0xa9) 'l' 'l' 'o' = 6 bytes
-        assert_eq!(encoded, vec![0x12, 0x06, b'h', 0xc3, 0xa9, b'l', b'l', b'o']);
+        assert_eq!(
+            encoded,
+            vec![0x12, 0x06, b'h', 0xc3, 0xa9, b'l', b'l', b'o']
+        );
     }
 
     #[test]
     fn printable_string_sanitizes_non_ascii() {
         // Non-printable byte 0x01 replaced with '?'
-        assert_eq!(printable_string("a\x01b"), vec![0x13, 0x03, b'a', b'?', b'b']);
+        assert_eq!(
+            printable_string("a\x01b"),
+            vec![0x13, 0x03, b'a', b'?', b'b']
+        );
     }
 
     #[test]

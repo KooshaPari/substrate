@@ -46,8 +46,14 @@ pub struct XorShift64 {
 impl XorShift64 {
     /// Construct from any non-zero seed.
     pub fn new(seed: u64) -> Self {
-        let s = if seed == 0 { 0xDEAD_BEEF_CAFE_F00D } else { seed };
-        Self { state: Cell::new(s) }
+        let s = if seed == 0 {
+            0xDEAD_BEEF_CAFE_F00D
+        } else {
+            seed
+        };
+        Self {
+            state: Cell::new(s),
+        }
     }
 
     /// Next 64-bit random value.
@@ -239,7 +245,11 @@ impl ToroidalMaze {
                 let dir = rng.next_range(4);
                 let next_idx = match dir {
                     0 => {
-                        let ndr = if dr == 0 { self.rows as i32 - 1 } else { dr - 1 };
+                        let ndr = if dr == 0 {
+                            self.rows as i32 - 1
+                        } else {
+                            dr - 1
+                        };
                         (ndr as usize) * self.cols + dc as usize
                     }
                     1 => {
@@ -251,7 +261,11 @@ impl ToroidalMaze {
                         (ndr as usize) * self.cols + dc as usize
                     }
                     _ => {
-                        let ndc = if dc == 0 { self.cols as i32 - 1 } else { dc - 1 };
+                        let ndc = if dc == 0 {
+                            self.cols as i32 - 1
+                        } else {
+                            dc - 1
+                        };
                         dr as usize * self.cols + ndc as usize
                     }
                 };
@@ -284,7 +298,11 @@ impl ToroidalMaze {
                     let dir = rng.next_range(4);
                     let nxt = match dir {
                         0 => {
-                            let ndr = if dr == 0 { self.rows as i32 - 1 } else { dr - 1 };
+                            let ndr = if dr == 0 {
+                                self.rows as i32 - 1
+                            } else {
+                                dr - 1
+                            };
                             (ndr as usize) * self.cols + dc as usize
                         }
                         1 => {
@@ -296,7 +314,11 @@ impl ToroidalMaze {
                             (ndr as usize) * self.cols + dc as usize
                         }
                         _ => {
-                            let ndc = if dc == 0 { self.cols as i32 - 1 } else { dc - 1 };
+                            let ndc = if dc == 0 {
+                                self.cols as i32 - 1
+                            } else {
+                                dc - 1
+                            };
                             dr as usize * self.cols + ndc as usize
                         }
                     };
@@ -354,20 +376,11 @@ impl ToroidalMaze {
             && self.cols > 1
         {
             WallSet::EAST
-        } else if ar == br
-            && (ac + self.cols - bc) % self.cols == 1
-            && self.cols > 1
-        {
+        } else if ar == br && (ac + self.cols - bc) % self.cols == 1 && self.cols > 1 {
             WallSet::WEST
-        } else if ac == bc
-            && (br + self.rows - ar) % self.rows == 1
-            && self.rows > 1
-        {
+        } else if ac == bc && (br + self.rows - ar) % self.rows == 1 && self.rows > 1 {
             WallSet::SOUTH
-        } else if ac == bc
-            && (ar + self.rows - br) % self.rows == 1
-            && self.rows > 1
-        {
+        } else if ac == bc && (ar + self.rows - br) % self.rows == 1 && self.rows > 1 {
             WallSet::NORTH
         } else {
             // Not adjacent — defensive no-op.
@@ -528,10 +541,7 @@ mod tests {
                 .iter()
                 .filter(|x| !**x)
                 .count();
-                assert!(
-                    openings >= 1,
-                    "cell ({col},{row}) had {openings} openings"
-                );
+                assert!(openings >= 1, "cell ({col},{row}) had {openings} openings");
             }
         }
     }

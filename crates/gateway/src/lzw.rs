@@ -102,9 +102,8 @@ impl<'a> BitReader<'a> {
 /// (next_code > MAX_CODE), a CLEAR_CODE is emitted mid-stream and the
 /// dictionary is reset.
 pub fn lzw_compress(input: &[u8]) -> Vec<u8> {
-    let mut dict: std::collections::HashMap<Vec<u8>, u16> = (0u16..=255)
-        .map(|i| (vec![i as u8], i))
-        .collect();
+    let mut dict: std::collections::HashMap<Vec<u8>, u16> =
+        (0u16..=255).map(|i| (vec![i as u8], i)).collect();
     let mut next_code: u16 = FIRST_CODE;
     let mut w = BitWriter::new();
     w.emit(CLEAR_CODE as u32, CODE_WIDTH);

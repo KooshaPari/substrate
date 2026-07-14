@@ -159,9 +159,7 @@ pub fn tokenize(src: &str) -> Result<Vec<Token>, CompileError> {
                 }
                 let s = std::str::from_utf8(&bytes[start..i])
                     .map_err(|_| CompileError::BadNumber(start))?;
-                let n: f64 = s
-                    .parse()
-                    .map_err(|_| CompileError::BadNumber(start))?;
+                let n: f64 = s.parse().map_err(|_| CompileError::BadNumber(start))?;
                 out.push(Token::Number(n));
             }
             b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
@@ -195,7 +193,10 @@ fn is_ident_cont_byte(c: u8) -> bool {
 }
 
 fn is_arith_byte(c: u8) -> bool {
-    matches!(c, b'+' | b'-' | b'*' | b'/' | b'%' | b'^' | b'(' | b')' | b',' | b' ')
+    matches!(
+        c,
+        b'+' | b'-' | b'*' | b'/' | b'%' | b'^' | b'(' | b')' | b',' | b' '
+    )
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -281,8 +282,12 @@ pub fn shunting_yard(tokens: &[Token]) -> Result<Vec<Token>, CompileError> {
                 }
                 was_unary = false;
             }
-            Token::Plus | Token::Minus | Token::Star | Token::Slash
-            | Token::Percent | Token::Caret => {
+            Token::Plus
+            | Token::Minus
+            | Token::Star
+            | Token::Slash
+            | Token::Percent
+            | Token::Caret => {
                 // Unary +/- at the start or after another operator /
                 // opening paren: encode as 0 then push the operator.
                 if was_unary {
@@ -303,7 +308,8 @@ pub fn shunting_yard(tokens: &[Token]) -> Result<Vec<Token>, CompileError> {
                         break;
                     }
                     let (prec_top, top_rasoc) = prec(top);
-                    if prec_top > prec_self || (prec_top == prec_self && !right_assoc && !top_rasoc) {
+                    if prec_top > prec_self || (prec_top == prec_self && !right_assoc && !top_rasoc)
+                    {
                         output.push(stack.pop().unwrap());
                     } else {
                         break;
@@ -339,10 +345,7 @@ fn prec(t: &Token) -> (u8, bool) {
 /// Functions: when an [`Token::Identifier`] appears at the end of a
 /// function call, the function name is used to look up an arity in the
 /// options struct, and that many operands are popped and passed.
-pub fn eval_postfix(
-    tokens: &[Token],
-    opts: &CompileOptions,
-) -> Result<f64, CompileError> {
+pub fn eval_postfix(tokens: &[Token], opts: &CompileOptions) -> Result<f64, CompileError> {
     let mut stack: Vec<f64> = Vec::new();
     for tok in tokens {
         match tok {
@@ -352,8 +355,7 @@ pub fn eval_postfix(
                     if stack.len() < arity {
                         return Err(CompileError::TooFewOperands);
                     }
-                    let args: Vec<f64> =
-                        stack.drain(stack.len() - arity..).collect();
+                    let args: Vec<f64> = stack.drain(stack.len() - arity..).collect();
                     let n = args.len();
                     let result = match name.as_str() {
                         "min" if n >= 1 => args.iter().copied().fold(f64::INFINITY, f64::min),
@@ -421,7 +423,10 @@ impl Token {
     }
 }
 
-fn binop(stack: &mut Vec<f64>, op: impl Fn(f64, f64) -> Result<f64, CompileError>) -> Result<(), CompileError> {
+fn binop(
+    stack: &mut Vec<f64>,
+    op: impl Fn(f64, f64) -> Result<f64, CompileError>,
+) -> Result<(), CompileError> {
     if stack.len() < 2 {
         return Err(CompileError::TooFewOperands);
     }
@@ -501,10 +506,7 @@ mod tests {
 
     #[test]
     fn unexpected_byte_error() {
-        assert_eq!(
-            ev("1 + 2 #"),
-            Err(CompileError::UnexpectedByte(6, b'#'))
-        );
+        assert_eq!(ev("1 + 2 #"), Err(CompileError::UnexpectedByte(6, b'#')));
     }
 
     #[test]

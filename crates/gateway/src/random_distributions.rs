@@ -47,18 +47,12 @@ pub fn exponential<R: FnMut() -> f64>(u: &mut R, lambda: f64) -> f64 {
 
 /// Standard normal (μ=0, σ=1) sample via Box-Muller polar.
 pub fn normal<R: FnMut() -> f64>(u: &mut R) -> f64 {
-    loop {
-        let u1 = u();
-        let u2 = u();
-        let r = (-2.0 * u1.max(1e-15).ln()).sqrt();
-        let theta = 2.0 * std::f64::consts::PI * u2;
-        let x = r * theta.cos();
-        // Reject r outside the unit disk for polar Box-Muller? Plain
-        // Box-Muller accepts all (r, theta); we use the alternate
-        // formulation and return one of the two samples per call.
-        let _ = r * theta.sin(); // could be returned for efficiency
-        return x;
-    }
+    let u1 = u();
+    let u2 = u();
+    let r = (-2.0 * u1.max(1e-15).ln()).sqrt();
+    let theta = 2.0 * std::f64::consts::PI * u2;
+    // Plain Box-Muller accepts all (r, theta); return one sample per call.
+    r * theta.cos()
 }
 
 /// Standard normal samples in pairs (saves one call to u()). The
@@ -120,7 +114,13 @@ mod tests {
     }
 
     fn approx(a: f64, b: f64, eps: f64) {
-        assert!((a - b).abs() < eps, "{} ≈ {} (|diff|={})", a, b, (a - b).abs());
+        assert!(
+            (a - b).abs() < eps,
+            "{} ≈ {} (|diff|={})",
+            a,
+            b,
+            (a - b).abs()
+        );
     }
 
     #[test]
@@ -130,8 +130,12 @@ mod tests {
         let mut max = f64::NEG_INFINITY;
         for _ in 0..10_000 {
             let v = uniform_f64(&mut r, 5.0, 10.0);
-            if v < min { min = v; }
-            if v > max { max = v; }
+            if v < min {
+                min = v;
+            }
+            if v > max {
+                max = v;
+            }
             assert!(v >= 5.0 && v < 10.0);
         }
         assert!(min < 5.5);
@@ -200,7 +204,9 @@ mod tests {
         let mut max = 0.0_f64;
         for _ in 0..10_000 {
             let v = cauchy(&mut r, 1.0).abs();
-            if v > max { max = v; }
+            if v > max {
+                max = v;
+            }
         }
         // Cauchy has heavy tails — 10k samples should produce at least
         // one sample with magnitude > 100.

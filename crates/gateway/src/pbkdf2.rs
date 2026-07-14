@@ -61,9 +61,8 @@ mod tests {
         // RFC 7914 vector: P="Password", S="NaCl", c=80000, dkLen=64
         // Expected: 4ddcd8f60b98c1f5acd54ed1ce442796d28c76dc4af75d9b1db1a76d65e8b296
         let dk = pbkdf2(b"Password", b"NaCl", 80000, 64);
-        let expected = hex_decode(
-            "4ddcd8f60b98c1f5acd54ed1ce442796d28c76dc4af75d9b1db1a76d65e8b296",
-        );
+        let expected =
+            hex_decode("4ddcd8f60b98c1f5acd54ed1ce442796d28c76dc4af75d9b1db1a76d65e8b296");
         // This is a long-running test (~1s). We assert it produces SOME output
         // of the right shape; full vector comparison omitted for speed.
         assert_eq!(dk.len(), 64);

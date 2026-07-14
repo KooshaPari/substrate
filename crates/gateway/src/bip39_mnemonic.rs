@@ -58,8 +58,8 @@ pub fn validate(mnemonic: &str) -> Result<bool, String> {
             all_bits.push(((idx >> shift) & 1) as u8);
         }
     }
-    let entropy_bytes: Vec<u8> = pack_bits(&all_bits, ent_bits)
-        .ok_or_else(|| "entropy bit-packing failed".to_string())?;
+    let entropy_bytes: Vec<u8> =
+        pack_bits(&all_bits, ent_bits).ok_or_else(|| "entropy bit-packing failed".to_string())?;
     let checksum_packed = pack_bits(&all_bits[ent_bits..], checksum_bits)
         .ok_or_else(|| "checksum bit-packing failed".to_string())?[0];
     // The packed byte holds the N-bit checksum MSB-aligned (bits
@@ -154,8 +154,7 @@ pub fn mnemonic_to_entropy(mnemonic: &str) -> Result<Vec<u8>, String> {
             bits.push(((idx >> shift) & 1) as u8);
         }
     }
-    pack_bits(&bits, ent_bits)
-        .ok_or_else(|| "entropy bit-packing failed".to_string())
+    pack_bits(&bits, ent_bits).ok_or_else(|| "entropy bit-packing failed".to_string())
 }
 
 /// Take `n_bits` bits from the front of `bits` and pack them MSB-first

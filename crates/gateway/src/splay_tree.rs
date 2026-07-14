@@ -60,7 +60,7 @@ impl<K: Ord, V> SplayTree<K, V> {
             if root.key == key {
                 let old = std::mem::replace(&mut root.value, value);
                 let _ = right_tree; // discard — value was replaced in place
-                // Re-attach right_tree as right subtree of root
+                                    // Re-attach right_tree as right subtree of root
                 root.right = right_tree;
                 self.root = left;
                 return Some(old);
@@ -84,7 +84,9 @@ impl<K: Ord, V> SplayTree<K, V> {
             if root.key == *key {
                 // Take the whole node out so we can destructure it.
                 let node_box = left.take().unwrap();
-                let Node { value, left, right, .. } = take_node(node_box);
+                let Node {
+                    value, left, right, ..
+                } = take_node(node_box);
                 // Splice: removed.left (all < key), removed.right (all > removed.key == key),
                 // and right_tree (all > key) all need to be joined. removed.right and
                 // right_tree both contain keys > key; merge_max_of_left joins them in

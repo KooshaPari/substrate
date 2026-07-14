@@ -7,8 +7,7 @@
 //!
 //! [`encode`] converts bytes to a base58 string. [`decode`] reverses.
 
-const ALPHABET: &[u8; 58] =
-    b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+const ALPHABET: &[u8; 58] = b"123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
 
 /// Encode bytes to a base58 string. Leading zero bytes in the input
 /// are preserved as leading `'1'` chars in the output (Bitcoin-style).

@@ -32,7 +32,13 @@ struct Node<K, V> {
 
 impl<K, V> Node<K, V> {
     fn new(key: K, value: V) -> Self {
-        Self { key, value, color: Color::Red, left: None, right: None }
+        Self {
+            key,
+            value,
+            color: Color::Red,
+            left: None,
+            right: None,
+        }
     }
 }
 
@@ -105,7 +111,10 @@ impl<K: Ord, V> RedBlackTree<K, V> {
 
     /// In-order traversal yielding keys in ascending order.
     pub fn iter(&self) -> InOrderIter<'_, K, V> {
-        InOrderIter { stack: Vec::new(), node: self.root.as_deref() }
+        InOrderIter {
+            stack: Vec::new(),
+            node: self.root.as_deref(),
+        }
     }
 }
 
@@ -165,7 +174,15 @@ mod tests {
     #[test]
     fn inorder_is_sorted() {
         let mut t = RedBlackTree::new();
-        let data = [(5, 50), (2, 20), (8, 80), (1, 10), (3, 30), (7, 70), (9, 90)];
+        let data = [
+            (5, 50),
+            (2, 20),
+            (8, 80),
+            (1, 10),
+            (3, 30),
+            (7, 70),
+            (9, 90),
+        ];
         for (k, v) in data {
             t.insert(k, v);
         }
