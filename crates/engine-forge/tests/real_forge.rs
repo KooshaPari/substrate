@@ -68,6 +68,7 @@ async fn real_forge_dispatch_emits_structured_result() {
         parent_task_id: None,
         requirement_id: None,
         epic_id: None,
+        conv_id: None,
     };
 
     let session = engine.start(&task).await.expect("start");
@@ -116,6 +117,7 @@ async fn real_forge_dump_to_structured_result() {
         parent_task_id: None,
         requirement_id: None,
         epic_id: None,
+        conv_id: None,
     };
 
     // Start the task — this spawns real forge and captures the conversation id.
