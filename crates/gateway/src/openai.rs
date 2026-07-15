@@ -12,7 +12,7 @@ use crate::fallback::{try_with_fallback, FallbackChain};
 use crate::retry::{with_retry, RetryPolicy, RetryableError};
 
 /// OpenAI chat message role.
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ChatRole {
     /// System prompt.
