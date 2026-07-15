@@ -220,6 +220,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ae3f5d315924270530207e2a68396c3cc547f6dca3fbdca317cfb1a51edb593"
 
 [[package]]
+name = "cargo-contention-bench"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "tokio",
+]
+
+[[package]]
 name = "cc"
 version = "1.2.65"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -687,6 +695,7 @@ dependencies = [
  "serde",
  "serde_json",
  "substrate-core",
+ "substrate-throttle",
  "tempfile",
  "thiserror 2.0.18",
  "tokio",
@@ -715,6 +724,19 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
+]
+
+[[package]]
+name = "f5-bench"
+version = "0.0.1"
+dependencies = [
+ "anyhow",
+ "engine-forge",
+ "forge_daemon",
+ "substrate-core",
+ "substrate-throttle",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]
@@ -2302,6 +2324,13 @@ version = "0.1.0"
 dependencies = [
  "serde_json",
  "substrate-core",
+]
+
+[[package]]
+name = "substrate-throttle"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
 ]
 
 [[package]]

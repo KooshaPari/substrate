@@ -18,6 +18,7 @@
 // single-machine use.  Mode 2 supports the warm-pool long-running daemon
 // model that eliminates dyld+tokio init cost across multiple callers.
 
+use std::cell::RefCell;
 use std::ffi::CString;
 use std::path::Path;
 
@@ -26,6 +27,12 @@ use serde::{Deserialize, Serialize};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::UnixStream;
 use tracing::{debug, info, warn};
+
+const RESULT_BUF_CAP: usize = 65_536;
+
+thread_local! {
+    static RESULT_BUF: RefCell<Vec<u8>> = RefCell::new(vec![0u8; RESULT_BUF_CAP]);
+}
 
 // ---------------------------------------------------------------------------
 // FFI bindings to libforge_daemon_core.a
@@ -119,29 +126,64 @@ impl DaemonDispatch {
         model: &str,
         cwd: &Path,
     ) -> Result<(i32, Vec<u8>)> {
+        Self::dispatch_with_thread_buffer(forge_bin, prompt, model, cwd, |exit_code, output| {
+            (exit_code, output.to_vec())
+        })
+    }
+
+    /// Dispatch a single forge task and decode stdout as UTF-8 lossily.
+    ///
+    /// This avoids allocating a fresh 64 KiB result buffer for callers that
+    /// only need a `String`, which is the `engine-forge` hot path.
+    pub fn dispatch_string(
+        forge_bin: &str,
+        prompt: &str,
+        model: &str,
+        cwd: &Path,
+    ) -> Result<(i32, String)> {
+        Self::dispatch_with_thread_buffer(forge_bin, prompt, model, cwd, |exit_code, output| {
+            (exit_code, String::from_utf8_lossy(output).into_owned())
+        })
+    }
+
+    fn dispatch_with_thread_buffer<T>(
+        forge_bin: &str,
+        prompt: &str,
+        model: &str,
+        cwd: &Path,
+        finish: impl FnOnce(i32, &[u8]) -> T,
+    ) -> Result<T> {
         let forge_bin_c = CString::new(forge_bin).context("forge_bin NUL")?;
         let prompt_c = CString::new(prompt).context("prompt NUL")?;
         let model_c = CString::new(model).context("model NUL")?;
         let cwd_c = CString::new(cwd.to_str().context("cwd UTF-8")?).context("cwd NUL")?;
 
-        let mut result_buf = vec![0u8; 65536];
-        let exit_code = unsafe {
-            forge_daemon_dispatch(
-                forge_bin_c.as_ptr(),
-                prompt_c.as_ptr(),
-                model_c.as_ptr(),
-                cwd_c.as_ptr(),
-                result_buf.as_mut_ptr() as *mut std::os::raw::c_char,
-                result_buf.len(),
-            )
-        };
+        RESULT_BUF.with(|cell| {
+            let mut result_buf = cell.borrow_mut();
+            if result_buf.len() != RESULT_BUF_CAP {
+                result_buf.resize(RESULT_BUF_CAP, 0);
+            }
 
-        // Find the NUL terminator to get the actual output length.
-        let nul_pos = result_buf.iter().position(|&b| b == 0).unwrap_or(result_buf.len());
-        result_buf.truncate(nul_pos);
+            let exit_code = unsafe {
+                forge_daemon_dispatch(
+                    forge_bin_c.as_ptr(),
+                    prompt_c.as_ptr(),
+                    model_c.as_ptr(),
+                    cwd_c.as_ptr(),
+                    result_buf.as_mut_ptr() as *mut std::os::raw::c_char,
+                    result_buf.len(),
+                )
+            };
 
-        debug!(exit_code, output_bytes = nul_pos, "forge_daemon_dispatch returned");
-        Ok((exit_code, result_buf))
+            // Find the NUL terminator to get the actual output length.
+            let nul_pos = result_buf
+                .iter()
+                .position(|&b| b == 0)
+                .unwrap_or(result_buf.len());
+
+            debug!(exit_code, output_bytes = nul_pos, "forge_daemon_dispatch returned");
+            Ok(finish(exit_code, &result_buf[..nul_pos]))
+        })
     }
 }
 

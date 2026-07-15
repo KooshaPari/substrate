@@ -1,0 +1,14 @@
+[package]
+name = "cargo-contention-bench"
+version = "0.0.1"
+edition = "2021"
+publish = false
+description = "PERF-D6: real cargo-contention bench. Drives M parallel cargo check invocations and measures wall-clock with vs without the G3 substrate-throttle."
+
+[[bin]]
+name = "cargo-contention-bench"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "time", "process", "fs", "sync"] }
+anyhow = "1"
