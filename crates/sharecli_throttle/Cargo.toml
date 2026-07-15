@@ -1,0 +1,19 @@
+[package]
+name = "sharecli_throttle"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "G3 (2026-06-30): substrate-side adapter that delegates build-contention throttling to sharecli via the run-pool sidecar."
+
+[dependencies]
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio = { workspace = true, features = ["process", "io-util", "macros", "rt"] }
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
