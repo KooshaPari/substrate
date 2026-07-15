@@ -1,0 +1,5 @@
+# Zig build outputs (do not commit)
+.zig-cache/
+zig-out/
+*.o
+*.a

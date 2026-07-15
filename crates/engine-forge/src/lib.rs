@@ -28,6 +28,9 @@
 
 mod parse;
 
+#[cfg(feature = "substrate_throttle")]
+mod throttle_gate;
+
 use std::path::PathBuf;
 use std::sync::Arc;
 use std::time::Duration;
@@ -199,6 +202,14 @@ impl ForgeEngine {
         {
             return self.run_simple_via_daemon(&args).await;
         }
+        // G3 (2026-07-01): build-contention throttle gate. When the
+        // `substrate_throttle` feature is on AND `SUBSTRATE_THROTTLE=1`
+        // AND the binary is a build harness, acquire a SpawnPolicy
+        // permit before spawning; release on drop. No-op otherwise.
+        // Mirrors KooshaPari/sharecli#16.
+        #[cfg(feature = "substrate_throttle")]
+        let _throttle_permit = throttle_gate::acquire(&self.bin).await;
+
         let output = Command::new(&self.bin)
             .args(&args)
             .output()

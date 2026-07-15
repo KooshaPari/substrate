@@ -43,6 +43,7 @@ members = [
     "crates/cloud-kilo",
     "crates/cloud-codex",
     "crates/forge_daemon",
+    "crates/substrate_throttle",
 ]
 [workspace.package]
 version = "0.1.0"
@@ -60,6 +61,7 @@ a2a = { version = "0.1.0", path = "crates/a2a" }
 store-sqlite = { version = "0.1.0", path = "crates/store-sqlite" }
 engine-forge = { version = "0.1.0", path = "crates/engine-forge" }
 forge_daemon = { version = "0.1.0", path = "crates/forge_daemon" }
+substrate_throttle = { version = "0.1.0", path = "crates/substrate_throttle" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"

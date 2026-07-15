@@ -24,10 +24,17 @@ thiserror.workspace = true
 # (list/dump). Avoids dyld+tokio init cost per spawn. Falls back to direct
 # Command::spawn when FORGE_DAEMON env is unset or daemon is not running.
 forge_daemon = { workspace = true, optional = true }
+# G3 (2026-07-01): build-contention throttle gate. When on, run_simple checks
+# is_build_harness(argv0) and acquires a SpawnPolicy permit before spawning.
+# Mirrors sharecli#16 throttle so cross-repo substrate-dispatch consumers do
+# not pile onto cargo/rustc. OFF by default — opt-in to keep the F5 wire
+# and existing callers unaffected.
+substrate_throttle = { workspace = true, optional = true, features = ["async"] }
 
 [features]
 default = []
 forge_daemon = ["dep:forge_daemon"]
+substrate_throttle = ["dep:substrate_throttle"]
 
 [target.'cfg(unix)'.dependencies]
 nix = { version = "0.31", features = ["signal"] }
