@@ -6,9 +6,10 @@ dry_run="${DRY_RUN:-false}"
 github_ref="${GITHUB_REF:-}"
 
 if [[ "$dry_run" == "true" ]] || [[ ! "$github_ref" =~ ^refs/tags/v ]]; then
-  cargo workspaces publish --dry-run --from-git --allow-dirty
+  cargo workspaces publish --dry-run --allow-dirty
   exit 0
 fi
 
 : "${CARGO_TOKEN:?CARGO_TOKEN must be set for a release publish}"
-cargo workspaces publish --from-git --token "$CARGO_TOKEN"
+export CARGO_REGISTRY_TOKEN="$CARGO_TOKEN"
+cargo workspaces publish --from-git
