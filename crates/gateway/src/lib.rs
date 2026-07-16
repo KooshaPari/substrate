@@ -51,7 +51,7 @@ use tokio::sync::{watch, RwLock as TokioRwLock};
 
 use axum::{
     extract::{Path as AxumPath, Query, State},
-    http::{Request, StatusCode},
+    http::{header::HeaderName, HeaderValue, Request, StatusCode},
     middleware::{self, Next},
     response::{IntoResponse, Response},
     routing::{get, post, put},
@@ -296,6 +296,29 @@ pub fn build_router(state: AppState) -> Router {
         .merge(protected)
         .merge(admin_routes)
         .with_state(state)
+        .layer(middleware::from_fn(request_id_middleware))
+}
+
+/// Propagate a caller request ID or attach a generated ID to every response.
+async fn request_id_middleware(
+    request: Request<axum::body::Body>,
+    next: Next,
+) -> Response {
+    let request_id = request
+        .headers()
+        .get("x-request-id")
+        .and_then(|value| value.to_str().ok())
+        .filter(|value| !value.is_empty())
+        .map(str::to_owned)
+        .unwrap_or_else(|| uuid::Uuid::new_v4().to_string());
+
+    let mut response = next.run(request).await;
+    let header_value = HeaderValue::from_str(&request_id)
+        .expect("UUIDs and valid inbound header values are valid HTTP headers");
+    response
+        .headers_mut()
+        .insert(HeaderName::from_static("x-request-id"), header_value);
+    response
 }
 
 /// Bind and serve the gateway using `config`.

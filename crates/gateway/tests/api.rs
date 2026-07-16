@@ -69,6 +69,38 @@ async fn healthz_returns_200() {
 }
 
 #[tokio::test]
+async fn request_id_is_preserved_in_response() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    let resp = app
+        .oneshot(
+            Request::builder()
+                .uri("/healthz")
+                .header("x-request-id", "operator-request-42")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+
+    assert_eq!(resp.headers()["x-request-id"], "operator-request-42");
+}
+
+#[tokio::test]
+async fn request_id_is_generated_for_response_without_header() {
+    let tmp = tempfile::tempdir().unwrap();
+    let app = build_router(fake_state(&tmp));
+
+    let resp = app
+        .oneshot(Request::builder().uri("/healthz").body(Body::empty()).unwrap())
+        .await
+        .unwrap();
+
+    assert!(resp.headers().contains_key("x-request-id"));
+}
+
+#[tokio::test]
 async fn models_lists_routed_model() {
     let tmp = tempfile::tempdir().unwrap();
     let app = build_router(fake_state(&tmp));
