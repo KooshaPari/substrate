@@ -93,7 +93,12 @@ async fn request_id_is_generated_for_response_without_header() {
     let app = build_router(fake_state(&tmp));
 
     let resp = app
-        .oneshot(Request::builder().uri("/healthz").body(Body::empty()).unwrap())
+        .oneshot(
+            Request::builder()
+                .uri("/healthz")
+                .body(Body::empty())
+                .unwrap(),
+        )
         .await
         .unwrap();
 

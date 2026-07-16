@@ -300,10 +300,7 @@ pub fn build_router(state: AppState) -> Router {
 }
 
 /// Propagate a caller request ID or attach a generated ID to every response.
-async fn request_id_middleware(
-    request: Request<axum::body::Body>,
-    next: Next,
-) -> Response {
+async fn request_id_middleware(request: Request<axum::body::Body>, next: Next) -> Response {
     let request_id = request
         .headers()
         .get("x-request-id")
