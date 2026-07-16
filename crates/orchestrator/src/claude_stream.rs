@@ -119,7 +119,7 @@ mod tests {
     use super::*;
     use std::io::Cursor;
     use std::pin::Pin;
-    use std::sync::Arc;
+    use std::sync::{Arc, Mutex, OnceLock};
     use std::task::{Context, Poll, Wake, Waker};
 
     struct NoopWaker;
@@ -147,8 +147,14 @@ mod tests {
         std::env::remove_var("CLAUDE_INTEGRATION");
     }
 
+    fn gate_lock() -> std::sync::MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
+
     #[test]
     fn parses_three_real_events() {
+        let _guard = gate_lock();
         enable_gate();
         let body = r#"{"type":"assistant_delta","text":"hello"}
 {"type":"tool_use","id":"t1","name":"Read","input":{"path":"./README.md"}}
@@ -186,6 +192,7 @@ mod tests {
 
     #[test]
     fn gated_when_env_unset() {
+        let _guard = gate_lock();
         disable_gate();
         let body = r#"{"type":"result","duration_ms":1,"cost_usd":0.0}"#;
         let mut cursor = Cursor::new(body.as_bytes());
@@ -198,6 +205,7 @@ mod tests {
 
     #[test]
     fn reports_malformed_line() {
+        let _guard = gate_lock();
         enable_gate();
         let body = r#"{"type":"result","duration_ms":1,"cost_usd":0.0}
 {"type":"tool_result","tool_use_id":"t1","output":"ok","is_error":false}
