@@ -38,7 +38,7 @@ pub const DEFAULT_DISPATCHER: DispatcherKind = DispatcherKind::Forge;
 pub enum DispatcherKind {
     /// `forge -p "$(cat wave.toml-context)"` — default per MVP-path spec.
     Forge,
-    /// `codex exec --prompt ...`.
+    /// `codex exec "<prompt>"` (the prompt is positional).
     Codex,
     /// In-process `Inline` fallback (mirrors the WaveRunner default).
     Inline,
