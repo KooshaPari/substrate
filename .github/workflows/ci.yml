@@ -49,6 +49,9 @@ jobs:
       - name: Build driver-http
         run: cargo build -p driver-http
 
+      - name: Release preflight (locked and offline)
+        run: bash ./scripts/release-preflight.sh
+
       - name: Publish dry-run (SDK crates)
         run: |
           mkdir -p .cargo
