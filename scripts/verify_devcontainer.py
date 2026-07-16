@@ -18,7 +18,8 @@ def main() -> int:
         print(f"missing DX-09 evidence: {EVIDENCE}", file=sys.stderr)
         return 1
     config = json.loads(CONFIG.read_text(encoding="utf-8"))
-    if not config.get("image") or "rust" not in config.get("features", {}):
+    features = config.get("features", {})
+    if not config.get("image") or not any("rust" in feature for feature in features):
         print("devcontainer must declare an image and Rust feature", file=sys.stderr)
         return 1
     if "rust-lang.rust-analyzer" not in config.get("customizations", {}).get("vscode", {}).get("extensions", []):
