@@ -28,6 +28,9 @@ jobs:
       - name: Install cargo-nextest
         run: cargo install --locked cargo-nextest --version 0.9.85
 
+      - name: Prebuild cloud-codex conformance fixture
+        run: cargo build -p fake-codex-cloud
+
       - name: Test workspace
         timeout-minutes: 30
         run: cargo nextest run --workspace --profile ci
@@ -37,7 +40,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: nextest-junit
-          path: target/nextest/junit.xml
+          path: target/nextest/ci/junit.xml
           if-no-files-found: error
 
       - name: Clippy

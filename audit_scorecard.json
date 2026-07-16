@@ -229,7 +229,7 @@
     {"id": "RE-12", "domain": "release_engineering", "title": "deployment dry-run script", "status": "satisfied", "evidence": "process-compose.yaml present"},
     {"id": "RE-13", "domain": "release_engineering", "title": "binary provenance (slsa)", "status": "satisfied", "evidence": ".github/workflows/ci.yml:154-192 SLSA L3 provenance job references slsa-framework/slsa-github-generator@v2.0.0"},
     {"id": "DX-01", "domain": "dx", "title": "fast build (cached deps)", "status": "satisfied", "evidence": "actions/cache configured for ~/.cargo in ci.yml"},
-    {"id": "DX-02", "domain": "dx", "title": "fast test (nextest)", "status": "satisfied", "evidence": "nextest.toml configures parallel execution and CI reporting; CI runs the workspace through cargo-nextest"},
+    {"id": "DX-02", "domain": "dx", "title": "fast test (nextest)", "status": "satisfied", "evidence": ".config/nextest.toml configures parallel execution; CI runs the workspace through cargo-nextest"},
     {"id": "DX-03", "domain": "dx", "title": "sccache for build cache", "status": "partial", "evidence": "no sccache in CI (only cargo cache)"},
     {"id": "DX-04", "domain": "dx", "title": "pre-commit hook (lefthook/hooks)", "status": "missing", "evidence": "no .lefthook.yml / .pre-commit-config.yaml"},
     {"id": "DX-05", "domain": "dx", "title": "rust-analyzer project.json", "status": "missing", "evidence": "no rust-project.json; relies on default workspace discovery"},

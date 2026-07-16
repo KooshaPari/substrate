@@ -17,6 +17,6 @@ retries = 0
 test-threads = 12
 
 [profile.ci.junit]
-# JUnit report so CI platforms can ingest test results.
-path = "target/nextest/junit.xml"
+# Nextest writes relative report paths below target/nextest/<profile>/.
+path = "junit.xml"
 report-name = "substrate-nextest"
