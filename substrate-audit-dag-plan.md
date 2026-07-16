@@ -2,9 +2,9 @@
 
 > **Audit baseline:** kooshapari/substrate @ `cb9a3e7` (psub- prefix rename)
 > **Audit date:** 2026-07-08
-> **Current score:** **82.5 / 100 (Grade B+)** across 140 pillars
+> **Current score:** **83.2 / 100 (Grade B+)** across 140 pillars
 > **Remediation:** Main track complete (Phase0 + Phase1 + Phase2).
-> **Remaining gap:** 17.5 points (107 satisfied, 17 partial, 16 missing)
+> **Remaining gap:** 16.8 points (109 satisfied, 15 partial, 16 missing)
 > **Companion artifacts:** [`audit_scorecard.json`](./audit_scorecard.json) (per-pillar verdicts)
 >
 > **Outstanding PRs:** None — all changes uncommitted in working tree.

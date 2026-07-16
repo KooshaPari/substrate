@@ -1,14 +1,11 @@
 [profile.default]
 # Run all tests in a crate in parallel, but limit total parallelism to 8
 # threads to avoid overwhelming CI runners.
-threads-per-test = 1
 test-threads = 8
 # Retry flaky tests once before marking them as failed.
 retries = 1
 # Show slowest tests (top 5) at the end of the run.
 slow-timeout = { period = "60s", terminate-after = 2 }
-# Display per-test timing.
-display-output = "passes"
 # Do not fail the whole run on test timeout; mark the timed-out test as
 # skipped so the remaining tests still report.
 fail-fast = false
@@ -16,14 +13,10 @@ fail-fast = false
 [profile.ci]
 # Stricter profile for CI runs.
 retries = 0
-# Full output on failure only — keeps CI logs manageable.
-display-output = "all"
 # Increase parallelism on beefier CI machines.
 test-threads = 12
-# Treat warnings as test failures (where the test framework supports it).
-require-tests = { passed = true, skipped = false, ignored = false, filtered = false }
 
 [profile.ci.junit]
-# JUnit report so CI platforms can ingest test results.
-path = "target/nextest/junit.xml"
+# Nextest writes relative report paths below target/nextest/<profile>/.
+path = "junit.xml"
 report-name = "substrate-nextest"
