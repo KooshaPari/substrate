@@ -55,6 +55,7 @@ jobs:
         uses: gitleaks/gitleaks-action@v3
         env:
           GITLEAKS_CONFIG: .gitleaks.toml
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   sbom:
     name: SBOM generation (CycloneDX)
@@ -64,23 +65,30 @@ jobs:
       - name: Generate SBOM (cargo-cyclonedx)
         run: |
           cargo install --locked cargo-cyclonedx || true
-          cargo cyclonedx --format json --override-filename ${{{{ github.repository }}}}.sbom.json || cargo cyclonedx --format json
+          cargo cyclonedx --format json --override-filename ${{ github.repository }}.sbom.json || cargo cyclonedx --format json
         continue-on-error: true
       - name: Upload SBOM artifact
         uses: actions/upload-artifact@v7
         with:
           name: sbom
-          path: ${{{{ github.workspace }}}}/*.cdx.json
+          path: ${{ github.workspace }}/*.cdx.json
         if: always()
 
-  slsa-provenance:
-    name: SLSA Build Level 3 provenance
+  provenance:
+    name: Build provenance attestation
     runs-on: ubuntu-latest
     needs: [codeql, dependency-audit, gitleaks]
+    permissions:
+      attestations: write
+      contents: read
+      id-token: write
     steps:
       - uses: actions/checkout@v7
-      - name: Generate SLSA provenance attestation
-        uses: slsa-framework/slsa-github-generator/.github/workflows/generator_generic_slsa3.yml@v2.1.0
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+      - name: Build release binary
+        run: cargo build --release -p driver-cli
+      - name: Attest release binary provenance
+        uses: actions/attest-build-provenance@v2
         with:
-          base64-subjects: "${{ needs.dependency-audit.outputs.digest || needs.gitleaks.outputs.digest || '' }}"
-        continue-on-error: true
+          subject-path: target/release/substrate
