@@ -13,7 +13,7 @@ fn ci_runs_nextest_with_the_ci_profile_and_junit_report() {
     let repository_root = repository_root();
     let workflow = std::fs::read_to_string(repository_root.join(".github/workflows/ci.yml"))
         .expect("read CI workflow");
-    let nextest = std::fs::read_to_string(repository_root.join("nextest.toml"))
+    let nextest = std::fs::read_to_string(repository_root.join(".config/nextest.toml"))
         .expect("read nextest configuration");
 
     assert!(
