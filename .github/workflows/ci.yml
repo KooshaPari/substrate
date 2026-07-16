@@ -25,9 +25,20 @@ jobs:
       - name: Build workspace
         run: cargo build --workspace
 
+      - name: Install cargo-nextest
+        run: cargo install --locked cargo-nextest --version 0.9.85
+
       - name: Test workspace
         timeout-minutes: 30
-        run: cargo test --workspace
+        run: cargo nextest run --workspace --profile ci
+
+      - name: Upload nextest report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: nextest-junit
+          path: target/nextest/junit.xml
+          if-no-files-found: error
 
       - name: Clippy
         run: cargo clippy --workspace --lib
