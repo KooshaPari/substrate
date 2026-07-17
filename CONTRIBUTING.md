@@ -218,7 +218,7 @@ See [`CHANGELOG.md`](./CHANGELOG.md) for the canonical release history.
 | You are trying to... | Open an issue labeled | Or ask in |
 |---|---|---|
 | understand the layout | `question` | — |
-| propose a change | `rfc` (template TBD) | see ADR template below |
+| propose a change | `rfc` ([RFC process](docs/RFC.md)) | see ADR guidance |
 | report a bug | `bug` | follow the bug template |
 | request a feature | `enhancement` | follow the feature template |
 | report a security issue | — | email security@ (see SECURITY.md) |
