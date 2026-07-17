@@ -7,6 +7,7 @@ pub const SPARKLINE_LEN: usize = 60;
 pub struct LatencyHistory {
     pub provider: String,
     pub samples: VecDeque<u64>,
+    latencies: VecDeque<u64>,
 }
 
 impl LatencyHistory {
@@ -14,6 +15,7 @@ impl LatencyHistory {
         Self {
             provider: provider.into(),
             samples: VecDeque::with_capacity(SPARKLINE_LEN),
+            latencies: VecDeque::new(),
         }
     }
     pub fn push(&mut self, ms: u64) {
@@ -21,15 +23,16 @@ impl LatencyHistory {
             self.samples.pop_front();
         }
         self.samples.push_back(ms);
+        self.latencies.push_back(ms);
     }
     pub fn p50(&self) -> Option<u64> {
-        percentile(&self.samples, 50)
+        percentile(&self.latencies, 50)
     }
     pub fn p95(&self) -> Option<u64> {
-        percentile(&self.samples, 95)
+        percentile(&self.latencies, 95)
     }
     pub fn max(&self) -> Option<u64> {
-        self.samples.iter().copied().max()
+        self.latencies.iter().copied().max()
     }
     pub fn as_ratatui_data(&self) -> Vec<u64> {
         self.samples.iter().copied().collect()
@@ -42,7 +45,8 @@ fn percentile(data: &VecDeque<u64>, pct: usize) -> Option<u64> {
     }
     let mut sorted: Vec<u64> = data.iter().copied().collect();
     sorted.sort_unstable();
-    let idx = ((pct * sorted.len()).saturating_sub(1)) / 100;
+    let pct = pct.clamp(1, 100);
+    let idx = (pct * sorted.len()).div_ceil(100) - 1;
     sorted.get(idx).copied()
 }
 
