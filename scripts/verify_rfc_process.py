@@ -14,6 +14,7 @@ REQUIRED_SECTIONS = (
     "## RFC lifecycle",
     "## RFC template",
     "## Decision records (ADRs)",
+    "## Links and ownership",
 )
 REQUIRED_TEMPLATE_FIELDS = (
     "## Summary",
@@ -23,6 +24,7 @@ REQUIRED_TEMPLATE_FIELDS = (
     "## Alternatives considered",
     "## Compatibility and migration",
     "## Test and rollout plan",
+    "## Open questions",
 )
 
 
