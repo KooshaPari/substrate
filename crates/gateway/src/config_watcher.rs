@@ -119,12 +119,22 @@ impl ConfigWatcher {
                         return;
                     }
                 }
-                *guard = Some(now);
             }
 
             // Re-read and re-parse.
             match FileConfig::from_file(&path_clone) {
                 Ok(cfg) => {
+                    // Ignore stale notifications that only re-read the current
+                    // value (common when the initial file write races watcher
+                    // registration); they must not consume the debounce window.
+                    if *tx.borrow() == cfg {
+                        return;
+                    }
+                    // Only start the debounce window after a successful read.
+                    // Atomic/partial writes can deliver a notification before
+                    // the file is parseable; failed reads must not suppress the
+                    // next notification containing the valid configuration.
+                    *last_fire.lock().unwrap() = Some(now);
                     eprintln!(
                         "[config_watcher] reloaded config from {}",
                         path_clone.display()
@@ -284,6 +294,10 @@ retry_attempts = 7
         // CI runners, and a 500ms sleep can race a busy runner.
         let got = tokio::time::timeout(Duration::from_secs(5), async {
             loop {
+                let current = rx.borrow().clone();
+                if current.rate_limit_rps >= 2 {
+                    return current;
+                }
                 rx.changed().await.expect("watcher receiver remains open");
                 let got = rx.borrow_and_update().clone();
                 if got.rate_limit_rps >= 2 {
