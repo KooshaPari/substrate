@@ -89,6 +89,6 @@ jobs:
       - name: Build release binary
         run: cargo build --release -p driver-cli
       - name: Attest release binary provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: target/release/substrate
