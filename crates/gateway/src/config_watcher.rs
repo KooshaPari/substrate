@@ -113,7 +113,7 @@ impl ConfigWatcher {
             // Debounce: skip if a reload fired less than 200ms ago.
             let now = Instant::now();
             {
-                let mut guard = last_fire.lock().unwrap();
+                let guard = last_fire.lock().unwrap();
                 if let Some(last) = *guard {
                     if now.duration_since(last) < debounce {
                         return;
