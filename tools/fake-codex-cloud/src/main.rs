@@ -94,8 +94,9 @@ fn run_exec(args: &[String]) {
         .duration_since(std::time::UNIX_EPOCH)
         .expect("system clock before unix epoch")
         .as_nanos();
+    let safe_branch = branch.replace(['/', '\\'], "_");
     let task_id = format!(
-        "task_i_fake_{suffix}_{branch}_{}_{}",
+        "task_i_fake_{suffix}_{safe_branch}_{}_{}",
         std::process::id(),
         nonce
     );
