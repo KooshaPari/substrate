@@ -222,8 +222,9 @@ rate_limit_rps = 10
         let (tx, mut rx) = watch::channel(initial);
         let _watcher = ConfigWatcher::new(cfg_path.clone(), tx).unwrap();
 
-        // Give the watcher a moment to register.
-        sleep(Duration::from_millis(50)).await;
+        // Give the platform watcher callback time to finish registration before
+        // writing; initial directory events can otherwise race this update.
+        sleep(Duration::from_millis(500)).await;
 
         // Write a new config.
         fs::write(
@@ -234,10 +235,17 @@ rate_limit_rps = 50
         )
         .unwrap();
 
-        // Wait for the debounce window plus a small buffer.
-        sleep(Duration::from_millis(400)).await;
-
-        let got = rx.borrow_and_update().clone();
+        let got = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                let current = rx.borrow().clone();
+                if current.auth_token.as_deref() == Some("updated") {
+                    return current;
+                }
+                rx.changed().await.expect("watcher receiver remains open");
+            }
+        })
+        .await
+        .expect("config reload did not arrive within timeout");
         assert_eq!(got.auth_token, Some("updated".to_string()));
         assert_eq!(got.rate_limit_rps, 50);
     }
