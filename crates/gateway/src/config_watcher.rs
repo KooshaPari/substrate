@@ -279,14 +279,21 @@ retry_attempts = 7
             sleep(Duration::from_millis(10)).await;
         }
 
-        // Wait for debounce + buffer.
-        sleep(Duration::from_millis(500)).await;
+        // Wait for the first debounced reload with a bounded timeout rather than a
+        // fixed sleep.  Filesystem notification delivery is scheduler-dependent on
+        // CI runners, and a 500ms sleep can race a busy runner.
+        let got = tokio::time::timeout(Duration::from_secs(5), async {
+            loop {
+                rx.changed().await.expect("watcher receiver remains open");
+                let got = rx.borrow_and_update().clone();
+                if got.rate_limit_rps >= 2 {
+                    return got;
+                }
+            }
+        })
+        .await
+        .expect("debounced config reload did not arrive within timeout");
 
-        // The first write fires immediately; subsequent writes within the 200 ms
-        // debounce window are suppressed.  The channel value must have changed from
-        // the initial (1), proving at least one reload fired and none of the rapid
-        // writes crashed the watcher.
-        let got = rx.borrow_and_update().clone();
         assert!(
             got.rate_limit_rps >= 2,
             "expected at least one debounced reload, got rate_limit_rps={}",

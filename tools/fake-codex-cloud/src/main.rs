@@ -87,7 +87,18 @@ fn run_exec(args: &[String]) {
     } else {
         "ok"
     };
-    let task_id = format!("task_i_fake_{suffix}_{branch}");
+    // Every invocation gets an isolated state file.  The conformance suites
+    // execute the fake CLI in parallel, so a deterministic task id would let
+    // one test consume another test's poll counter and make harvest flaky.
+    let nonce = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .expect("system clock before unix epoch")
+        .as_nanos();
+    let task_id = format!(
+        "task_i_fake_{suffix}_{branch}_{}_{}",
+        std::process::id(),
+        nonce
+    );
     write_polls(&task_id, 0);
     println!("https://chatgpt.com/codex/tasks/{task_id}");
     let _ = (env_id, prompt);
