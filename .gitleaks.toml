@@ -30,4 +30,17 @@ regexes = [
   'example[_-]?token',
   'EXAMPLE_API_KEY',
   'FAKE_TOKEN',
+
+  # Public RFC 5849 worked-example values used by the OAuth signer tests.
+  # These are protocol vectors, not credentials; keep each value explicit so
+  # newly introduced secrets continue to fail the scan.
+  'xvz1evFS4wEEPTGEFPHBog',
+  'kYjzVBB8Y0ZFabxSWbWovY3uYSQ2pTgmZeNu2VS4cg',
+  '370773112-GmHxMAgYyLbNEtIKZeRNFsMKPR9EyMZeS9weJAEb',
+  'LswwdoUaIvS8ltyTt5jkRh4J50vUPVVHtR2YPi5kE',
+
+  # Deterministic unit-test vectors (JWT decode and utility parser).
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\.eyJzdWIiOiIxMjMiLCJuYW1lIjoiQWxpY2UiLCJpYXQiOjE1MTYyMzkwMjJ9\.tJ2gKHkm7RfYx5xXr8VfZwYJcqRfsx2FvC3qJwXuJmc',
+  '00112233445566778899aabbccddeeff',
+  'as_32bit=true',
 ]
