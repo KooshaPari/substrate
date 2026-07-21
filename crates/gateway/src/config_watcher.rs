@@ -257,7 +257,10 @@ retry_attempts = 7
         let (tx, mut rx) = watch::channel(initial);
         let _watcher = ConfigWatcher::new(cfg_path.clone(), tx).unwrap();
 
-        sleep(Duration::from_millis(50)).await;
+        // Allow the platform watcher callback to finish registering before the
+        // rapid-write sequence; otherwise its initial directory event can race
+        // the first update on heavily loaded CI runners.
+        sleep(Duration::from_millis(500)).await;
 
         // Write invalid TOML.
         fs::write(&cfg_path, "retry_attempts = [broken").unwrap();

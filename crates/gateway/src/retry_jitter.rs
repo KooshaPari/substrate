@@ -75,6 +75,9 @@ mod tests {
     }
     #[test]
     fn jitter_pct_clamped() {
-        assert!(exponential_backoff_jitter_ms(2, 100, 10_000, 2.0) >= 100);
+        // Attempt 2 has a base delay of 400ms.  A 200% request clamps to
+        // 100%, so the sampled value is bounded to [0ms, 800ms].
+        let value = exponential_backoff_jitter_ms(2, 100, 10_000, 2.0);
+        assert!(value <= 800, "clamped jitter out of bounds: {value}");
     }
 }
