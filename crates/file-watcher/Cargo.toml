@@ -6,6 +6,9 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "WatcherPort implementation: debounced filesystem events via notify."
+# The crates.io name is owned by an unrelated 0.0.18 package; publish this
+# workspace implementation only through source/workspace distribution.
+publish = false
 
 [dependencies]
 substrate-core = { version = "0.3.8", path = "../substrate-core" }
