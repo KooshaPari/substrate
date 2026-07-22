@@ -33,8 +33,15 @@ DRY_RUN=false EVENT_NAME=workflow_dispatch GITHUB_REF=refs/heads/main CARGO_TOKE
 assert_log "workspaces publish --dry-run --allow-dirty"
 
 : > "$CARGO_LOG"
-DRY_RUN=false EVENT_NAME=push GITHUB_REF=refs/tags/v0.3.1 CARGO_TOKEN=release-token bash "$script"
-assert_log "workspaces publish --from-git"
+PUBLISH_ORDER=substrate-a2a PUBLISH_VERSION=0.3.1 SKIP_REGISTRY_CHECK=true \
+  DRY_RUN=false EVENT_NAME=push GITHUB_REF=refs/tags/v0.3.1 CARGO_TOKEN=release-token bash "$script"
+assert_log "publish --locked --package substrate-a2a"
+
+: > "$CARGO_LOG"
+PUBLISH_ORDER=substrate-a2a,substrate-core PUBLISH_VERSION=0.3.1 \
+  PUBLISH_BATCH_START=1 PUBLISH_BATCH_SIZE=1 DRY_RUN=false EVENT_NAME=push \
+  GITHUB_REF=refs/tags/v0.3.1 CARGO_TOKEN=release-token SKIP_REGISTRY_CHECK=true bash "$script"
+assert_log "publish --locked --package substrate-core"
 
 if grep -q -- '--no-verify' "$CARGO_LOG"; then
   echo "release publishing must not bypass cargo verification" >&2
