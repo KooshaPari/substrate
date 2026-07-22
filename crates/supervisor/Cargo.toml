@@ -8,9 +8,9 @@ description = "Supervisor orchestration runtime for substrate workers."
 publish = false
 
 [dependencies]
-substrate-core = { version = "0.3.6", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.6" }
-store-sqlite = { version = "0.3.6", path = "../store-sqlite" }
+substrate-core = { version = "0.3.7", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.7" }
+store-sqlite = { version = "0.3.7", path = "../store-sqlite" }
 tempfile = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
@@ -22,9 +22,9 @@ async-trait = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
-substrate-core = { version = "0.3.6", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.6" }
-store-sqlite = { version = "0.3.6", path = "../store-sqlite" }
+substrate-core = { version = "0.3.7", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.7" }
+store-sqlite = { version = "0.3.7", path = "../store-sqlite" }
 
 [features]
 default = []

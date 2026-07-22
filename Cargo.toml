@@ -50,21 +50,21 @@ members = [
     "crates/orchestrator",
 ]
 [workspace.package]
-version = "0.3.6"
+version = "0.3.7"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/KooshaPari/substrate"
 rust-version = "1.80"
 
 [workspace.dependencies]
-substrate-core = { version = "0.3.6", path = "crates/substrate-core" }
-substrate-serve-lock = { version = "0.3.6", path = "crates/substrate-serve-lock" }
-substrate-trace = { version = "0.3.6", path = "crates/substrate-trace" }
-substrate-app = { version = "0.3.6", path = "crates/substrate-app" }
-engine-spec = { version = "0.3.6", path = "crates/engine-spec" }
-a2a = { package = "substrate-a2a", version = "0.3.6", path = "crates/a2a" }
-store-sqlite = { version = "0.3.6", path = "crates/store-sqlite" }
-engine-forge = { version = "0.3.6", path = "crates/engine-forge" }
+substrate-core = { version = "0.3.7", path = "crates/substrate-core" }
+substrate-serve-lock = { version = "0.3.7", path = "crates/substrate-serve-lock" }
+substrate-trace = { version = "0.3.7", path = "crates/substrate-trace" }
+substrate-app = { version = "0.3.7", path = "crates/substrate-app" }
+engine-spec = { version = "0.3.7", path = "crates/engine-spec" }
+a2a = { package = "substrate-a2a", version = "0.3.7", path = "crates/a2a" }
+store-sqlite = { version = "0.3.7", path = "crates/store-sqlite" }
+engine-forge = { version = "0.3.7", path = "crates/engine-forge" }
 forge_daemon = { version = "0.2.0", path = "crates/forge_daemon" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
