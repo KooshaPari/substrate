@@ -7,12 +7,12 @@ rust-version.workspace = true
 description = "EnginePort adapter for the codex CLI (gpt-codex-spark)."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core = { version = "0.3.2", path = "../substrate-core" }
+engine-spec = { version = "0.3.2", path = "../engine-spec" }
 async-trait = { workspace = true }
 tokio = { workspace = true }
 uuid = { workspace = true }
 
 [dev-dependencies]
-engine-conformance = { path = "../engine-conformance" }
+engine-conformance = { version = "0.3.2", path = "../engine-conformance" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

@@ -1,6 +1,7 @@
 [package]
 name = "driver-cli"
 version.workspace = true
+publish = false
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -12,21 +13,21 @@ name = "substrate"
 path = "src/main.rs"
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-substrate-app = { path = "../substrate-app" }
-driver-argv = { path = "../driver-argv" }
-engine-spec = { path = "../engine-spec" }
-engine-forge = { path = "../engine-forge" }
-engine-codex = { path = "../engine-codex" }
-engine-claude = { path = "../engine-claude" }
-engine-agentapi = { path = "../engine-agentapi" }
-transport-file = { path = "../transport-file" }
-store-file = { path = "../store-file" }
-cloud-cursor = { path = "../cloud-cursor" }
-cloud-kilo = { path = "../cloud-kilo" }
-cloud-codex = { path = "../cloud-codex" }
-driver-http = { path = "../driver-http" }
-substrate-serve-lock = { path = "../substrate-serve-lock" }
+substrate-core = { version = "0.3.2", path = "../substrate-core" }
+substrate-app = { version = "0.3.2", path = "../substrate-app" }
+driver-argv = { version = "0.3.2", path = "../driver-argv" }
+engine-spec = { version = "0.3.2", path = "../engine-spec" }
+engine-forge = { version = "0.3.2", path = "../engine-forge" }
+engine-codex = { version = "0.3.2", path = "../engine-codex" }
+engine-claude = { version = "0.3.2", path = "../engine-claude" }
+engine-agentapi = { version = "0.3.2", path = "../engine-agentapi" }
+transport-file = { version = "0.3.2", path = "../transport-file" }
+store-file = { version = "0.3.2", path = "../store-file" }
+cloud-cursor = { version = "0.3.2", path = "../cloud-cursor" }
+cloud-kilo = { version = "0.3.2", path = "../cloud-kilo" }
+cloud-codex = { version = "0.3.2", path = "../cloud-codex" }
+driver-http = { version = "0.3.2", path = "../driver-http" }
+substrate-serve-lock = { version = "0.3.2", path = "../substrate-serve-lock" }
 clap.workspace = true
 tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time", "signal"] }
 serde_json.workspace = true
