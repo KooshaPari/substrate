@@ -272,7 +272,9 @@ retry_attempts = 7
 
         // Write invalid TOML.
         fs::write(&cfg_path, "retry_attempts = [broken").unwrap();
-        sleep(Duration::from_millis(400)).await;
+        // Allow any queued filesystem notifications to settle; parse failures
+        // must not replace the last valid channel value.
+        sleep(Duration::from_millis(1000)).await;
 
         // Channel value should still be the original good config.
         let got = rx.borrow_and_update().clone();
