@@ -7,8 +7,8 @@ rust-version.workspace = true
 description = "EnginePort HTTP client + child-process manager for agentapi-plusplus (multi-agent HTTP gateway over PTY)."
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-engine-spec = { path = "../engine-spec" }
+substrate-core = { version = "0.3.2", path = "../substrate-core" }
+engine-spec = { version = "0.3.2", path = "../engine-spec" }
 async-trait = { workspace = true }
 tokio = { workspace = true, features = ["process", "io-util", "net", "sync", "time", "macros", "rt-multi-thread"] }
 uuid = { workspace = true }
@@ -20,5 +20,5 @@ chrono = { workspace = true }
 bytes = "1"
 
 [dev-dependencies]
-engine-conformance = { path = "../engine-conformance" }
+engine-conformance = { version = "0.3.2", path = "../engine-conformance" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

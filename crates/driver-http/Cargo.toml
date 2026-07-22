@@ -1,6 +1,7 @@
 [package]
 name = "driver-http"
 version.workspace = true
+publish = false
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -12,17 +13,17 @@ name = "substrate-http"
 path = "src/main.rs"
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-substrate-app = { path = "../substrate-app" }
-engine-spec = { path = "../engine-spec" }
-engine-forge = { path = "../engine-forge" }
-engine-codex = { path = "../engine-codex" }
-engine-claude = { path = "../engine-claude" }
-engine-agentapi = { path = "../engine-agentapi" }
-transport-file = { path = "../transport-file" }
-store-file = { path = "../store-file" }
-store-sqlite = { path = "../store-sqlite" }
-routing-phenotype-router = { path = "../routing-phenotype-router" }
+substrate-core = { version = "0.3.2", path = "../substrate-core" }
+substrate-app = { version = "0.3.2", path = "../substrate-app" }
+engine-spec = { version = "0.3.2", path = "../engine-spec" }
+engine-forge = { version = "0.3.2", path = "../engine-forge" }
+engine-codex = { version = "0.3.2", path = "../engine-codex" }
+engine-claude = { version = "0.3.2", path = "../engine-claude" }
+engine-agentapi = { version = "0.3.2", path = "../engine-agentapi" }
+transport-file = { version = "0.3.2", path = "../transport-file" }
+store-file = { version = "0.3.2", path = "../store-file" }
+store-sqlite = { version = "0.3.2", path = "../store-sqlite" }
+routing-phenotype-router = { version = "0.3.2", path = "../routing-phenotype-router" }
 a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.2" }
 axum.workspace = true
 tower.workspace = true

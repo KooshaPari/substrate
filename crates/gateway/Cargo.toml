@@ -12,10 +12,10 @@ name = "substrate-gateway"
 path = "src/main.rs"
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-routing-phenotype-router = { path = "../routing-phenotype-router" }
+substrate-core = { version = "0.3.2", path = "../substrate-core" }
+routing-phenotype-router = { version = "0.3.2", path = "../routing-phenotype-router" }
 a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.2" }
-store-sqlite = { path = "../store-sqlite" }
+store-sqlite = { version = "0.3.2", path = "../store-sqlite" }
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
@@ -50,4 +50,4 @@ tower = { workspace = true, features = ["util"] }
 serde_json.workspace = true
 tokio = { workspace = true, features = ["macros", "rt-multi-thread"] }
 async-trait.workspace = true
-substrate-core = { path = "../substrate-core" }
+substrate-core = { version = "0.3.2", path = "../substrate-core" }
