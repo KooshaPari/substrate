@@ -12,20 +12,20 @@ name = "driver_mcp"
 path = "src/lib.rs"
 
 [dependencies]
-substrate-core = { path = "../substrate-core", version = "0.3.0" }
-substrate-app = { path = "../substrate-app", version = "0.3.0" }
-engine-spec = { path = "../engine-spec", version = "0.3.0" }
-engine-forge = { path = "../engine-forge", version = "0.3.0" }
-engine-codex = { path = "../engine-codex", version = "0.3.0" }
-engine-claude = { path = "../engine-claude", version = "0.3.0" }
-engine-agentapi = { path = "../engine-agentapi", version = "0.3.0" }
-transport-file = { path = "../transport-file", version = "0.3.0" }
-store-file = { path = "../store-file", version = "0.3.0" }
-store-sqlite = { path = "../store-sqlite", version = "0.3.0" }
-routing-phenotype-router = { path = "../routing-phenotype-router", version = "0.3.0" }
-a2a = { path = "../a2a", version = "0.3.0" }
-cliproxy-adapter = { path = "../cliproxy-adapter", version = "0.3.0" }
-phenotype-mcp = { path = "../phenotype-mcp", version = "0.3.0" }
+substrate-core = { path = "../substrate-core", version = "0.3.1" }
+substrate-app = { path = "../substrate-app", version = "0.3.1" }
+engine-spec = { path = "../engine-spec", version = "0.3.1" }
+engine-forge = { path = "../engine-forge", version = "0.3.1" }
+engine-codex = { path = "../engine-codex", version = "0.3.1" }
+engine-claude = { path = "../engine-claude", version = "0.3.1" }
+engine-agentapi = { path = "../engine-agentapi", version = "0.3.1" }
+transport-file = { path = "../transport-file", version = "0.3.1" }
+store-file = { path = "../store-file", version = "0.3.1" }
+store-sqlite = { path = "../store-sqlite", version = "0.3.1" }
+routing-phenotype-router = { path = "../routing-phenotype-router", version = "0.3.1" }
+a2a = { path = "../a2a", version = "0.3.1" }
+cliproxy-adapter = { path = "../cliproxy-adapter", version = "0.3.1" }
+phenotype-mcp = { path = "../phenotype-mcp", version = "0.3.1" }
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
