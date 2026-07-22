@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "Conformance suite proving EnginePort is harness-agnostic — run against any adapter."
+repository.workspace = true
 
 [dependencies]
 substrate-core = { version = "0.3.8", path = "../substrate-core" }
