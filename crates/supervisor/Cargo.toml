@@ -7,7 +7,7 @@ rust-version.workspace = true
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
+a2a = { package = "substrate-a2a", path = "../a2a" }
 store-sqlite = { path = "../store-sqlite" }
 tempfile = { workspace = true }
 tokio = { workspace = true }
@@ -21,7 +21,7 @@ async-trait = { workspace = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }
 substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
+a2a = { package = "substrate-a2a", path = "../a2a" }
 store-sqlite = { path = "../store-sqlite" }
 
 [features]

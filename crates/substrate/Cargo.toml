@@ -20,7 +20,7 @@ a2a = ["dep:a2a"]
 substrate-core = { version = "0.3.1", path = "../substrate-core" }
 substrate-app = { version = "0.3.1", path = "../substrate-app", optional = true }
 engine-spec = { version = "0.3.1", path = "../engine-spec", optional = true }
-a2a = { version = "0.3.1", path = "../a2a", optional = true }
+a2a = { package = "substrate-a2a", version = "0.3.1", path = "../a2a", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }

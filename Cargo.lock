@@ -3,17 +3,6 @@
 version = 3
 
 [[package]]
-name = "a2a"
-version = "0.3.1"
-dependencies = [
- "chrono",
- "serde",
- "serde_json",
- "thiserror 2.0.18",
- "uuid",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -814,13 +803,13 @@ dependencies = [
 name = "dispatch-bridge"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "futures",
  "parking_lot",
  "serde",
  "serde_json",
+ "substrate-a2a",
  "substrate-core",
  "thiserror 2.0.18",
  "tokio",
@@ -898,7 +887,6 @@ dependencies = [
 name = "driver-http"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "axum 0.8.9",
@@ -915,6 +903,7 @@ dependencies = [
  "serde_json",
  "store-file",
  "store-sqlite",
+ "substrate-a2a",
  "substrate-app",
  "substrate-core",
  "tempfile",
@@ -929,7 +918,6 @@ dependencies = [
 name = "driver-mcp"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "cliproxy-adapter",
@@ -948,6 +936,7 @@ dependencies = [
  "serial_test",
  "store-file",
  "store-sqlite",
+ "substrate-a2a",
  "substrate-app",
  "substrate-core",
  "tempfile",
@@ -966,7 +955,6 @@ checksum = "91622ff5e7162018101f2fea40d6ebf4a78bbe5a49736a2020649edf9693679e"
 name = "engine-a2a"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "async-trait",
  "axum 0.8.9",
  "bytes",
@@ -976,6 +964,7 @@ dependencies = [
  "reqwest",
  "serde",
  "serde_json",
+ "substrate-a2a",
  "substrate-core",
  "tokio",
  "uuid",
@@ -1344,7 +1333,6 @@ dependencies = [
 name = "gateway"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "anyhow",
  "async-trait",
  "axum 0.8.9",
@@ -1365,6 +1353,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "store-sqlite",
+ "substrate-a2a",
  "substrate-core",
  "tempfile",
  "tokio",
@@ -3450,12 +3439,12 @@ dependencies = [
 name = "store-sqlite"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "chrono",
  "rusqlite",
  "serde",
  "serde_json",
  "strsim",
+ "substrate-a2a",
  "substrate-core",
  "tempfile",
  "thiserror 2.0.18",
@@ -3514,11 +3503,22 @@ dependencies = [
 name = "substrate"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "engine-spec",
+ "substrate-a2a",
  "substrate-app",
  "substrate-core",
  "tokio",
+]
+
+[[package]]
+name = "substrate-a2a"
+version = "0.3.1"
+dependencies = [
+ "chrono",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+ "uuid",
 ]
 
 [[package]]
@@ -3635,12 +3635,12 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 name = "supervisor"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "async-trait",
  "chrono",
  "serde",
  "serde_json",
  "store-sqlite",
+ "substrate-a2a",
  "substrate-core",
  "tempfile",
  "thiserror 2.0.18",
@@ -4437,13 +4437,13 @@ dependencies = [
 name = "wave"
 version = "0.3.1"
 dependencies = [
- "a2a",
  "async-trait",
  "chrono",
  "regex",
  "serde",
  "serde_json",
  "store-sqlite",
+ "substrate-a2a",
  "substrate-core",
  "supervisor",
  "thiserror 2.0.18",

@@ -62,7 +62,7 @@ substrate-serve-lock = { version = "0.3.1", path = "crates/substrate-serve-lock"
 substrate-trace = { version = "0.3.1", path = "crates/substrate-trace" }
 substrate-app = { version = "0.3.1", path = "crates/substrate-app" }
 engine-spec = { version = "0.3.1", path = "crates/engine-spec" }
-a2a = { version = "0.3.1", path = "crates/a2a" }
+a2a = { package = "substrate-a2a", version = "0.3.1", path = "crates/a2a" }
 store-sqlite = { version = "0.3.1", path = "crates/store-sqlite" }
 engine-forge = { version = "0.3.1", path = "crates/engine-forge" }
 forge_daemon = { version = "0.2.0", path = "crates/forge_daemon" }
