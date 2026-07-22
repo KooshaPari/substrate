@@ -13,18 +13,18 @@ name = "substrate-http"
 path = "src/main.rs"
 
 [dependencies]
-substrate-core = { version = "0.3.5", path = "../substrate-core" }
-substrate-app = { version = "0.3.5", path = "../substrate-app" }
-engine-spec = { version = "0.3.5", path = "../engine-spec" }
-engine-forge = { version = "0.3.5", path = "../engine-forge" }
-engine-codex = { version = "0.3.5", path = "../engine-codex" }
-engine-claude = { version = "0.3.5", path = "../engine-claude" }
-engine-agentapi = { version = "0.3.5", path = "../engine-agentapi" }
-transport-file = { version = "0.3.5", path = "../transport-file" }
-store-file = { version = "0.3.5", path = "../store-file" }
-store-sqlite = { version = "0.3.5", path = "../store-sqlite" }
-routing-phenotype-router = { version = "0.3.5", path = "../routing-phenotype-router" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.5" }
+substrate-core = { version = "0.3.6", path = "../substrate-core" }
+substrate-app = { version = "0.3.6", path = "../substrate-app" }
+engine-spec = { version = "0.3.6", path = "../engine-spec" }
+engine-forge = { version = "0.3.6", path = "../engine-forge" }
+engine-codex = { version = "0.3.6", path = "../engine-codex" }
+engine-claude = { version = "0.3.6", path = "../engine-claude" }
+engine-agentapi = { version = "0.3.6", path = "../engine-agentapi" }
+transport-file = { version = "0.3.6", path = "../transport-file" }
+store-file = { version = "0.3.6", path = "../store-file" }
+store-sqlite = { version = "0.3.6", path = "../store-sqlite" }
+routing-phenotype-router = { version = "0.3.6", path = "../routing-phenotype-router" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.6" }
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true
