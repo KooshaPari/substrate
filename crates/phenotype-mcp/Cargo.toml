@@ -3,6 +3,8 @@ name = "phenotype-mcp"
 version = "0.3.9"
 edition = "2021"
 license = "MIT"
+repository = "https://github.com/KooshaPari/substrate"
+description = "Phenotype MCP integration adapter for substrate routing and dispatch."
 
 [lib]
 path = "src/lib.rs"

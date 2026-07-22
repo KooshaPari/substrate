@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "EnginePort adapter for the A2A Agent-to-Agent REST protocol."
+repository.workspace = true
 
 [dependencies]
 a2a = { workspace = true }

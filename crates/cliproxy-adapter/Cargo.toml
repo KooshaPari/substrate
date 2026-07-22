@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "EnginePort adapter for KooshaPari/cliproxyapi-plusplus — the Plus fork of router-for-me/CLIProxyAPI exposing 50+ agent CLIs (claude, codex, gemini, copilot, q, opencode, etc.) over a single OpenAI-compat /v1 endpoint."
+repository.workspace = true
 
 [dependencies]
 substrate-core = { version = "0.3.8", path = "../substrate-core" }

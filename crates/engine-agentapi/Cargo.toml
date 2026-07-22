@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "EnginePort HTTP client + child-process manager for agentapi-plusplus (multi-agent HTTP gateway over PTY)."
+repository.workspace = true
 
 [dependencies]
 substrate-core = { version = "0.3.8", path = "../substrate-core" }
