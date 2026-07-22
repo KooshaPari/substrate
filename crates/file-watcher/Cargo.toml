@@ -8,7 +8,7 @@ rust-version.workspace = true
 description = "WatcherPort implementation: debounced filesystem events via notify."
 
 [dependencies]
-substrate-core = { version = "0.3.7", path = "../substrate-core" }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
 async-trait.workspace = true
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
 uuid.workspace = true

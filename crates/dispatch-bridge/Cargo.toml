@@ -9,9 +9,9 @@ description = "A2A/Wave envelope over HTTP+SSE+Unix-socket transport. Wires subs
 publish = false
 
 [dependencies]
-substrate-core = { version = "0.3.7", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.7" }
-wave = { version = "0.3.7", path = "../wave" }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.8" }
+wave = { version = "0.3.8", path = "../wave" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 tokio = { workspace = true }

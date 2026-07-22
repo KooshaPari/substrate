@@ -17,5 +17,5 @@ dotenvy.workspace = true
 tokio = { workspace = true, features = ["process", "rt", "macros"] }
 
 [dev-dependencies]
-cloud-dispatch-conformance = { version = "0.3.7", path = "../cloud-dispatch-conformance" }
+cloud-dispatch-conformance = { version = "0.3.8", path = "../cloud-dispatch-conformance" }
 tokio = { workspace = true, features = ["macros", "rt"] }

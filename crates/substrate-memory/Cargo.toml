@@ -8,8 +8,8 @@ rust-version.workspace = true
 description = "MemoryPort: bounded ring buffer + two-tier compose with store-sqlite."
 
 [dependencies]
-substrate-core = { version = "0.3.7", path = "../substrate-core" }
-store-sqlite = { version = "0.3.7", path = "../store-sqlite" }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
+store-sqlite = { version = "0.3.8", path = "../store-sqlite" }
 chrono = { workspace = true }
 thiserror = { workspace = true }
 uuid = { workspace = true }
