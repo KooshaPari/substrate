@@ -6,6 +6,7 @@ license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
 description = "Contract-test suite and fake CloudDispatchPort for cloud-dispatch adapters."
+publish = false
 readme = "README.md"
 keywords = ["cloud", "dispatch", "conformance", "substrate"]
 categories = ["development-tools"]
