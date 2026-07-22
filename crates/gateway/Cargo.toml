@@ -14,7 +14,7 @@ path = "src/main.rs"
 [dependencies]
 substrate-core = { path = "../substrate-core" }
 routing-phenotype-router = { path = "../routing-phenotype-router" }
-a2a = { package = "substrate-a2a", path = "../a2a" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.2" }
 store-sqlite = { path = "../store-sqlite" }
 axum.workspace = true
 tower.workspace = true
