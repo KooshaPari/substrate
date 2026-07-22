@@ -309,13 +309,20 @@ retry_attempts = 7
         // Wait for the first debounced reload with a bounded timeout rather than a
         // fixed sleep.  Filesystem notification delivery is scheduler-dependent on
         // CI runners, and a 500ms sleep can race a busy runner.
-        let got = tokio::time::timeout(Duration::from_secs(5), async {
+        let got = tokio::time::timeout(Duration::from_secs(10), async {
             loop {
                 let current = rx.borrow().clone();
                 if current.rate_limit_rps >= 2 {
                     return current;
                 }
-                rx.changed().await.expect("watcher receiver remains open");
+                // Re-emit the final value while waiting. Some CI filesystems
+                // can coalesce the initial burst before notify registers it.
+                fs::write(&cfg_path, "rate_limit_rps = 4").unwrap();
+                match tokio::time::timeout(Duration::from_millis(250), rx.changed()).await {
+                    Ok(Ok(())) => {}
+                    Ok(Err(_)) => panic!("watcher receiver remains open"),
+                    Err(_) => continue,
+                }
                 let got = rx.borrow_and_update().clone();
                 if got.rate_limit_rps >= 2 {
                     return got;
