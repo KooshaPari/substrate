@@ -4,10 +4,14 @@ use gateway::{serve, GatewayConfig};
 
 /// Wire OTLP exporter (no-op when `OTEL_EXPORTER_OTLP_ENDPOINT` is unset).
 fn init_telemetry() -> opentelemetry_sdk::trace::TracerProvider {
-    use opentelemetry::{trace::TracerProvider as _, KeyValue};
+    use opentelemetry::{global, trace::TracerProvider as _, KeyValue};
     use opentelemetry_sdk::trace::{Config, RandomIdGenerator, Sampler};
     use opentelemetry_sdk::Resource;
     use tracing_subscriber::prelude::*;
+
+    // Register the W3C Trace Context propagator so downstream OTLP exporters
+    // preserve `traceparent`/`tracestate` semantics across service boundaries.
+    global::set_text_map_propagator(opentelemetry_sdk::propagation::TraceContextPropagator::new());
 
     let exporter = opentelemetry_otlp::new_exporter()
         .tonic()
