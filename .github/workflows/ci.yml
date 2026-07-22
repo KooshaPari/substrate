@@ -63,7 +63,6 @@ jobs:
           substrate-a2a = { path = "crates/a2a" }
           EOF
           cargo publish --dry-run -p substrate-core
-          cargo publish --dry-run -p substrate
 
   python:
     runs-on: ubuntu-latest
