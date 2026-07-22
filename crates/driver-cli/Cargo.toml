@@ -13,21 +13,21 @@ name = "substrate"
 path = "src/main.rs"
 
 [dependencies]
-substrate-core = { version = "0.3.5", path = "../substrate-core" }
-substrate-app = { version = "0.3.5", path = "../substrate-app" }
-driver-argv = { version = "0.3.5", path = "../driver-argv" }
-engine-spec = { version = "0.3.5", path = "../engine-spec" }
-engine-forge = { version = "0.3.5", path = "../engine-forge" }
-engine-codex = { version = "0.3.5", path = "../engine-codex" }
-engine-claude = { version = "0.3.5", path = "../engine-claude" }
-engine-agentapi = { version = "0.3.5", path = "../engine-agentapi" }
-transport-file = { version = "0.3.5", path = "../transport-file" }
-store-file = { version = "0.3.5", path = "../store-file" }
-cloud-cursor = { version = "0.3.5", path = "../cloud-cursor" }
-cloud-kilo = { version = "0.3.5", path = "../cloud-kilo" }
-cloud-codex = { version = "0.3.5", path = "../cloud-codex" }
-driver-http = { version = "0.3.5", path = "../driver-http" }
-substrate-serve-lock = { version = "0.3.5", path = "../substrate-serve-lock" }
+substrate-core = { version = "0.3.6", path = "../substrate-core" }
+substrate-app = { version = "0.3.6", path = "../substrate-app" }
+driver-argv = { version = "0.3.6", path = "../driver-argv" }
+engine-spec = { version = "0.3.6", path = "../engine-spec" }
+engine-forge = { version = "0.3.6", path = "../engine-forge" }
+engine-codex = { version = "0.3.6", path = "../engine-codex" }
+engine-claude = { version = "0.3.6", path = "../engine-claude" }
+engine-agentapi = { version = "0.3.6", path = "../engine-agentapi" }
+transport-file = { version = "0.3.6", path = "../transport-file" }
+store-file = { version = "0.3.6", path = "../store-file" }
+cloud-cursor = { version = "0.3.6", path = "../cloud-cursor" }
+cloud-kilo = { version = "0.3.6", path = "../cloud-kilo" }
+cloud-codex = { version = "0.3.6", path = "../cloud-codex" }
+driver-http = { version = "0.3.6", path = "../driver-http" }
+substrate-serve-lock = { version = "0.3.6", path = "../substrate-serve-lock" }
 clap.workspace = true
 tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time", "signal"] }
 serde_json.workspace = true

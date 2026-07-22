@@ -5,12 +5,13 @@ edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
 description = "Phase 4: parallel wave runner — N concurrent teammate lanes with sub-subagent fan-out and harvested results."
+publish = false
 
 [dependencies]
-substrate-core = { version = "0.3.5", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.5" }
-store-sqlite = { version = "0.3.5", path = "../store-sqlite" }
-supervisor = { version = "0.3.5", path = "../supervisor" }
+substrate-core = { version = "0.3.6", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.6" }
+store-sqlite = { version = "0.3.6", path = "../store-sqlite" }
+supervisor = { version = "0.3.6", path = "../supervisor" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
 uuid = { workspace = true }
 chrono = { workspace = true }
@@ -22,10 +23,10 @@ regex = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
-substrate-core = { version = "0.3.5", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.5" }
-store-sqlite = { version = "0.3.5", path = "../store-sqlite" }
-supervisor = { version = "0.3.5", path = "../supervisor" }
+substrate-core = { version = "0.3.6", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.6" }
+store-sqlite = { version = "0.3.6", path = "../store-sqlite" }
+supervisor = { version = "0.3.6", path = "../supervisor" }
 
 [features]
 default = []
