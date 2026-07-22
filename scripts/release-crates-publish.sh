@@ -27,6 +27,21 @@ else
   metadata="$(cargo metadata --locked --no-deps --format-version 1)"
   mapfile -t packages < <(jq -r '.packages[] | select(.publish == null or (.publish | length) > 0) | .name' <<< "$metadata")
   mapfile -t versions < <(jq -r '.packages[] | select(.publish == null or (.publish | length) > 0) | .version' <<< "$metadata")
+  # Keep foundational crates ahead of dependents; append the remaining public
+  # members in metadata order. This is the stable dependency spine for batches.
+  preferred=(substrate-core engine-spec substrate-a2a substrate-app substrate-serve-lock)
+  ordered=(); ordered_versions=()
+  for wanted in "${preferred[@]}"; do
+    for j in "${!packages[@]}"; do
+      if [[ "${packages[$j]}" == "$wanted" ]]; then
+        ordered+=("${packages[$j]}"); ordered_versions+=("${versions[$j]}"); break
+      fi
+    done
+  done
+  for j in "${!packages[@]}"; do
+    case " ${ordered[*]} " in *" ${packages[$j]} "*) ;; *) ordered+=("${packages[$j]}"); ordered_versions+=("${versions[$j]}");; esac
+  done
+  packages=("${ordered[@]}"); versions=("${ordered_versions[@]}")
 fi
 
 end=$((batch_start + batch_size))

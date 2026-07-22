@@ -29,8 +29,8 @@ futures = "0.3"
 tokio-stream = "0.1"
 
 # dispatch-bridge types are used for wire-format compatibility
-dispatch-bridge = { version = "0.3.6", path = "../dispatch-bridge" }
-substrate-core = { version = "0.3.6", path = "../substrate-core" }
+dispatch-bridge = { version = "0.3.7", path = "../dispatch-bridge" }
+substrate-core = { version = "0.3.7", path = "../substrate-core" }
 
 [target.'cfg(unix)'.dependencies]
 # Unix-specific proc-compose monitoring uses signal hooks
