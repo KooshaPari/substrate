@@ -294,7 +294,11 @@ retry_attempts = 7
         let (tx, mut rx) = watch::channel(initial);
         let _watcher = ConfigWatcher::new(cfg_path.clone(), tx).unwrap();
 
-        sleep(Duration::from_millis(50)).await;
+        // Allow the platform watcher callback to finish registering before the
+        // rapid-write sequence.  A short delay can leave the initial file event
+        // queued behind these writes on busy CI runners, making the test race
+        // its own setup rather than exercising debounce behavior.
+        sleep(Duration::from_millis(500)).await;
 
         // Three rapid writes within a few ms.
         for i in 2u32..=4 {
