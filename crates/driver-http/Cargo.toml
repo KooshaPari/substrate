@@ -23,7 +23,7 @@ transport-file = { path = "../transport-file" }
 store-file = { path = "../store-file" }
 store-sqlite = { path = "../store-sqlite" }
 routing-phenotype-router = { path = "../routing-phenotype-router" }
-a2a = { path = "../a2a" }
+a2a = { package = "substrate-a2a", path = "../a2a" }
 axum.workspace = true
 tower.workspace = true
 tower-http.workspace = true

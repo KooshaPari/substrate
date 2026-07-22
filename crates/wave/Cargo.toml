@@ -8,7 +8,7 @@ description = "Phase 4: parallel wave runner — N concurrent teammate lanes wit
 
 [dependencies]
 substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
+a2a = { package = "substrate-a2a", path = "../a2a" }
 store-sqlite = { path = "../store-sqlite" }
 supervisor = { path = "../supervisor" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
@@ -23,7 +23,7 @@ regex = { workspace = true }
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
 substrate-core = { path = "../substrate-core" }
-a2a = { path = "../a2a" }
+a2a = { package = "substrate-a2a", path = "../a2a" }
 store-sqlite = { path = "../store-sqlite" }
 supervisor = { path = "../supervisor" }
 

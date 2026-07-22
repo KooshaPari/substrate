@@ -1,5 +1,5 @@
 [package]
-name = "a2a"
+name = "substrate-a2a"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
