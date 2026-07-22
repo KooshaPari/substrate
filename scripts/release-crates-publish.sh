@@ -29,7 +29,9 @@ else
   mapfile -t versions < <(jq -r '.packages[] | select(.publish == null or (.publish | length) > 0) | .version' <<< "$metadata")
   # Keep foundational crates ahead of dependents; append the remaining public
   # members in metadata order. This is the stable dependency spine for batches.
-  preferred=(substrate-core engine-spec substrate-a2a substrate-app substrate-serve-lock)
+  preferred=(substrate-core engine-spec substrate-a2a substrate-app substrate-serve-lock
+    transport-file store-file cloud-dispatch-conformance cloud-codex engine-conformance
+    engine-agentapi engine-claude engine-codex)
   ordered=(); ordered_versions=()
   for wanted in "${preferred[@]}"; do
     for j in "${!packages[@]}"; do

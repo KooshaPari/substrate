@@ -8,10 +8,10 @@ description = "Phase 4: parallel wave runner — N concurrent teammate lanes wit
 publish = false
 
 [dependencies]
-substrate-core = { version = "0.3.7", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.7" }
-store-sqlite = { version = "0.3.7", path = "../store-sqlite" }
-supervisor = { version = "0.3.7", path = "../supervisor" }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.8" }
+store-sqlite = { version = "0.3.8", path = "../store-sqlite" }
+supervisor = { version = "0.3.8", path = "../supervisor" }
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync"] }
 uuid = { workspace = true }
 chrono = { workspace = true }
@@ -23,10 +23,10 @@ regex = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync", "time"] }
-substrate-core = { version = "0.3.7", path = "../substrate-core" }
-a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.7" }
-store-sqlite = { version = "0.3.7", path = "../store-sqlite" }
-supervisor = { version = "0.3.7", path = "../supervisor" }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
+a2a = { package = "substrate-a2a", path = "../a2a", version = "0.3.8" }
+store-sqlite = { version = "0.3.8", path = "../store-sqlite" }
+supervisor = { version = "0.3.8", path = "../supervisor" }
 
 [features]
 default = []

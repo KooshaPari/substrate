@@ -17,5 +17,5 @@ serde.workspace = true
 uuid.workspace = true
 
 [dev-dependencies]
-cloud-codex = { version = "0.3.7", path = "../cloud-codex" }
+cloud-codex = { version = "0.3.8", path = "../cloud-codex" }
 tokio = { workspace = true, features = ["macros", "rt"] }

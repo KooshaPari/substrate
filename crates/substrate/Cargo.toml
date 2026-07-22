@@ -18,10 +18,10 @@ spec = ["dep:engine-spec"]
 a2a = ["dep:a2a"]
 
 [dependencies]
-substrate-core = { version = "0.3.7", path = "../substrate-core" }
-substrate-app = { version = "0.3.7", path = "../substrate-app", optional = true }
-engine-spec = { version = "0.3.7", path = "../engine-spec", optional = true }
-a2a = { package = "substrate-a2a", version = "0.3.7", path = "../a2a", optional = true }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
+substrate-app = { version = "0.3.8", path = "../substrate-app", optional = true }
+engine-spec = { version = "0.3.8", path = "../engine-spec", optional = true }
+a2a = { package = "substrate-a2a", version = "0.3.8", path = "../a2a", optional = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "rt"] }
