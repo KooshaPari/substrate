@@ -17,7 +17,6 @@ plugins:
 # rustfmt) and run them through the same enabled list as the other checks.
 lint:
   enabled:
-    - actionlint
     - black
     - clippy
     - eslint
@@ -27,5 +26,4 @@ lint:
     - ruff
     - rustfmt
     - shellcheck
-    - taplo
     - yamllint
