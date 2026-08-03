@@ -10,9 +10,6 @@ all-features = false
 no-default-features = false
 features = []
 
-# We do not want multiple versions of the same crate in the build tree.
-multiple-versions = "warn"
-
 # ---------------------------------------------------------------------------
 # [output] -- report formatting.
 # ---------------------------------------------------------------------------
@@ -34,7 +31,6 @@ allow = [
     "ISC",
     "Zlib",
     "Unicode-DFS-2016",
-    "Unicode-MIT",
     "CC0-1.0",
     "MPL-2.0",          # rustls
     "OpenSSL",          # transitively; preferred path is rustls
@@ -49,7 +45,7 @@ multiple-versions = "warn"
 wildcards = "deny"
 highlight = "all"
 deny = []
-skip = false
+skip = []
 skip-tree = []
 allow = []
 # Note: add specific "deny = [{ name = 'foo', reason = 'bar' }, ...]"
@@ -69,11 +65,6 @@ allow-git = []
 # ---------------------------------------------------------------------------
 [advisories]
 version = 2
-unmaintained = "warn"
-unsound = "warn"
+unmaintained = "all"
+unsound = "all"
 ignore = []
-# 'informational' issues (yanked, notice) are reported but not blocking.
-informational = ["unmaintained"]
-severity-threshold = "medium"
-# Skip these crate names (must match exactly)
-skip = []
