@@ -10,6 +10,7 @@ plugins:
   sources:
     - id: trunk
       ref: v1.6.0
+      uri: https://github.com/trunk-io/plugins
 
 # Preserve the repository's existing language, formatting, and security
 # coverage. Trunk's plugin definitions identify formatters (black, prettier,
