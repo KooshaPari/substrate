@@ -22,7 +22,6 @@ lint:
     - eslint
     - golangci-lint
     - mypy
-    - prettier
     - ruff
     - rustfmt
     - shellcheck
