@@ -39,6 +39,14 @@ impl RingMemory {
 
     fn push_entry(&self, key: &str, content: &str) -> Uuid {
         let id = Uuid::new_v4();
+        self.push_entry_with_id(id, key, content);
+        id
+    }
+
+    fn push_entry_with_id(&self, id: Uuid, key: &str, content: &str) {
+        if self.capacity == 0 {
+            return;
+        }
         let entry = MemoryEntry {
             id,
             key: key.to_string(),
@@ -46,11 +54,10 @@ impl RingMemory {
             created_at: Utc::now().timestamp(),
         };
         let mut buf = self.entries.lock().unwrap();
-        if self.capacity > 0 && buf.len() >= self.capacity {
+        if buf.len() >= self.capacity {
             buf.pop_front();
         }
         buf.push_back(entry);
-        id
     }
 }
 
@@ -100,10 +107,12 @@ impl MemoryPort for TwoTierMemory {
     type Error = MemoryError;
 
     fn append(&self, key: &str, content: &str) -> Result<Uuid, Self::Error> {
-        self.ring.append(key, content)?;
+        let id = Uuid::new_v4();
         self.persistent
-            .append(key, content)
-            .map_err(MemoryError::from)
+            .append_with_id(id, key, content)
+            .map_err(MemoryError::from)?;
+        self.ring.push_entry_with_id(id, key, content);
+        Ok(id)
     }
 
     fn get(&self, key: &str) -> Result<Option<String>, Self::Error> {
@@ -140,6 +149,15 @@ mod tests {
     }
 
     #[test]
+    fn zero_capacity_ring_retains_no_entries() {
+        let ring = RingMemory::new(0);
+        ring.append("a", "1").unwrap();
+
+        assert!(ring.recent(10).unwrap().is_empty());
+        assert_eq!(ring.get("a").unwrap(), None);
+    }
+
+    #[test]
     fn persistent_round_trip() {
         let store = SqliteMemoryStore::open_in_memory().unwrap();
         store.append("topic", "hello").unwrap();
@@ -158,5 +176,14 @@ mod tests {
         assert_eq!(mem.get("k").unwrap(), Some("v3".into()));
         assert_eq!(mem.recent(10).unwrap().len(), 2);
         assert_eq!(mem.history().unwrap().len(), 3);
+    }
+
+    #[test]
+    fn two_tier_uses_the_same_id_in_both_tiers() {
+        let mem = TwoTierMemory::in_memory(1).unwrap();
+        let id = mem.append("k", "v").unwrap();
+
+        assert_eq!(mem.recent(1).unwrap()[0].id, id);
+        assert_eq!(mem.history().unwrap()[0].id, id);
     }
 }
