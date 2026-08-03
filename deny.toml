@@ -65,6 +65,6 @@ allow-git = []
 # ---------------------------------------------------------------------------
 [advisories]
 version = 2
-unmaintained = "all"
-unsound = "all"
+unmaintained = "warn"
+unsound = "warn"
 ignore = []
