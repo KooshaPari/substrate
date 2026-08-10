@@ -27,6 +27,15 @@ pub struct ProviderConfig {
     pub auth_scheme: AuthScheme,
     /// Default model to use when the request does not specify one.
     pub default_model: Option<String>,
+    /// Ordered list of fallback provider names to try when this provider returns
+    /// a retriable error (5xx status or connection failure).
+    ///
+    /// Equivalent to the `substrate.toml` `[[providers]] fallbacks = [...]` field.
+    pub fallbacks: Vec<String>,
+    /// Whether this provider is currently enabled for traffic.
+    ///
+    /// Defaults to `true`.  Toggle via `POST /admin/providers/:id/toggle`.
+    pub enabled: bool,
 }
 
 impl ProviderConfig {
@@ -42,7 +51,18 @@ impl ProviderConfig {
             api_key_env: api_key_env.into(),
             auth_scheme: AuthScheme::Bearer,
             default_model: None,
+            fallbacks: Vec::new(),
+            enabled: true,
         }
+    }
+
+    /// Set a list of fallback provider names tried in order on retriable errors.
+    pub fn with_fallbacks(
+        mut self,
+        fallbacks: impl IntoIterator<Item = impl Into<String>>,
+    ) -> Self {
+        self.fallbacks = fallbacks.into_iter().map(Into::into).collect();
+        self
     }
 
     /// Override the auth scheme.

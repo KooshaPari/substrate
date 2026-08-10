@@ -1,0 +1,44 @@
+{
+  "name": "substrate",
+  "image": "mcr.microsoft.com/devcontainers/universal:2-linux",
+  "features": {
+    "ghcr.io/devcontainers/features/rust:1": {
+      "version": "1.80",
+      "profile": "complete"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rust-lang.rust-analyzer",
+        "tamasfe.even-better-toml",
+        "serayuzgur.crates",
+        "vadimcn.vscode-lldb",
+        "fill-labs.dependi",
+        "eamodio.gitlens",
+        "github.vscode-github-actions",
+        "stkb.rewrap"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "rust-analyzer.check.command": "clippy",
+        "rust-analyzer.cargo.features": "all",
+        "[rust]": {
+          "editor.defaultFormatter": "rust-lang.rust-analyzer"
+        },
+        "files.exclude": {
+          "**/target": true
+        }
+      }
+    }
+  },
+  "postCreateCommand": "rustup component add clippy rustfmt && cargo install --locked cargo-deny cargo-nextest cargo-cyclonedx cargo-llvm-cov && rustc --version && cargo --version",
+  "mounts": [
+    "source=${env:HOME}${env:USERPROFILE}/.cargo/registry,target=/usr/local/cargo/registry,type=bind,consistency=cached"
+  ],
+  "remoteUser": "root"
+}

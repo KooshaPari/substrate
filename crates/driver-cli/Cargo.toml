@@ -1,6 +1,7 @@
 [package]
 name = "driver-cli"
 version.workspace = true
+publish = false
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
@@ -12,21 +13,23 @@ name = "substrate"
 path = "src/main.rs"
 
 [dependencies]
-substrate-core = { path = "../substrate-core" }
-substrate-app = { path = "../substrate-app" }
-driver-argv = { path = "../driver-argv" }
-engine-spec = { path = "../engine-spec" }
-engine-forge = { path = "../engine-forge" }
-engine-codex = { path = "../engine-codex" }
-engine-claude = { path = "../engine-claude" }
-engine-agentapi = { path = "../engine-agentapi" }
-transport-file = { path = "../transport-file" }
-store-file = { path = "../store-file" }
-cloud-cursor = { path = "../cloud-cursor" }
-cloud-kilo = { path = "../cloud-kilo" }
-cloud-codex = { path = "../cloud-codex" }
+substrate-core = { version = "0.3.8", path = "../substrate-core" }
+substrate-app = { version = "0.3.8", path = "../substrate-app" }
+driver-argv = { version = "0.3.8", path = "../driver-argv" }
+engine-spec = { version = "0.3.8", path = "../engine-spec" }
+engine-forge = { version = "0.3.8", path = "../engine-forge" }
+engine-codex = { version = "0.3.8", path = "../engine-codex" }
+engine-claude = { version = "0.3.8", path = "../engine-claude" }
+engine-agentapi = { version = "0.3.8", path = "../engine-agentapi" }
+transport-file = { version = "0.3.8", path = "../transport-file" }
+store-file = { version = "0.3.8", path = "../store-file" }
+cloud-cursor = { version = "0.3.8", path = "../cloud-cursor" }
+cloud-kilo = { version = "0.3.8", path = "../cloud-kilo" }
+cloud-codex = { version = "0.3.8", path = "../cloud-codex" }
+driver-http = { version = "0.3.8", path = "../driver-http" }
+substrate-serve-lock = { version = "0.3.8", path = "../substrate-serve-lock" }
 clap.workspace = true
-tokio.workspace = true
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time", "signal"] }
 serde_json.workspace = true
 anyhow.workspace = true
 
@@ -34,3 +37,14 @@ anyhow.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
 tempfile.workspace = true
+
+[package.metadata.bundle]
+# Backbone-2 visual identity (decision 2026-07-06 by substrate-mesh).
+# Icon source of truth: ../../assets/brand/substrate-icon.svg.
+name = "substrate"
+identifier = "ai.kooshapari.substrate"
+icon = ["../../assets/icons/substrate.iconset"]
+resources = []
+category = "DeveloperTool"
+short_description = "Release-ready hexagonal dispatch spine"
+long_description = "Three driver faces (CLI/HTTP/MCP) sharing one planner and composition root."

@@ -101,6 +101,27 @@ fn dispatch_dry_run_prints_plan_without_spawning() {
 }
 
 #[test]
+fn codex_plan_auto_tiers_short_prompt_to_worker_without_spawning() {
+    let tmp = tempfile::tempdir().unwrap();
+    let missing = tmp.path().join("definitely-not-codex.exe");
+
+    let mut cmd = Command::cargo_bin("substrate").unwrap();
+    cmd.env("CODEX_BIN", &missing).args([
+        "plan",
+        "--engine",
+        "codex",
+        "--cwd",
+        tmp.path().to_str().unwrap(),
+        "echo hi",
+    ]);
+
+    cmd.assert()
+        .success()
+        .stdout(predicate::str::contains("\"engine\": \"codex\""))
+        .stdout(predicate::str::contains("gpt-5.3-codex-spark"));
+}
+
+#[test]
 fn help_lists_dispatch_and_plan_subcommands() {
     Command::cargo_bin("substrate")
         .unwrap()

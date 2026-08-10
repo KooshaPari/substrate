@@ -1,0 +1,79 @@
+# cargo-deny configuration for kooshapari/substrate
+# Phase 0 (P0.1). CI runs `cargo deny check` on every PR (P0.2).
+# See CONTRIBUTING.md §9 for the dependency policy.
+
+# ---------------------------------------------------------------------------
+# [graph] -- fine-grained feature graph control.
+# ---------------------------------------------------------------------------
+[graph]
+all-features = false
+no-default-features = false
+features = []
+
+# We do not want multiple versions of the same crate in the build tree.
+multiple-versions = "warn"
+
+# ---------------------------------------------------------------------------
+# [output] -- report formatting.
+# ---------------------------------------------------------------------------
+[output]
+feature-depth = 1
+
+# ---------------------------------------------------------------------------
+# [licenses] -- allowlist.
+# ---------------------------------------------------------------------------
+[licenses]
+version = 2
+allow = [
+    "MIT",
+    "MIT-0",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "Unicode-DFS-2016",
+    "Unicode-MIT",
+    "CC0-1.0",
+    "MPL-2.0",          # rustls
+    "OpenSSL",          # transitively; preferred path is rustls
+]
+confidence-threshold = 0.8
+
+# ---------------------------------------------------------------------------
+# [bans] -- forbid fragile / unmaintained / redundant crates.
+# ---------------------------------------------------------------------------
+[bans]
+multiple-versions = "warn"
+wildcards = "deny"
+highlight = "all"
+deny = []
+skip = false
+skip-tree = []
+allow = []
+# Note: add specific "deny = [{ name = 'foo', reason = 'bar' }, ...]"
+# entries on a per-case basis via subsequent PR.
+
+# ---------------------------------------------------------------------------
+# [sources] -- only allow fetching from trusted registries.
+# ---------------------------------------------------------------------------
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+allow-git = []
+
+# ---------------------------------------------------------------------------
+# [advisories] -- vulnerability database.
+# ---------------------------------------------------------------------------
+[advisories]
+version = 2
+unmaintained = "warn"
+unsound = "warn"
+ignore = []
+# 'informational' issues (yanked, notice) are reported but not blocking.
+informational = ["unmaintained"]
+severity-threshold = "medium"
+# Skip these crate names (must match exactly)
+skip = []

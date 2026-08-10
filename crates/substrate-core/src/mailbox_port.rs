@@ -55,6 +55,9 @@ pub trait MailboxStore: Send + Sync {
     /// Mark a message as `Consumed`.
     fn consume(&self, message_id: Uuid) -> Result<(), Self::Error>;
 
+    /// Roll back a claim: transition message state from `Delivered` to `Unread`.
+    fn unclaim(&self, message_id: Uuid) -> Result<(), Self::Error>;
+
     /// Insert a new task.
     fn task_create(&self, task: &Self::Task) -> Result<(), Self::Error>;
 

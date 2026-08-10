@@ -1,0 +1,414 @@
+//! Application state — top-level struct shared by all TUI components.
+
+use std::time::Instant;
+
+use ratatui::{
+    layout::{Constraint, Direction, Layout, Rect},
+    style::{Color, Modifier, Style},
+    text::Span,
+    widgets::{Block, Borders, Cell, Row, Table, TableState},
+    Frame,
+};
+
+use crate::config::TuiConfig;
+use crate::dispatch_client::{
+    format_log_timestamp, log_entry_color, truncate_str, GatewayClient, GatewayMetrics, LogEntry,
+    ServiceStatus,
+};
+use crate::help::draw_help;
+use crate::proccompose::{load_compositions, Composition};
+use crate::statusbar::draw_statusbar;
+
+/// Top-level application state.
+pub struct App {
+    /// Dashboard configuration (gateway URL, compose dir, etc.).
+    pub config: TuiConfig,
+    /// Whether the gateway is currently reachable.
+    pub connected: bool,
+    /// Live compositions loaded from the compose directory.
+    pub compositions: Vec<Composition>,
+    /// Most-recently polled HTTP health status for each service.
+    ///
+    /// Refreshed every 5 s via [`App::refresh_service_statuses`].
+    pub service_statuses: Vec<ServiceStatus>,
+    /// A2A tasks tracked by the gateway.
+    // WIP: task tracking is not yet surfaced in the render path.
+    #[allow(dead_code)]
+    pub tasks: Vec<Task>,
+    /// Instant the dashboard started (for uptime calculation).
+    #[allow(dead_code)]
+    startup: Instant,
+    /// Currently selected service index in the table.
+    pub selected_index: usize,
+    /// Whether the help overlay is shown.
+    pub show_help: bool,
+    /// Whether the metrics panel is shown.
+    pub show_metrics: bool,
+    /// Most-recently fetched gateway metrics.
+    pub metrics: Option<GatewayMetrics>,
+    /// Whether the request log panel is shown.
+    pub show_logs: bool,
+    /// Most-recently fetched audit log entries (up to 100).
+    pub logs: Vec<LogEntry>,
+    /// Ratatui table state for selection highlight.
+    pub table_state: TableState,
+}
+
+impl App {
+    /// Create a new app state from the given configuration.
+    ///
+    /// Compositions are loaded eagerly from `config.compose_dir`; if the
+    /// directory is missing or empty the list is simply empty (no panic).
+    pub fn new(config: TuiConfig) -> Self {
+        let compositions = load_compositions(&config.compose_dir);
+        let mut table_state = TableState::default();
+        if !compositions.is_empty() {
+            table_state.select(Some(0));
+        }
+        Self {
+            config,
+            connected: false,
+            compositions,
+            service_statuses: Vec::new(),
+            tasks: Vec::new(),
+            startup: Instant::now(),
+            selected_index: 0,
+            show_help: false,
+            show_metrics: false,
+            metrics: None,
+            show_logs: false,
+            logs: Vec::new(),
+            table_state,
+        }
+    }
+
+    /// Reload compositions from the configured compose directory.
+    ///
+    /// Call this on a poll tick to pick up changes to the compose manifests.
+    // Available for callers; not yet used in the current event loop path.
+    #[allow(dead_code)]
+    pub fn refresh_compositions(&mut self) {
+        self.compositions = load_compositions(&self.config.compose_dir);
+    }
+
+    /// Probe every service in `self.compositions` and update `service_statuses`.
+    ///
+    /// Should be called every 5 s from the TUI event loop to provide fresh
+    /// Running/Stopped/Unknown indicators without blocking the render thread.
+    pub async fn refresh_service_statuses(&mut self) {
+        self.service_statuses = GatewayClient::get_status(&self.compositions).await;
+    }
+
+    /// Fetch metrics from the gateway and store them.
+    ///
+    /// On failure (gateway not reachable) the existing `metrics` value is left
+    /// unchanged so stale data continues to render.
+    pub async fn refresh_metrics(&mut self) {
+        let client = GatewayClient::new(self.config.gateway_url.clone(), None);
+        if let Ok(m) = client.get_metrics().await {
+            self.metrics = Some(m);
+        }
+    }
+
+    /// Toggle the metrics panel visibility.
+    pub fn toggle_metrics(&mut self) {
+        self.show_metrics = !self.show_metrics;
+    }
+
+    /// Toggle the request log panel visibility.
+    pub fn toggle_logs(&mut self) {
+        self.show_logs = !self.show_logs;
+    }
+
+    /// Fetch the latest log entries from the gateway and store them.
+    ///
+    /// On failure the existing `logs` value is left unchanged.
+    pub async fn refresh_logs(&mut self) {
+        let client = GatewayClient::new(self.config.gateway_url.clone(), None);
+        if let Ok(entries) = client.refresh_logs().await {
+            self.logs = entries;
+        }
+    }
+
+    /// Number of running dispatch lanes across all compositions.
+    pub fn active_lanes(&self) -> usize {
+        self.compositions
+            .iter()
+            .flat_map(|c| &c.members)
+            .filter(|m| {
+                let s = m.state.to_lowercase();
+                s == "running" || s == "working"
+            })
+            .count()
+    }
+
+    /// Human-readable uptime since the dashboard started.
+    #[allow(dead_code)]
+    pub fn formatted_uptime(&self) -> String {
+        let secs = self.startup.elapsed().as_secs();
+        if secs == 0 {
+            return "<1s".into();
+        }
+        let hours = secs / 3600;
+        let mins = (secs % 3600) / 60;
+        let secs = secs % 60;
+        if hours > 0 {
+            format!("{hours}h {mins}m")
+        } else if mins > 0 {
+            format!("{mins}m {secs}s")
+        } else {
+            format!("{secs}s")
+        }
+    }
+
+    /// Move selection down one row.
+    pub fn select_next(&mut self) {
+        if self.compositions.is_empty() {
+            return;
+        }
+        self.selected_index = (self.selected_index + 1) % self.compositions.len();
+        self.table_state.select(Some(self.selected_index));
+    }
+
+    /// Move selection up one row.
+    pub fn select_prev(&mut self) {
+        if self.compositions.is_empty() {
+            return;
+        }
+        if self.selected_index == 0 {
+            self.selected_index = self.compositions.len() - 1;
+        } else {
+            self.selected_index -= 1;
+        }
+        self.table_state.select(Some(self.selected_index));
+    }
+
+    /// Toggle the help overlay.
+    pub fn toggle_help(&mut self) {
+        self.show_help = !self.show_help;
+    }
+
+    /// Render the full UI into `frame`.
+    pub fn render(&mut self, frame: &mut Frame) {
+        let area = frame.area();
+
+        // Build vertical layout: compositions table, optional metrics/logs panels, status bar.
+        let extra_panels = usize::from(self.show_metrics) + usize::from(self.show_logs);
+        let mut constraints: Vec<Constraint> = vec![Constraint::Min(0)];
+        for _ in 0..extra_panels {
+            constraints.push(Constraint::Length(10));
+        }
+        constraints.push(Constraint::Length(1));
+
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints(constraints)
+            .split(area);
+
+        self.render_service_table(frame, chunks[0]);
+
+        let mut panel_idx = 1usize;
+        if self.show_metrics {
+            self.render_metrics_panel(frame, chunks[panel_idx]);
+            panel_idx += 1;
+        }
+        if self.show_logs {
+            self.render_logs_panel(frame, chunks[panel_idx]);
+            panel_idx += 1;
+        }
+        draw_statusbar(frame, chunks[panel_idx], self);
+
+        if self.show_help {
+            let help_area = centered_rect(60, 70, area);
+            draw_help(frame, help_area);
+        }
+    }
+
+    fn render_metrics_panel(&self, frame: &mut Frame, area: Rect) {
+        use ratatui::text::Line;
+        use ratatui::widgets::Paragraph;
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Gateway Metrics (m to hide) ");
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        match &self.metrics {
+            None => {
+                let p = Paragraph::new("No metrics available — gateway may be unreachable.");
+                frame.render_widget(p, inner);
+            }
+            Some(m) => {
+                // Summary line
+                let summary = format!(
+                    "Requests: {} | Errors: {} | Error rate: {:.1}% | Avg latency: {:.1}ms",
+                    m.total_requests,
+                    m.total_errors,
+                    m.error_rate * 100.0,
+                    m.avg_latency_ms,
+                );
+
+                // Per-provider rows (header + data)
+                let mut lines: Vec<Line> = vec![
+                    Line::from(Span::styled(summary, Style::default().fg(Color::Yellow))),
+                    Line::from(""),
+                    Line::from(Span::styled(
+                        format!(
+                            "{:<24} {:>8} {:>8} {:>10}",
+                            "Provider", "Reqs", "Errs", "Avg ms"
+                        ),
+                        Style::default()
+                            .fg(Color::Cyan)
+                            .add_modifier(Modifier::BOLD),
+                    )),
+                ];
+
+                let mut providers: Vec<(&String, &crate::dispatch_client::ProviderMetrics)> =
+                    m.per_provider.iter().collect();
+                providers.sort_by_key(|(k, _)| k.as_str());
+
+                for (name, pm) in providers {
+                    lines.push(Line::from(Span::raw(format!(
+                        "{:<24} {:>8} {:>8} {:>10.1}",
+                        name, pm.requests, pm.errors, pm.avg_latency_ms,
+                    ))));
+                }
+
+                if m.per_provider.is_empty() {
+                    lines.push(Line::from(Span::raw("  (no per-provider data)")));
+                }
+
+                let p = Paragraph::new(lines);
+                frame.render_widget(p, inner);
+            }
+        }
+    }
+
+    /// Render the last 20 request log entries as a color-coded list.
+    ///
+    /// Each row shows: `[HH:MM:SS] provider/model  status  latency_ms ms`
+    /// Color coding: green=2xx, yellow=429, red=5xx.
+    fn render_logs_panel(&self, frame: &mut Frame, area: Rect) {
+        use ratatui::text::Line;
+        use ratatui::widgets::{List, ListItem};
+
+        let block = Block::default()
+            .borders(Borders::ALL)
+            .title(" Request Log (l to hide) ");
+
+        let inner = block.inner(area);
+        frame.render_widget(block, area);
+
+        if self.logs.is_empty() {
+            use ratatui::widgets::Paragraph;
+            let p = Paragraph::new("No requests recorded yet.");
+            frame.render_widget(p, inner);
+            return;
+        }
+
+        // Show the last 20 entries, most-recent first.
+        let items: Vec<ListItem> = self
+            .logs
+            .iter()
+            .rev()
+            .take(20)
+            .map(|entry| {
+                let ts = format_log_timestamp(&entry.timestamp);
+                let model = truncate_str(&entry.model, 24);
+                let color = log_entry_color(entry.status_code);
+                let line = Line::from(ratatui::text::Span::styled(
+                    format!(
+                        "[{ts}] {model:<24}  {:>3}  {:>6}ms",
+                        entry.status_code, entry.latency_ms
+                    ),
+                    ratatui::style::Style::default().fg(color),
+                ));
+                ListItem::new(line)
+            })
+            .collect();
+
+        let list = List::new(items);
+        frame.render_widget(list, inner);
+    }
+
+    fn render_service_table(&mut self, frame: &mut Frame, area: Rect) {
+        let header_cells = ["Service", "Status", "Members", "Uptime"].iter().map(|h| {
+            Cell::from(*h).style(
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )
+        });
+        let header = Row::new(header_cells).height(1).bottom_margin(1);
+
+        let rows: Vec<Row> = self
+            .compositions
+            .iter()
+            .map(|comp| {
+                let status_color = comp.status.state_style();
+                Row::new(vec![
+                    Cell::from(Span::raw(comp.name.clone())),
+                    Cell::from(Span::styled(
+                        comp.status.to_string(),
+                        Style::default().fg(status_color),
+                    )),
+                    Cell::from(Span::raw(comp.members.len().to_string())),
+                    Cell::from(Span::raw(comp.formatted_uptime())),
+                ])
+            })
+            .collect();
+
+        let table = Table::new(
+            rows,
+            [
+                Constraint::Percentage(40),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+                Constraint::Percentage(20),
+            ],
+        )
+        .header(header)
+        .block(
+            Block::default()
+                .borders(Borders::ALL)
+                .title(" substrate-tui — Compositions "),
+        )
+        .row_highlight_style(Style::default().add_modifier(Modifier::REVERSED));
+
+        frame.render_stateful_widget(table, area, &mut self.table_state);
+    }
+}
+
+/// A tracked A2A task.
+// WIP: fields populated once gateway task polling is connected.
+#[allow(dead_code)]
+#[derive(Debug, Clone)]
+pub struct Task {
+    pub id: String,
+    pub description: String,
+    pub status: String,
+}
+
+/// Return a centered [`Rect`] that is `percent_x` wide and `percent_y` tall
+/// relative to `r`.
+fn centered_rect(percent_x: u16, percent_y: u16, r: Rect) -> Rect {
+    let popup_layout = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Percentage((100 - percent_y) / 2),
+            Constraint::Percentage(percent_y),
+            Constraint::Percentage((100 - percent_y) / 2),
+        ])
+        .split(r);
+
+    Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage((100 - percent_x) / 2),
+            Constraint::Percentage(percent_x),
+            Constraint::Percentage((100 - percent_x) / 2),
+        ])
+        .split(popup_layout[1])[1]
+}

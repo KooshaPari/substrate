@@ -51,6 +51,7 @@ async fn start_spawns_fake_forge_captures_conv_id_and_writes_logfile() {
         parent_task_id: None,
         requirement_id: None,
         epic_id: None,
+        conv_id: None,
     };
 
     let session = engine.start(&task).await.unwrap();
@@ -96,6 +97,7 @@ async fn start_timeout_kills_hanging_forge_and_returns() {
         parent_task_id: None,
         requirement_id: None,
         epic_id: None,
+        conv_id: None,
     };
 
     // Set the env var to make fake-forge hang after printing the conv id.

@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 270" width="480" height="270" role="img" aria-label="substrate identity demo: dispatch mesh with sync-violet nodes">
+  <title>substrate — L105 Identity Demo (Backbone-2 sync-violet dispatch mesh)</title>
+  <defs>
+    <linearGradient id="sbBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0a0d12"/>
+      <stop offset="1" stop-color="#161b22"/>
+    </linearGradient>
+    <radialGradient id="sbNodeGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#a371f7" stop-opacity="0.6"/>
+      <stop offset="1" stop-color="#a371f7" stop-opacity="0"/>
+    </radialGradient>
+    <style>
+      .sb-mono { font-family: ui-monospace, SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace; }
+      .sb-pulse {
+        transform-origin: 240px 135px;
+        animation: sb-beat 1.6s cubic-bezier(.4,0,.2,1) infinite;
+      }
+      @keyframes sb-beat {
+        0%   { transform: scale(0.85); opacity: 0.5; }
+        25%  { transform: scale(1.15); opacity: 1; }
+        50%  { transform: scale(0.95); opacity: 0.85; }
+        75%  { transform: scale(1.05); opacity: 0.95; }
+        100% { transform: scale(0.85); opacity: 0.5; }
+      }
+      .sb-pkt {
+        animation: sb-pkt 2.4s ease-in-out infinite;
+      }
+      .sb-pkt-2 { animation-delay: -0.8s; }
+      .sb-pkt-3 { animation-delay: -1.6s; }
+      @keyframes sb-pkt {
+        0%   { transform: translate(0,0);    opacity: 0; }
+        15%  { opacity: 1; }
+        85%  { opacity: 1; }
+        100% { transform: translate(140px, -80px); opacity: 0; }
+      }
+      .sb-orbit {
+        transform-origin: 240px 135px;
+        animation: sb-orbit 9s linear infinite;
+      }
+      @keyframes sb-orbit {
+        from { transform: rotate(0deg); }
+        to   { transform: rotate(360deg); }
+      }
+      .sb-label { animation: sb-fade 1.6s ease-in-out infinite; }
+      @keyframes sb-fade {
+        0%, 100% { opacity: 0.7; }
+        50%      { opacity: 1; }
+      }
+    </style>
+  </defs>
+
+  <rect width="480" height="270" fill="url(#sbBg)"/>
+  <rect x="14" y="14" width="452" height="242" rx="10" ry="10" fill="none" stroke="#a371f7" stroke-opacity="0.2" stroke-width="1"/>
+
+  <g stroke="#a371f7" stroke-opacity="0.12" stroke-width="1">
+    <line x1="60"  y1="60"  x2="60"  y2="210"/>
+    <line x1="60"  y1="60"  x2="420" y2="60"/>
+    <line x1="420" y1="60"  x2="420" y2="210"/>
+    <line x1="60"  y1="210" x2="420" y2="210"/>
+    <line x1="60"  y1="60"  x2="420" y2="210"/>
+    <line x1="420" y1="60"  x2="60"  y2="210"/>
+  </g>
+
+  <g class="sb-orbit" opacity="0.4">
+    <circle cx="240" cy="135" r="100" fill="none" stroke="#a371f7" stroke-width="1" stroke-dasharray="3 5"/>
+    <circle cx="340" cy="135" r="4" fill="#a371f7"/>
+    <circle cx="240" cy="35"  r="3" fill="#d29922"/>
+    <circle cx="140" cy="135" r="3" fill="#d29922"/>
+  </g>
+
+  <g fill="#a371f7" opacity="0.85">
+    <circle cx="100" cy="100" r="4"/>
+    <circle cx="380" cy="100" r="4"/>
+    <circle cx="100" cy="170" r="4"/>
+    <circle cx="380" cy="170" r="4"/>
+  </g>
+
+  <g class="sb-pkt">
+    <circle cx="100" cy="100" r="3" fill="#a371f7"/>
+  </g>
+  <g class="sb-pkt sb-pkt-2">
+    <circle cx="100" cy="170" r="3" fill="#a371f7"/>
+  </g>
+  <g class="sb-pkt sb-pkt-3">
+    <circle cx="380" cy="100" r="3" fill="#a371f7"/>
+  </g>
+
+  <circle cx="240" cy="135" r="86" fill="url(#sbNodeGlow)"/>
+  <g class="sb-pulse">
+    <circle cx="240" cy="135" r="42" fill="#161b22" stroke="#a371f7" stroke-width="2.5"/>
+    <polygon points="240,107 263,121 263,149 240,163 217,149 217,121" fill="none" stroke="#a371f7" stroke-width="2"/>
+    <circle cx="240" cy="135" r="5" fill="#a371f7"/>
+  </g>
+
+  <g class="sb-mono">
+    <text x="240" y="232" text-anchor="middle" font-size="14" font-weight="700" fill="#f6f8fa" letter-spacing="0.08em" class="sb-label">SUBSTRATE</text>
+    <text x="240" y="248" text-anchor="middle" font-size="9" fill="#a371f7" letter-spacing="0.18em" opacity="0.85">dispatch · mesh · plane</text>
+  </g>
+
+  <g stroke="#a371f7" stroke-width="1.5" stroke-linecap="round" opacity="0.7">
+    <path d="M22 22 L34 22 M22 22 L22 34"/>
+    <path d="M458 22 L446 22 M458 22 L458 34"/>
+    <path d="M22 248 L34 248 M22 248 L22 236"/>
+    <path d="M458 248 L446 248 M458 248 L458 236"/>
+  </g>
+</svg>

@@ -6,6 +6,9 @@
 
 mod cloud_dispatch;
 mod plan;
+mod serve;
+mod splash;
+mod theme;
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -18,7 +21,7 @@ use engine_forge::ForgeEngine;
 use engine_spec::TaskSpec;
 use plan::{engine_catalog, enrich_plan_argv, print_plan};
 use store_file::FileStore;
-use substrate_app::tiered_dispatch::dispatch_with_reroute_async;
+use substrate_app::tiered_dispatch::{dispatch_with_reroute_async, select_auto_tier};
 use substrate_app::DispatchService;
 use substrate_app::{DispatchPlanner, PlanRequest, SessionMode};
 use substrate_core::domain::Task;
@@ -45,6 +48,10 @@ use transport_file::FileTransport;
                   FORGE_BIN, CODEX_BIN, CLAUDE_BIN, AGENTAPI_ENDPOINT"
 )]
 struct Cli {
+    /// Print the Backbone-2 splash banner before running (L97/L98/L99).
+    #[arg(long, global = true)]
+    splash: bool,
+
     #[command(subcommand)]
     command: Command,
 }
@@ -62,6 +69,8 @@ enum Command {
     },
     /// Submit a remote cloud-agent task and harvest the PR result as JSON.
     CloudDispatch(CloudDispatchArgs),
+    /// Start the substrate HTTP server with a lock-based single-instance guard.
+    Serve(serve::ServeArgs),
 }
 
 /// Flags shared by `dispatch` and `plan`.
@@ -90,7 +99,7 @@ struct DispatchOptions {
     /// Print the plan without spawning (same output as the `plan` subcommand).
     #[arg(long)]
     dry_run: bool,
-    /// Run codex through tiered dispatch (`heavy`, `main`, or `worker`) with reroute-up retries.
+    /// Run codex through tiered dispatch (`heavy`, `main`, or `worker`); auto-selected when omitted for codex.
     #[arg(long, value_name = "TIER")]
     tier: Option<String>,
     /// Working directory the engine runs in.
@@ -165,7 +174,7 @@ impl DispatchArgs {
         })
         .map_err(|e| anyhow!("plan failed: {e}"))?;
         enrich_plan_argv(&mut plan);
-        if let Some(tier) = self.tier()? {
+        if let Some(tier) = self.selected_tier(&spec.prompt)? {
             plan.engine = "codex".to_string();
             plan.argv = {
                 let bin = std::env::var("CODEX_BIN").unwrap_or_else(|_| "codex".into());
@@ -187,6 +196,18 @@ impl DispatchArgs {
             .map(str::parse::<Tier>)
             .transpose()
             .map_err(anyhow::Error::msg)
+    }
+
+    fn selected_tier(&self, prompt: &str) -> anyhow::Result<Option<Tier>> {
+        if let Some(tier) = self.tier()? {
+            return Ok(Some(tier));
+        }
+
+        if self.options.engine.as_deref() == Some("codex") {
+            return Ok(Some(select_auto_tier(prompt)));
+        }
+
+        Ok(None)
     }
 }
 
@@ -250,6 +271,13 @@ async fn execute_tiered_dispatch(args: &DispatchArgs, start_tier: Tier) -> anyho
     .await
     .map_err(|e| anyhow!("tiered dispatch failed: {e}"))?;
 
+    if outcome.attempted_tiers.len() > 1 {
+        eprintln!(
+            "downgraded tier from {} to {} after dispatch failure",
+            outcome.attempted_tiers[0], outcome.succeeded_tier
+        );
+    }
+
     let payload = serde_json::json!({
         "success": true,
         "engine": "codex",
@@ -263,13 +291,18 @@ async fn execute_tiered_dispatch(args: &DispatchArgs, start_tier: Tier) -> anyho
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
+    if cli.splash {
+        let version = env!("CARGO_PKG_VERSION");
+        splash::print_cli_splash(version);
+    }
     match cli.command {
         Command::Dispatch(args) => {
             if args.options.fake {
                 let path = fake_forge_path()?;
                 std::env::set_var("FORGE_BIN", path);
             }
-            let tier = args.tier()?;
+            let prompt = args.prompt_text()?;
+            let tier = args.selected_tier(&prompt)?;
             let plan = args.plan()?;
             if args.options.dry_run {
                 print_plan(&plan)?;
@@ -288,5 +321,6 @@ async fn main() -> anyhow::Result<()> {
         Command::CloudDispatch(args) => {
             cloud_dispatch::run(args.platform, &args.repo, &args.branch, &args.task).await
         }
+        Command::Serve(args) => serve::run(args).await,
     }
 }
