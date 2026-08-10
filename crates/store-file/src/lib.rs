@@ -81,16 +81,24 @@ impl StorePort for FileStore {
             Err(e) => return Err(io(e)),
         }
 
-        let mut task = self.load(id).await?;
-        // CAS on lifecycle state: only a Submitted task is claimable.
-        if task.state != TaskState::Submitted {
-            return Err(SubstrateError::ClaimConflict(format!(
-                "task {id} not claimable from {:?}",
-                task.state
-            )));
+        let result = (async {
+            let mut task = self.load(id).await?;
+            // CAS on lifecycle state: only a Submitted task is claimable.
+            if task.state != TaskState::Submitted {
+                return Err(SubstrateError::ClaimConflict(format!(
+                    "task {id} not claimable from {:?}",
+                    task.state
+                )));
+            }
+            task.advance(TaskState::Working)?;
+            self.persist(&task).await?;
+            Ok(task)
+        })
+        .await;
+
+        if result.is_err() {
+            let _ = fs::remove_file(&lock);
         }
-        task.advance(TaskState::Working)?;
-        self.persist(&task).await?;
-        Ok(task)
+        result
     }
 }

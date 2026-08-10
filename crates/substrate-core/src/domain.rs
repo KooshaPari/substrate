@@ -90,6 +90,9 @@ pub struct Task {
     pub requirement_id: Option<String>,
     /// Traceability link to an epic.
     pub epic_id: Option<String>,
+    /// Engine conversation id, set after [`EnginePort::start`].
+    #[serde(default)]
+    pub conv_id: Option<String>,
 }
 
 impl Task {
@@ -103,6 +106,7 @@ impl Task {
             parent_task_id: None,
             requirement_id: None,
             epic_id: None,
+            conv_id: None,
         }
     }
 

@@ -210,6 +210,15 @@ impl MailboxStore for SqliteMailboxStore {
         Ok(())
     }
 
+    fn unclaim(&self, message_id: Uuid) -> Result<(), StoreError> {
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "UPDATE mailbox SET state='unread', consumed_at=NULL WHERE id=?1 AND state='delivered'",
+            params![message_id.to_string()],
+        )?;
+        Ok(())
+    }
+
     fn task_create(&self, task: &Task) -> Result<(), StoreError> {
         let conn = self.conn.lock().unwrap();
         conn.execute(

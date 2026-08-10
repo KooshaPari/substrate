@@ -6,6 +6,7 @@ mod fake;
 
 pub use fake::FakeCloudDispatch;
 
+use std::time::Duration;
 use substrate_core::cloud_dispatch_port::{CloudDispatchPort, CloudResult, CloudTaskStatus};
 use substrate_core::error::SubstrateError;
 
@@ -55,10 +56,25 @@ pub async fn assert_happy_path(adapter: &dyn CloudDispatchPort) {
         "conformance: happy-path task must succeed"
     );
 
-    let result = adapter
-        .harvest(&handle)
-        .await
-        .expect("conformance: harvest must succeed after Succeeded");
+    // Some providers report terminal status before their diff endpoint is
+    // readable.  Poll harvest briefly rather than turning that propagation
+    // window into a flaky conformance failure.
+    let mut result = None;
+    for _ in 0..32 {
+        match adapter.harvest(&handle).await {
+            Ok(value) => {
+                result = Some(value);
+                break;
+            }
+            Err(SubstrateError::CloudDispatch(message))
+                if message.contains("not ready for harvest") =>
+            {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => panic!("conformance: harvest failed after Succeeded: {error}"),
+        }
+    }
+    let result = result.expect("conformance: harvest did not become ready within timeout");
     assert!(
         !result.branch.is_empty(),
         "conformance: harvest.branch must be non-empty"

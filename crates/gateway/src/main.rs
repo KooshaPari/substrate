@@ -2,13 +2,57 @@
 
 use gateway::{serve, GatewayConfig};
 
+/// Wire OTLP exporter (no-op when `OTEL_EXPORTER_OTLP_ENDPOINT` is unset).
+fn init_telemetry() -> opentelemetry_sdk::trace::TracerProvider {
+    use opentelemetry::{global, trace::TracerProvider as _, KeyValue};
+    use opentelemetry_sdk::trace::{Config, RandomIdGenerator, Sampler};
+    use opentelemetry_sdk::Resource;
+    use tracing_subscriber::prelude::*;
+
+    // Register the W3C Trace Context propagator so downstream OTLP exporters
+    // preserve `traceparent`/`tracestate` semantics across service boundaries.
+    global::set_text_map_propagator(opentelemetry_sdk::propagation::TraceContextPropagator::new());
+
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .build_span_exporter()
+        .expect("valid OTLP exporter configuration");
+
+    let provider = opentelemetry_sdk::trace::TracerProvider::builder()
+        .with_config(
+            Config::default()
+                .with_sampler(Sampler::TraceIdRatioBased(0.1))
+                .with_id_generator(RandomIdGenerator::default())
+                .with_resource(Resource::new(vec![KeyValue::new(
+                    "service.name",
+                    "substrate-gateway",
+                )])),
+        )
+        .with_batch_exporter(exporter, opentelemetry_sdk::runtime::Tokio)
+        .build();
+
+    let tracer = provider.tracer("substrate-gateway");
+    let telemetry = tracing_opentelemetry::layer().with_tracer(tracer);
+
+    tracing_subscriber::registry()
+        .with(telemetry)
+        .with(tracing_subscriber::fmt::layer().json())
+        .with(tracing_subscriber::EnvFilter::from_default_env())
+        .init();
+
+    provider
+}
+
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    let _provider = init_telemetry();
+
     let config = GatewayConfig::from_env()?;
-    eprintln!(
-        "substrate-gateway listening on {} (state: {})",
-        config.bind,
-        config.state_dir.display()
+    tracing::info!(
+        bind = %config.bind,
+        state_dir = %config.state_dir.display(),
+        "gateway starting"
     );
+
     serve(config).await
 }

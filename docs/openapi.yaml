@@ -1,0 +1,660 @@
+openapi: 3.1.0
+
+info:
+  title: substrate gateway
+  version: 0.1.0
+  summary: HTTP gateway for the substrate orchestration runtime.
+  description: |
+    The `psub-gateway` exposes a polyglot HTTP surface for substrate:
+
+    - OpenAI-compatible chat completions (`/v1/chat/completions`, `/v1/models`)
+    - A2A v0.3 message and task endpoints (`/a2a/*`)
+    - Health, metrics, and admin surfaces for ops
+
+    Authentication is API-key based (see `Authorization` below) for `/v1/*` and
+    `/a2a/*`; admin routes additionally require `X-Admin-Token`.
+
+    Wire format is JSON for request/response and `text/event-stream` for SSE
+    streams (`stream=true` on chat completions).
+
+    Source: `crates/psub-gateway/src/lib.rs` (router built at lines 257–298).
+  contact:
+    name: substrate maintainers
+    url: https://github.com/kooshapari/substrate
+  license:
+    name: Apache-2.0 OR MIT
+    url: https://github.com/kooshapari/substrate/blob/main/LICENSE-APACHE
+
+servers:
+  - url: http://127.0.0.1:8080
+    description: Local dev (default `psub-gateway` bind)
+  - url: https://gateway.example.invalid
+    description: Production placeholder
+
+tags:
+  - name: chat
+    description: OpenAI-compatible chat completions
+  - name: models
+    description: OpenAI-compatible model listing
+  - name: a2a
+    description: A2A v0.3 message / task surface
+  - name: health
+    description: Liveness, readiness, and provider health
+  - name: metrics
+    description: Operational metrics
+  - name: admin
+    description: Operator endpoints (require X-Admin-Token)
+
+security:
+  - ApiKeyAuth: []
+
+paths:
+
+  /healthz:
+    get:
+      tags: [health]
+      summary: Liveness probe.
+      description: Always returns 200 with `{"status":"ok"}` if the process is running.
+      security: []
+      responses:
+        '200':
+          description: Process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                ok:
+                  value: { status: ok }
+
+  /health:
+    get:
+      tags: [health]
+      summary: Readiness probe (deep).
+      description: |
+        Returns 200 only if every required dependency is reachable. Returns
+        503 with per-subsystem status if any required dep is down.
+      security: []
+      responses:
+        '200':
+          description: All subsystems healthy.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
+        '503':
+          description: One or more subsystems unhealthy.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/HealthResponse' }
+
+  /health/providers:
+    get:
+      tags: [health]
+      summary: Per-provider health snapshot.
+      description: Returns the last-known health status for each configured upstream provider.
+      security: []
+      responses:
+        '200':
+          description: Provider health map.
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  $ref: '#/components/schemas/ProviderHealth'
+
+  /metrics:
+    get:
+      tags: [metrics]
+      summary: Point-in-time metrics snapshot (JSON).
+      description: |
+        Returns request counters, error counters, and rate-limit hits as JSON.
+        Cheap; safe to scrape at high frequency.
+      security: []
+      responses:
+        '200':
+          description: Metrics snapshot.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MetricsSnapshot' }
+
+  /metrics/prometheus:
+    get:
+      tags: [metrics]
+      summary: Prometheus text exposition (v0.0.4).
+      description: |
+        Returns counters and histograms in Prometheus text exposition format
+        (`text/plain; version=0.0.4`).
+      security: []
+      responses:
+        '200':
+          description: Prometheus text body.
+          content:
+            text/plain; version=0.0.4:
+              schema:
+                type: string
+              examples:
+                sample: |
+                  # HELP psub_gateway_requests_total Total chat-completion requests
+                  # TYPE psub_gateway_requests_total counter
+                  psub_gateway_requests_total{model="claude-3-5-sonnet",provider="anthropic"} 42
+
+  /metrics/reset:
+    post:
+      tags: [metrics]
+      summary: Reset all in-memory metrics counters.
+      description: Admin-only operation.
+      security:
+        - AdminToken: []
+      responses:
+        '204':
+          description: Counters reset.
+
+  /v1/models:
+    get:
+      tags: [models]
+      summary: List available models.
+      description: |
+        Returns the union of all models reachable from the current routing
+        configuration. See `crates/psub-gateway/src/openai.rs:117`.
+      responses:
+        '200':
+          description: Model list (OpenAI-compatible shape).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ModelsResponse' }
+
+  /v1/chat/completions:
+    post:
+      tags: [chat]
+      summary: Create a chat completion (OpenAI-compatible).
+      description: |
+        Accepts an OpenAI-compatible chat completion request and routes it
+        through the configured provider chain. Set `stream=true` to receive
+        an SSE stream of `ChatCompletionChunk` events instead of a single
+        JSON response.
+
+        See `crates/psub-gateway/src/openai.rs:35` for the request shape and
+        `crates/psub-gateway/src/lib.rs:260` for the route binding.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChatCompletionRequest' }
+            examples:
+              non_streaming:
+                value:
+                  model: claude-3-5-sonnet
+                  messages:
+                    - role: user
+                      content: Hello, world.
+                  stream: false
+              streaming:
+                value:
+                  model: claude-3-5-sonnet
+                  messages:
+                    - role: user
+                      content: Stream me a poem.
+                  stream: true
+      responses:
+        '200':
+          description: Completion (JSON) or stream (SSE) depending on `stream`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ChatCompletionResponse' }
+            text/event-stream:
+              schema: { $ref: '#/components/schemas/ChatCompletionChunk' }
+        '400':
+          description: Validation failure (empty messages, no user message, etc.).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+        '502':
+          description: All upstream providers failed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /management/config:
+    post:
+      tags: [admin]
+      summary: Update runtime configuration (no restart).
+      description: |
+        Hot-reload the live gateway configuration. The new config replaces
+        `AppState::live_config` in place; no restart is required. Changes are
+        also picked up by the optional `ConfigWatcher` (if `SUBSTRATE_CONFIG_FILE`
+        is set).
+      security:
+        - AdminToken: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/GatewayConfig' }
+      responses:
+        '204':
+          description: Configuration updated.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /a2a/messages:
+    post:
+      tags: [a2a]
+      summary: Send an A2A message (JSON-RPC 2.0 `message/send`).
+      description: Synchronously dispatches a message to the addressed agent and returns the response.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/A2AMessageEnvelope' }
+      responses:
+        '200':
+          description: A2A message accepted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/A2AMessageEnvelope' }
+        '404':
+          description: Addressed agent is unknown.
+
+  /a2a/inbox:
+    get:
+      tags: [a2a]
+      summary: Read the addressed agent's inbox.
+      description: Returns queued inbound messages for the calling agent.
+      responses:
+        '200':
+          description: Inbox contents.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/A2AMessageEnvelope' }
+
+  /a2a/tasks:
+    get:
+      tags: [a2a]
+      summary: List tasks owned by the addressed agent.
+      responses:
+        '200':
+          description: Task list.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/A2ATask' }
+
+  /budget/{session_id}:
+    get:
+      tags: [admin]
+      summary: Read session budget status.
+      security:
+        - AdminToken: []
+      parameters:
+        - in: path
+          name: session_id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Budget snapshot.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BudgetSnapshot' }
+
+  /logs:
+    get:
+      tags: [admin]
+      summary: Tail in-memory logs (best-effort).
+      security:
+        - AdminToken: []
+      responses:
+        '200':
+          description: Recent log lines.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+
+  /admin/providers/{id}/toggle:
+    post:
+      tags: [admin]
+      summary: Toggle a provider on or off at runtime.
+      security:
+        - AdminToken: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Provider toggled.
+
+  /admin/config:
+    put:
+      tags: [admin]
+      summary: Replace full gateway configuration.
+      security:
+        - AdminToken: []
+      responses:
+        '204':
+          description: Configuration replaced.
+
+  /admin/budget/reset/{session_id}:
+    post:
+      tags: [admin]
+      summary: Reset budget counters for a session.
+      security:
+        - AdminToken: []
+      parameters:
+        - in: path
+          name: session_id
+          required: true
+          schema: { type: string }
+      responses:
+        '204':
+          description: Budget reset.
+
+  /admin/metrics/reset:
+    post:
+      tags: [admin]
+      summary: Reset metrics counters (admin path; same as `/metrics/reset`).
+      security:
+        - AdminToken: []
+      responses:
+        '204':
+          description: Counters reset.
+
+components:
+
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: |
+        Bearer-style API key. Format: `Authorization: Bearer <KEY>`.
+        The header value is parsed from `x-session-id` for session affinity.
+    AdminToken:
+      type: apiKey
+      in: header
+      name: X-Admin-Token
+      description: Admin token from `SUBSTRATE_ADMIN_TOKEN` env var.
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    BadRequest:
+      description: Validation failed.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+    RateLimited:
+      description: Rate limit exceeded for the current API key.
+      headers:
+        Retry-After:
+          schema: { type: integer }
+          description: Seconds until the limit window resets.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  schemas:
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        subsystems:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [up, down, degraded]
+
+    ProviderHealth:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [up, down, degraded]
+        last_check_at:
+          type: string
+          format: date-time
+        last_error:
+          type: string
+          nullable: true
+
+    ModelsResponse:
+      type: object
+      required: [object, data]
+      properties:
+        object:
+          type: string
+          enum: [list]
+        data:
+          type: array
+          items: { $ref: '#/components/schemas/ModelObject' }
+
+    ModelObject:
+      type: object
+      required: [id, object, owned_by]
+      properties:
+        id: { type: string }
+        object:
+          type: string
+          enum: [model]
+        owned_by: { type: string }
+
+    ChatCompletionRequest:
+      type: object
+      required: [model, messages]
+      properties:
+        model:
+          type: string
+          description: Requested model id (may be overridden by routing).
+        messages:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/ChatMessage' }
+        stream:
+          type: boolean
+          default: false
+          description: When true, the response is a stream of SSE chunks.
+
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [system, user, assistant]
+        content:
+          type: string
+          minLength: 1
+
+    ChatCompletionResponse:
+      type: object
+      required: [id, object, model, choices]
+      properties:
+        id: { type: string, format: uuid }
+        object:
+          type: string
+          enum: [chat.completion]
+        model:
+          type: string
+          description: Routed model id.
+        choices:
+          type: array
+          items: { $ref: '#/components/schemas/ChatChoice' }
+
+    ChatChoice:
+      type: object
+      required: [index, message, finish_reason]
+      properties:
+        index: { type: integer, minimum: 0 }
+        message: { $ref: '#/components/schemas/ChatChoiceMessage' }
+        finish_reason:
+          type: string
+          enum: [stop, length, content_filter, tool_calls]
+
+    ChatChoiceMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [assistant]
+        content: { type: string }
+
+    ChatCompletionChunk:
+      type: object
+      description: |
+        SSE chunk emitted when `stream=true`. Wrapped in
+        `data: <json>\n\n` per SSE convention; ends with `data: [DONE]\n\n`.
+      required: [id, object, model, choices]
+      properties:
+        id: { type: string, format: uuid }
+        object:
+          type: string
+          enum: [chat.completion.chunk]
+        model: { type: string }
+        choices:
+          type: array
+          items: { $ref: '#/components/schemas/ChatChunkChoice' }
+
+    ChatChunkChoice:
+      type: object
+      properties:
+        index: { type: integer, minimum: 0 }
+        delta:
+          type: object
+          properties:
+            role: { type: string, enum: [assistant] }
+            content: { type: string }
+        finish_reason:
+          type: string
+          nullable: true
+          enum: [stop, length, content_filter, tool_calls, null]
+
+    A2AMessageEnvelope:
+      type: object
+      description: JSON-RPC 2.0 envelope for A2A `message/send`.
+      required: [jsonrpc, id, method, params]
+      properties:
+        jsonrpc: { type: string, enum: ['2.0'] }
+        id: { type: string }
+        method:
+          type: string
+          enum: ['message/send', 'message/stream']
+        params:
+          type: object
+          required: [from, to, parts]
+          properties:
+            from: { type: string }
+            to: { type: string }
+            parts:
+              type: array
+              items:
+                type: object
+                properties:
+                  kind:
+                    type: string
+                    enum: [text, data, file]
+                  text: { type: string }
+                  data: {}
+                  uri: { type: string }
+
+    A2ATask:
+      type: object
+      required: [id, status, owner]
+      properties:
+        id: { type: string }
+        status:
+          type: string
+          enum: [submitted, working, completed, failed, canceled]
+        owner: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    BudgetSnapshot:
+      type: object
+      properties:
+        session_id: { type: string }
+        limit_usd: { type: number, format: float }
+        spent_usd: { type: number, format: float }
+        window:
+          type: string
+          enum: [minute, hour, day, month, total]
+
+    GatewayConfig:
+      type: object
+      description: Hot-reloadable gateway configuration (TOML-shaped).
+      properties:
+        providers:
+          type: array
+          items: { $ref: '#/components/schemas/ProviderConfig' }
+        default_model: { type: string }
+        rate_limit:
+          type: object
+          properties:
+            requests_per_minute: { type: integer, minimum: 1 }
+            tokens_per_minute: { type: integer, minimum: 1 }
+
+    ProviderConfig:
+      type: object
+      required: [id, kind]
+      properties:
+        id: { type: string }
+        kind:
+          type: string
+          enum: [openai, anthropic, gemini, openai_compatible, self_hosted]
+        base_url: { type: string, format: uri }
+        api_key_env: { type: string }
+        enabled: { type: boolean, default: true }
+
+    MetricsSnapshot:
+      type: object
+      properties:
+        requests_total:
+          type: object
+          additionalProperties: { type: integer, format: int64 }
+        errors_total:
+          type: object
+          additionalProperties: { type: integer, format: int64 }
+        rate_limit_hits:
+          type: integer
+          format: int64
+        started_at: { type: string, format: date-time }
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [type, message]
+          properties:
+            type:
+              type: string
+              enum:
+                - invalid_request
+                - authentication
+                - rate_limit
+                - upstream_failure
+                - internal
+            message: { type: string }
+            code:
+              type: string
+              description: Optional machine-readable error code.

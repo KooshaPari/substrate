@@ -1,5 +1,6 @@
 [workspace]
 resolver = "2"
+exclude = ["crates/forge_daemon"]
 members = [
     "crates/substrate",
     "crates/substrate-core",
@@ -25,6 +26,7 @@ members = [
     "crates/engine-conformance",
     "crates/engine-codex",
     "crates/engine-claude",
+    "crates/engine-a2a",
     "crates/engine-agentapi",
     "crates/cliproxy-adapter",
     "crates/substrate-trace",
@@ -42,30 +44,34 @@ members = [
     "crates/cloud-cursor",
     "crates/cloud-kilo",
     "crates/cloud-codex",
-    "crates/forge_daemon",
+    "crates/substrate-serve-lock",
+    "crates/substrate-tui",
+    "crates/gateway-tools",
+    "crates/orchestrator",
 ]
 [workspace.package]
-version = "0.1.0"
+version = "0.3.10"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/KooshaPari/substrate"
 rust-version = "1.80"
 
 [workspace.dependencies]
-substrate-core = { version = "0.1.0", path = "crates/substrate-core" }
-substrate-trace = { version = "0.1.0", path = "crates/substrate-trace" }
-substrate-app = { version = "0.1.0", path = "crates/substrate-app" }
-engine-spec = { version = "0.1.0", path = "crates/engine-spec" }
-a2a = { version = "0.1.0", path = "crates/a2a" }
-store-sqlite = { version = "0.1.0", path = "crates/store-sqlite" }
-engine-forge = { version = "0.1.0", path = "crates/engine-forge" }
-forge_daemon = { version = "0.1.0", path = "crates/forge_daemon" }
+substrate-core = { version = "0.3.8", path = "crates/substrate-core" }
+substrate-serve-lock = { version = "0.3.8", path = "crates/substrate-serve-lock" }
+substrate-trace = { version = "0.3.8", path = "crates/substrate-trace" }
+substrate-app = { version = "0.3.8", path = "crates/substrate-app" }
+engine-spec = { version = "0.3.8", path = "crates/engine-spec" }
+a2a = { package = "substrate-a2a", version = "0.3.8", path = "crates/a2a" }
+store-sqlite = { version = "0.3.8", path = "crates/store-sqlite" }
+engine-forge = { version = "0.3.8", path = "crates/engine-forge" }
+forge_daemon = { version = "0.2.0", path = "crates/forge_daemon" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 thiserror = "2.0"
 uuid = { version = "1.11", features = ["v4", "serde"] }
 async-trait = "0.1"
-tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time"] }
+tokio = { version = "1.42", features = ["rt", "rt-multi-thread", "macros", "process", "io-util", "sync", "time", "signal"] }
 regex = "1.11"
 anyhow = "1.0"
 clap = { version = "4.5", features = ["derive", "env"] }
@@ -91,6 +97,16 @@ futures-core = "0.3"
 parking_lot = "0.12"
 tokio-stream = "0.1"
 tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+tracing-opentelemetry = "0.25"
+opentelemetry = "0.24"
+opentelemetry_sdk = { version = "0.24", features = ["rt-tokio"] }
+opentelemetry-otlp = { version = "0.17", features = ["tonic"] }
+fs2 = "0.4"
+libc = "0.2"
 
 [profile.release]
+opt-level = "z"
+lto = true
+codegen-units = 1
 strip = true

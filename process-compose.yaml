@@ -1,0 +1,18 @@
+version: "0.5"
+processes:
+  gateway:
+    command: cargo run -p gateway
+    environment:
+      - SUBSTRATE_PORT=3000
+      - SUBSTRATE_LOG=info
+    readiness_probe:
+      http_get:
+        path: /health
+        port: 3000
+      initial_delay_seconds: 3
+      period_seconds: 2
+  tui:
+    command: cargo run -p substrate-tui
+    depends_on:
+      gateway:
+        condition: process_healthy

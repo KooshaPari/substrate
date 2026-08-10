@@ -53,7 +53,8 @@ Out of scope:
 This repository runs the following security tooling on every push and weekly cron:
 
 - `cargo audit` / `pip-audit` / `npm audit` / `govulncheck` - dependency CVE scanning
-- `gitleaks` - secret detection (`.gitleaks.toml` allowlists known false positives)
+- `gitleaks` - secret detection (`.gitleaks.toml` allowlists only explicit,
+  publicly documented RFC/test-vector values; new secrets still fail the scan)
 - `trivy` - image and filesystem vulnerability scanning
 - `cargo-cyclonedx` / `syft` - SBOM generation (CycloneDX format)
 - `slsa-github-generator` - SLSA Build Level 3 provenance attestation

@@ -1,0 +1,37 @@
+name: User friction
+description: Report UX friction, confusing output, or a user-story gap (not a crash).
+title: "[friction] "
+labels: ["friction:UX"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this for friction — something worked but was confusing, slow, or harder than it should be.
+        For crashes/bugs use the bug template.
+  - type: textarea
+    id: what
+    attributes:
+      label: What were you trying to do?
+      description: The user story / goal.
+    validations:
+      required: true
+  - type: textarea
+    id: friction
+    attributes:
+      label: Where was the friction?
+      description: What was confusing, missing, or harder than expected? Include command/output.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What would have felt right?
+    validations:
+      required: false
+  - type: input
+    id: surface
+    attributes:
+      label: Surface
+      description: CLI / TUI / SDK / driver-http / docs
+    validations:
+      required: false

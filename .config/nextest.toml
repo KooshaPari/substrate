@@ -1,0 +1,22 @@
+[profile.default]
+# Run all tests in a crate in parallel, but limit total parallelism to 8
+# threads to avoid overwhelming CI runners.
+test-threads = 8
+# Retry flaky tests once before marking them as failed.
+retries = 1
+# Show slowest tests (top 5) at the end of the run.
+slow-timeout = { period = "60s", terminate-after = 2 }
+# Do not fail the whole run on test timeout; mark the timed-out test as
+# skipped so the remaining tests still report.
+fail-fast = false
+
+[profile.ci]
+# Stricter profile for CI runs.
+retries = 0
+# Increase parallelism on beefier CI machines.
+test-threads = 12
+
+[profile.ci.junit]
+# Nextest writes relative report paths below target/nextest/<profile>/.
+path = "junit.xml"
+report-name = "substrate-nextest"

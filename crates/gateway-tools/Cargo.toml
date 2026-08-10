@@ -1,0 +1,26 @@
+[package]
+name = "gateway-tools"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "CLI surface exposing `gateway` utility modules as observable MVP toolbelt."
+publish = false
+
+[[bin]]
+name = "gateway-tools"
+path = "src/main.rs"
+
+[dependencies]
+gateway = { version = "0.3.8", path = "../gateway" }
+clap.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+# wraps: axum 0.8 + tokio 1.42 from workspace (per xDD wrap-over-handroll mandate;
+# the `serve` subcommand is a thin HTTP shell over the in-binary `inspect_registry()`).
+axum.workspace = true
+tokio.workspace = true
+
+[dev-dependencies]
+tower = { workspace = true, features = ["util"] }

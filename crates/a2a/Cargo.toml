@@ -1,5 +1,5 @@
 [package]
-name = "a2a"
+name = "substrate-a2a"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -9,6 +9,10 @@ description = "A2A-shaped wire schema (Task, Message, Artifact, Part). Transport
 readme = "README.md"
 keywords = ["a2a", "agent", "protocol", "schema"]
 categories = ["development-tools", "encoding"]
+
+[lib]
+name = "a2a"
+
 # Deliberately a leaf crate. It must NOT depend on substrate-core, engine-*, transport-*,
 # store-*, driver-*, or *-adapter. arch-test enforces a similar rule for substrate-core.
 
