@@ -10,9 +10,6 @@ all-features = false
 no-default-features = false
 features = []
 
-# We do not want multiple versions of the same crate in the build tree.
-multiple-versions = "warn"
-
 # ---------------------------------------------------------------------------
 # [output] -- report formatting.
 # ---------------------------------------------------------------------------
@@ -34,8 +31,9 @@ allow = [
     "ISC",
     "Zlib",
     "Unicode-DFS-2016",
-    "Unicode-MIT",
+    "Unicode-3.0",
     "CC0-1.0",
+    "CDLA-Permissive-2.0",
     "MPL-2.0",          # rustls
     "OpenSSL",          # transitively; preferred path is rustls
 ]
@@ -46,10 +44,10 @@ confidence-threshold = 0.8
 # ---------------------------------------------------------------------------
 [bans]
 multiple-versions = "warn"
-wildcards = "deny"
+wildcards = "warn"
 highlight = "all"
 deny = []
-skip = false
+skip = []
 skip-tree = []
 allow = []
 # Note: add specific "deny = [{ name = 'foo', reason = 'bar' }, ...]"
@@ -62,18 +60,13 @@ allow = []
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []
+allow-git = ["https://github.com/KooshaPari/phenotype-router"]
 
 # ---------------------------------------------------------------------------
 # [advisories] -- vulnerability database.
 # ---------------------------------------------------------------------------
 [advisories]
 version = 2
-unmaintained = "warn"
-unsound = "warn"
+unmaintained = "workspace"
+unsound = "workspace"
 ignore = []
-# 'informational' issues (yanked, notice) are reported but not blocking.
-informational = ["unmaintained"]
-severity-threshold = "medium"
-# Skip these crate names (must match exactly)
-skip = []

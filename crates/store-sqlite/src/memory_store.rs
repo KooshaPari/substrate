@@ -36,17 +36,31 @@ impl SqliteMemoryStore {
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn history_rejects_invalid_entry_ids() {
+        let store = SqliteMemoryStore::open_in_memory().unwrap();
+        let conn = store.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params!["not-a-uuid", "key", "content", 0],
+        )
+        .unwrap();
+        drop(conn);
+
+        assert!(matches!(store.history(), Err(StoreError::Sqlite(_))));
+    }
+}
+
 impl MemoryPort for SqliteMemoryStore {
     type Error = StoreError;
 
     fn append(&self, key: &str, content: &str) -> Result<Uuid, Self::Error> {
         let id = Uuid::new_v4();
-        let created_at = Utc::now().timestamp();
-        let conn = self.conn.lock().unwrap();
-        conn.execute(
-            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
-            params![id.to_string(), key, content, created_at],
-        )?;
+        self.append_with_id(id, key, content)?;
         Ok(id)
     }
 
@@ -73,14 +87,33 @@ impl MemoryPort for SqliteMemoryStore {
 }
 
 impl SqliteMemoryStore {
+    /// Append an entry with a caller-supplied id (for composed stores).
+    pub fn append_with_id(&self, id: Uuid, key: &str, content: &str) -> Result<(), StoreError> {
+        let created_at = Utc::now().timestamp();
+        let conn = self.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params![id.to_string(), key, content, created_at],
+        )?;
+        Ok(())
+    }
+
     fn history_limited(&self, limit: usize) -> Result<Vec<MemoryEntry>, StoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
             "SELECT id, mem_key, content, created_at FROM memory ORDER BY created_at DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit as i64], |row| {
+            let id_str: String = row.get(0)?;
+            let id = Uuid::parse_str(&id_str).map_err(|e| {
+                rusqlite::Error::FromSqlConversionFailure(
+                    0,
+                    rusqlite::types::Type::Text,
+                    Box::new(e),
+                )
+            })?;
             Ok(MemoryEntry {
-                id: Uuid::parse_str(&row.get::<_, String>(0)?).unwrap_or_else(|_| Uuid::nil()),
+                id,
                 key: row.get(1)?,
                 content: row.get(2)?,
                 created_at: row.get(3)?,
