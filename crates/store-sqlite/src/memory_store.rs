@@ -36,25 +36,6 @@ impl SqliteMemoryStore {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn history_rejects_invalid_entry_ids() {
-        let store = SqliteMemoryStore::open_in_memory().unwrap();
-        let conn = store.conn.lock().unwrap();
-        conn.execute(
-            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
-            params!["not-a-uuid", "key", "content", 0],
-        )
-        .unwrap();
-        drop(conn);
-
-        assert!(matches!(store.history(), Err(StoreError::Sqlite(_))));
-    }
-}
-
 impl MemoryPort for SqliteMemoryStore {
     type Error = StoreError;
 
@@ -67,7 +48,7 @@ impl MemoryPort for SqliteMemoryStore {
     fn get(&self, key: &str) -> Result<Option<String>, Self::Error> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT content FROM memory WHERE mem_key = ?1 ORDER BY created_at DESC LIMIT 1",
+            "SELECT content FROM memory WHERE mem_key = ?1 ORDER BY created_at DESC, rowid DESC LIMIT 1",
         )?;
         let mut rows = stmt.query(params![key])?;
         if let Some(row) = rows.next()? {
@@ -101,7 +82,7 @@ impl SqliteMemoryStore {
     fn history_limited(&self, limit: usize) -> Result<Vec<MemoryEntry>, StoreError> {
         let conn = self.conn.lock().unwrap();
         let mut stmt = conn.prepare(
-            "SELECT id, mem_key, content, created_at FROM memory ORDER BY created_at DESC LIMIT ?1",
+            "SELECT id, mem_key, content, created_at FROM memory ORDER BY created_at DESC, rowid DESC LIMIT ?1",
         )?;
         let rows = stmt.query_map(params![limit as i64], |row| {
             let id_str: String = row.get(0)?;
@@ -121,5 +102,49 @@ impl SqliteMemoryStore {
         })?;
         rows.collect::<Result<Vec<_>, _>>()
             .map_err(StoreError::from)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn history_rejects_invalid_entry_ids() {
+        let store = SqliteMemoryStore::open_in_memory().unwrap();
+        let conn = store.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params!["not-a-uuid", "key", "content", 0],
+        )
+        .unwrap();
+        drop(conn);
+
+        assert!(matches!(store.history(), Err(StoreError::Sqlite(_))));
+    }
+
+    #[test]
+    fn latest_lookup_and_history_break_equal_timestamp_ties_by_insert_order() {
+        let store = SqliteMemoryStore::open_in_memory().unwrap();
+        let first = Uuid::new_v4();
+        let second = Uuid::new_v4();
+        let timestamp = 1_700_000_000_i64;
+        let conn = store.conn.lock().unwrap();
+        conn.execute(
+            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params![first.to_string(), "topic", "first", timestamp],
+        )
+        .unwrap();
+        conn.execute(
+            "INSERT INTO memory (id, mem_key, content, created_at) VALUES (?1, ?2, ?3, ?4)",
+            params![second.to_string(), "topic", "second", timestamp],
+        )
+        .unwrap();
+        drop(conn);
+
+        assert_eq!(store.get("topic").unwrap(), Some("second".into()));
+        let history = store.history().unwrap();
+        assert_eq!(history[0].id, second);
+        assert_eq!(history[1].id, first);
     }
 }

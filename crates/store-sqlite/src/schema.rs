@@ -53,6 +53,7 @@ pub fn init(conn: &Connection) -> Result<()> {
             created_at  INTEGER NOT NULL
         );
         CREATE INDEX IF NOT EXISTS idx_memory_created ON memory(created_at DESC);
+        CREATE INDEX IF NOT EXISTS idx_memory_key_created ON memory(mem_key, created_at DESC);
 
         CREATE TABLE IF NOT EXISTS event_log (
             aggregate_id  TEXT NOT NULL,
