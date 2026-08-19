@@ -89,6 +89,8 @@ impl MemoryPort for RingMemory {
 
 /// Composes a hot [`RingMemory`] tier with a cold [`SqliteMemoryStore`] tier.
 pub struct TwoTierMemory {
+    /// Serializes composite reads and writes so both tiers expose one order.
+    coherence: Mutex<()>,
     ring: RingMemory,
     persistent: SqliteMemoryStore,
 }
@@ -97,6 +99,7 @@ impl TwoTierMemory {
     /// Create a two-tier store with ring capacity `ring_capacity`.
     pub fn in_memory(ring_capacity: usize) -> Result<Self, MemoryError> {
         Ok(Self {
+            coherence: Mutex::new(()),
             ring: RingMemory::new(ring_capacity),
             persistent: SqliteMemoryStore::open_in_memory()?,
         })
@@ -107,6 +110,7 @@ impl MemoryPort for TwoTierMemory {
     type Error = MemoryError;
 
     fn append(&self, key: &str, content: &str) -> Result<Uuid, Self::Error> {
+        let _coherence = self.coherence.lock().unwrap();
         let id = Uuid::new_v4();
         self.persistent
             .append_with_id(id, key, content)
@@ -116,6 +120,7 @@ impl MemoryPort for TwoTierMemory {
     }
 
     fn get(&self, key: &str) -> Result<Option<String>, Self::Error> {
+        let _coherence = self.coherence.lock().unwrap();
         if let Some(v) = self.ring.get(key)? {
             return Ok(Some(v));
         }
@@ -123,10 +128,12 @@ impl MemoryPort for TwoTierMemory {
     }
 
     fn recent(&self, limit: usize) -> Result<Vec<MemoryEntry>, Self::Error> {
+        let _coherence = self.coherence.lock().unwrap();
         self.ring.recent(limit)
     }
 
     fn history(&self) -> Result<Vec<MemoryEntry>, Self::Error> {
+        let _coherence = self.coherence.lock().unwrap();
         self.persistent.history().map_err(MemoryError::from)
     }
 }
@@ -134,6 +141,8 @@ impl MemoryPort for TwoTierMemory {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::{Arc, Barrier};
+    use std::thread;
 
     #[test]
     fn ring_evicts_oldest_at_capacity() {
@@ -185,5 +194,41 @@ mod tests {
 
         assert_eq!(mem.recent(1).unwrap()[0].id, id);
         assert_eq!(mem.history().unwrap()[0].id, id);
+    }
+
+    #[test]
+    fn two_tier_zero_capacity_returns_latest_persisted_value_within_one_second() {
+        let mem = TwoTierMemory::in_memory(0).unwrap();
+        let first = mem.append("k", "first").unwrap();
+        let second = mem.append("k", "second").unwrap();
+
+        assert_eq!(mem.get("k").unwrap(), Some("second".into()));
+        let history = mem.history().unwrap();
+        assert_eq!(history[0].id, second);
+        assert_eq!(history[1].id, first);
+    }
+
+    #[test]
+    fn two_tier_concurrent_appends_keep_hot_and_durable_order_aligned() {
+        let mem = Arc::new(TwoTierMemory::in_memory(4).unwrap());
+        let start = Arc::new(Barrier::new(3));
+        let mut workers = Vec::new();
+        for content in ["first", "second"] {
+            let mem = Arc::clone(&mem);
+            let start = Arc::clone(&start);
+            workers.push(thread::spawn(move || {
+                start.wait();
+                mem.append("k", content).unwrap()
+            }));
+        }
+        start.wait();
+        for worker in workers {
+            worker.join().unwrap();
+        }
+
+        let newest_hot = mem.recent(1).unwrap().remove(0);
+        let newest_durable = mem.history().unwrap().remove(0);
+        assert_eq!(newest_hot.id, newest_durable.id);
+        assert_eq!(mem.get("k").unwrap(), Some(newest_durable.content.clone()));
     }
 }
