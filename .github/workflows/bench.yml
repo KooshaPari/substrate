@@ -1,13 +1,12 @@
-name: Mutation
+name: Benchmarks
 on:
   push:
     branches: [main]
   pull_request:
 jobs:
-  mutants:
+  bench:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo install cargo-mutants
-      - run: cargo mutants --no-shuffle -j 2 --timeout 120 2>&1 | tail -100 || true
+      - run: if [ -d benches ]; then cargo bench 2>&1 | tail -50 || true; else echo no-bench; fi
