@@ -7,6 +7,6 @@ jobs:
   bench:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: dtolnay/rust-toolchain@stable
       - run: if [ -d benches ]; then cargo bench 2>&1 | tail -50 || true; else echo no-bench; fi
