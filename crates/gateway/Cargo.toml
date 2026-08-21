@@ -44,7 +44,13 @@ opentelemetry.workspace = true
 opentelemetry_sdk.workspace = true
 opentelemetry-otlp.workspace = true
 
+[[bench]]
+name = "criterion_bench"
+path = "../../benches/criterion_bench.rs"
+harness = false
+
 [dev-dependencies]
+criterion.workspace = true
 http-body-util.workspace = true
 tempfile.workspace = true
 tower = { workspace = true, features = ["util"] }
