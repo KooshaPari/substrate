@@ -28,6 +28,7 @@ pub mod request_rate;
 pub mod retry;
 pub mod router;
 pub mod streaming;
+pub mod stream_usage;
 pub mod upstream;
 
 pub use audit_log::{AuditEntry, AuditLogger};
@@ -67,6 +68,7 @@ use substrate_core::ports::RoutingPort;
 use tracing::instrument;
 
 use openai::{complete_chat, complete_chat_stream, models_from_decision, ChatCompletionRequest};
+use stream_usage as stream_accounting;
 use streaming::StreamingResponseBuilder;
 
 // ---------------------------------------------------------------------------
@@ -565,7 +567,7 @@ async fn chat_completions_handler(
         .collect();
 
     if body.stream {
-        let stream = complete_chat_stream(state.routing.as_ref(), &body, &providers_snap)
+        let raw_stream = complete_chat_stream(state.routing.as_ref(), &body, &providers_snap)
             .await
             .map_err(|e| {
                 let latency_ms = t0.elapsed().as_millis() as u64;
@@ -595,6 +597,15 @@ async fn chat_completions_handler(
                 );
                 ApiError::bad_request(e)
             })?;
+        // Wrap the raw SSE byte stream so token usage is accounted incrementally
+        // as content deltas arrive, and the exact upstream `usage` payload
+        // (when present) overrides the heuristic estimate at stream end.
+        let stream = stream_accounting::CountingStream::new(
+            raw_stream,
+            state.budget_store.clone(),
+            &session_id,
+            &body.model,
+        );
         let latency_ms = t0.elapsed().as_millis() as u64;
         state.metrics.record("stream", latency_ms, false);
         if let Some(logger) = &state.audit_logger {
