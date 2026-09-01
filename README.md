@@ -6,6 +6,8 @@
 <p align="center"><em>Hexagonal AI dispatch gateway &amp; TUI — proxy, rate-limit, retry, observe.</em></p>
 <p align="center"><sub>Backbone-2 graphite palette · <a href="assets/brand/README.md">brand assets &amp; tokens</a> · theme.rs wired (PR #217) · <a href="docs/assets/identity/">visual identity demo</a></sub></p>
 
+[![AI slop inside](https://sladge.net/badge.svg)](https://sladge.net) [![GitHub Downloads (all assets, all releases)](https://img.shields.io/github/downloads/KooshaPari/substrate/total)](https://github.com/KooshaPari/substrate/releases)
+
 ---
 
 > AI dispatch gateway and TUI — proxy, rate-limit, retry, and observe LLM traffic.
