@@ -1,0 +1,47 @@
+# Rust formatting configuration for substrate
+# Stable, default rustfmt style with these project-specific choices:
+# - max_width=100 (matches the rust-lang default but explicit for IDEs/CI)
+# - group_imports=StdExternalCrate groups std / external / crate imports
+# - reorder_imports=true keeps imports in a deterministic order
+# - use_small_heuristics=Default avoids stylistic churn from "Max" heuristics
+# - imports_granularity=Crate keeps one `use` group per crate (cleaner diffs)
+# - format_strings=true runs the unstable string formatting check
+#
+# Run `cargo fmt --all` locally; CI runs `cargo fmt --all -- --check`.
+
+edition = "2021"
+max_width = 100
+hard_tabs = false
+tab_spaces = 4
+newline_style = "Unix"
+use_small_heuristics = "Default"
+reorder_imports = true
+group_imports = "StdExternalCrate"
+imports_granularity = "Crate"
+format_strings = true
+format_macro_matchers = true
+normalize_comments = true
+normalize_doc_attributes = true
+wrap_comments = true
+comment_width = 100
+trailing_comma = "Vertical"
+trailing_semicolon = true
+match_block_trailing_comma = true
+brace_style = "SameLineWhere"
+control_brace_style = "AlwaysSameLine"
+empty_item_single_line = true
+fn_single_line = false
+where_single_line = false
+struct_lit_single_line = false
+hex_literal_case = "Lower"
+use_try_shorthand = true
+condense_wildcard_suffixes = false
+force_explicit_abi = true
+unstable_features = false
+
+# Skip vendored or generated files (cargo fmt still formats these unless excluded).
+# ignore = [
+#   "target/",
+#   ".git/",
+#   "**/target/",
+# ]

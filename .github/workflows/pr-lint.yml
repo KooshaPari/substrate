@@ -1,0 +1,23 @@
+name: Lint PR title
+
+on:
+  pull_request_target:
+    types:
+      - opened
+      - edited
+      - reopened
+      - synchronize
+
+permissions:
+  pull-requests: write
+
+jobs:
+  conventional:
+    name: Validate conventional commit title
+    runs-on: ubuntu-latest
+    steps:
+      - uses: wagoid/commitlint-github-action@v5
+        with:
+          configFile: .commitlintrc.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
