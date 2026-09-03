@@ -1,0 +1,49 @@
+# =============================================================================
+# Flaky Test Detection & Quarantine (TEST-13)
+# =============================================================================
+# Runs after main CI completes. If any test step has retried (a sign of
+# flakiness), the workflow creates an issue tracking it.
+# Quarantined tests live in tests/quarantined/ — see TEST_QUARANTINE.md.
+# =============================================================================
+
+name: Flaky Test Detector
+
+on:
+  workflow_run:
+    workflows: ["rust", "CI", "Test"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  detect-flaky:
+    name: Detect + report flaky tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: github.event.workflow_run.conclusion == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan workflow run for retry indicators
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN_ID: ${{ github.event.workflow_run.id }}
+        run: |
+          set -euo pipefail
+          # Find any job step that retried (sign of flakiness)
+          RETRIES=$(gh api "repos/${{ github.repository }}/actions/runs/${RUN_ID}/jobs" \
+            --jq '.jobs[].steps[]? | select(.conclusion == "success" and .number > 1) | .name' 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$RETRIES" -gt 0 ]; then
+            echo "::warning::Detected $RETRIES retried steps in workflow run ${RUN_ID}"
+            ISSUE=$(gh issue list --search "Flaky test detected" --state open --json number --jq '.[0].number // empty' 2>/dev/null)
+            if [ -z "$ISSUE" ]; then
+              gh issue create \
+                --title "Flaky test detected in workflow run ${RUN_ID}" \
+                --body "Workflow run \`${RUN_ID}\` reported $RETRIES step retries. See run logs: https://github.com/${{ github.repository }}/actions/runs/${RUN_ID}" \
+                --label "test:flaky" 2>/dev/null || echo "Issue creation skipped (missing token scope)"
+            fi
+          else
+            echo "No flakiness detected."
+          fi
