@@ -1,0 +1,14 @@
+# Clippy lint configuration for the substrate workspace.
+# This enforces the quality bar called out in the scorecard:
+#   CQ-10: no `.unwrap()` / `.expect()` in non-test code.
+#
+# Test code (`#[cfg(test)]` modules, integration tests under `tests/`)
+# is exempt from these lints.
+
+# Disallow `unwrap`/`expect` outside tests
+disallowed-methods = [
+  { path = ["std::option::Option", "unwrap"], reason = "Use `expect()` with a clear message, or handle the None case explicitly" },
+  { path = ["std::option::Option", "expect"], reason = "Avoid `expect()` in non-test code; write fallible code paths instead" },
+  { path = ["std::result::Result", "unwrap"], reason = "Use `expect()` with a clear message, or propagate the error with `?`" },
+  { path = ["std::result::Result", "expect"], reason = "Avoid `expect()` in non-test code; propagate the error with `?`" },
+]
