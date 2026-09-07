@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 5
     if: github.event.workflow_run.conclusion == 'success'
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Scan workflow run for retry indicators
         env:
