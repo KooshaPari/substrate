@@ -1,0 +1,35 @@
+[package]
+name = "croner"
+version = "3.0.1"
+edition = "2021"
+license = "MIT"
+description = "Fully-featured, lightweight, and efficient Rust library designed for parsing and evaluating cron patterns"
+repository = "https://github.com/hexagon/croner-rust"
+documentation = "https://docs.rs/croner"
+readme = "README.md"
+keywords = ["cron", "scheduler", "job", "task", "time"]
+categories = ["date-and-time", "parser-implementations"]
+homepage = "https://github.com/hexagon/croner-rust"
+
+[lib]
+name = "croner"
+path = "src/lib.rs"
+
+[dependencies]
+chrono = "0.4.42"
+derive_builder = "0.20.2"
+serde = { version = "1.0", optional = true }
+strum = { version = "0.27.2", features = ["derive"] }
+
+[dev-dependencies]
+chrono-tz = "0.10.4"
+criterion = "0.7.0"
+rstest = "0.26.1"
+serde_test = "1.0"
+
+[features]
+serde = ["dep:serde"]
+
+[[bench]]
+name = "croner_bench"
+harness = false

@@ -1,0 +1,23 @@
+# `cargo-llvm-cov` configuration for `phenotype-router`.
+#
+# Per ADR-040 (test coverage gates per tier), `phenotype-router` is
+# classified as a **federated-service** substrate (Tier 3) with a
+# **60 % line-coverage gate**. The CI workflow in
+# `.github/workflows/ci.yml` reads `cov` summary output and fails
+# the build when the line coverage falls below the gate.
+
+[llvm-cov]
+# Source roots to instrument. Excludes tests/, benches/, and
+# examples/ from the coverage denominator; the gate measures
+# *production* code coverage.
+exclude-from-coverage = ["tests", "benches", "examples", "target"]
+
+[rust]
+# Use llvm-cov's built-in coverage profiler (faster than
+# source-based for CI).
+instrument-coverage = true
+
+[report]
+# Show line, branch, and region coverage in the summary.
+output-format = ["text", "lcov"]
+fail-under-lines = 60

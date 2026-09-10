@@ -1,0 +1,135 @@
+# `phenotype-router` — LLM-facing context
+
+> Mirror the conventions in `pheno-port-adapter/llms.txt` and
+> `pheno-tracing/llms.txt`. This file is the canonical context for
+> LLM-based code assistants and code-review tools.
+
+## What this crate does
+
+`phenotype-router` is the **decision layer** of the Phenotype router
+architecture. It receives a `Request` and returns a `Response` whose
+`Decision` is one of `Allow | Defer | Deny(reason)`. It is a
+hexagonal L4 Port/Adapter primitive (ADR-038) with OTel-native OTLP
+span emission (ADR-012 / ADR-036B).
+
+## When to use this crate
+
+- You are building a new LLM-routing service and need a substrate-grade
+  decision layer with built-in OTLP span emission.
+- You are adding a new adapter (Bifrost replacement, SmartFallback,
+  plugin pre-routing) and want to plug into a fleet-wide contract.
+- You are wiring observability for routing decisions and want one
+  canonical span shape across the fleet (`phenotype.router.decision`,
+  per ADR-052 §3).
+
+## When NOT to use this crate
+
+- You need the **transport layer** (use `phenotype-gateway`).
+- You need the **plugin chain runtime** (v0.5.0; v0.3.0 ships the
+  decision-layer contract that plugins will plug into).
+- You need a **full OTel SDK** with batching, resource attributes, etc.
+  — the recorder is a thin span producer; consumers wire the SDK.
+
+## Public surface
+
+```rust
+// Decision port contract (ADR-050 / ADR-038)
+pub trait DecisionLayer: Send + Sync {
+    fn name(&self) -> &str;
+    fn adapter_kind(&self) -> &str { self.name() }
+    fn health(&self) -> Result<(), DecisionError> { Ok(()) }
+    fn decide(&self, req: &Request) -> Response;
+}
+
+// In-tree adapters
+pub struct BifrostAdapter;     // stub mirroring Bifrost's allow/deny rules
+pub struct HelloWorld;         // no-op fixture, returns Allow
+
+// OTel substrate (ADR-012 / ADR-036B / ADR-052 §3)
+pub struct OtlpDecisionRecorder { /* ... */ }
+pub struct TraceOperation { /* name, kind, attributes */ }
+pub trait TracePort: Send + Sync { fn submit(&self, op: TraceOperation) -> TraceResult; }
+pub struct InMemoryTracePort;   // for tests
+
+// SDK contracts (ADR-052 §1)
+#[async_trait] pub trait LlmPort: Send + Sync { /* ... */ }
+pub trait DecisionPlugin: Send + Sync { /* ... */ }
+#[async_trait] pub trait ConnectorPort: Send + Sync { /* ... */ }
+
+// Chaos matrix (ADR-052 §4)
+pub struct ChaosMatrix { /* 5 fault kinds */ }
+pub enum ChaosKind { Timeout, Malformed, Unreachable, Transient, Overload }
+pub trait ChaosInjector { fn inject(&self, s: &ChaosScenario) -> FaultOutcome; }
+```
+
+## Code patterns
+
+### 5-line minimal use
+
+```rust
+use phenotype_router::{BifrostAdapter, DecisionLayer, Request};
+let adapter = BifrostAdapter::new();
+let req = Request::new("user:42", "weather");
+let resp = adapter.decide(&req);
+assert_eq!(resp.decision.kind_str(), "allow");
+```
+
+### Record a span (in-tree in-memory port)
+
+```rust
+use phenotype_router::otel::{OtelConfig, OtlpDecisionRecorder};
+use std::sync::Arc;
+
+let recorder = OtlpDecisionRecorder::in_memory(OtelConfig::default());
+let adapter = BifrostAdapter::new();
+let req = Request::new("user:42", "weather");
+let resp = adapter.decide(&req);
+recorder.record(&adapter, &req, &resp); // submits to InMemoryTracePort
+```
+
+### Custom TracePort (consumer-wired OTel SDK)
+
+```rust
+use phenotype_router::otel::{TracePort, TraceOperation, TraceResult, TraceStatus, OtlpDecisionRecorder};
+use std::sync::Arc;
+
+struct MyOtelPort;
+impl TracePort for MyOtelPort {
+    fn submit(&self, op: TraceOperation) -> TraceResult {
+        // forward `op` to opentelemetry-otlp / jaeger / etc.
+        TraceResult { trace_id: op.trace_id, span_id: op.span_id, status: TraceStatus::Ok }
+    }
+}
+
+let recorder = OtlpDecisionRecorder::with_port(
+    Arc::new(MyOtelPort),
+    OtelConfig { service_name: "my-svc".into(), ..Default::default() },
+);
+```
+
+## Quality bar (must keep green)
+
+- **Tests:** 56 total (32 unit + 6 chaos + 6 hello + 4 otlp + 8 e2e).
+- **Coverage:** 60 % line (federated-service tier, ADR-040).
+- **CI:** `.github/workflows/ci.yml` (build + test + chaos + bench + clippy).
+- **Docs:** `SPEC.md` (1 page) + `README.md` + `docs/concept.md` + `docs/architecture.md`.
+- **Observability:** `OtlpDecisionRecorder` (ADR-012 / ADR-036B / ADR-052 §3).
+- **Span name:** `phenotype.router.decision` (PINNED; do not change).
+
+## Related ADRs
+
+- ADR-023 (substrate placement) — `docs/adr/2026-06-15/ADR-023-agent-effort-governance.md`.
+- ADR-038 (hexagonal L4 Port) — `docs/adr/2026-06-18/ADR-038-hexagonal-port-adapter-l4-policy.md`.
+- ADR-040 (test coverage gates per tier) — `docs/adr/2026-06-18/ADR-040-test-coverage-gates-per-tier.md`.
+- ADR-050 (router rebuild) — `docs/adr/2026-06-20/ADR-050-router-rebuild.md`.
+- ADR-051 (Bifrost-as-library) — `docs/adr/2026-06-20/ADR-051-bifrost-as-library.md`.
+- ADR-052 (plugin SDK spec) — `docs/adr/2026-06-20/ADR-052-plugin-sdk-spec.md`.
+- ADR-012 / ADR-036B (pheno-tracing substrate canonical).
+
+## Related substrate crates
+
+- `pheno-port-adapter` — hexagonal L4 reference impl.
+- `pheno-tracing` — tracing substrate (v15 follow-up).
+- `pheno-otel` — OTLP wire-format exporter.
+- `pheno-config` — config substrate.
+- `pheno-worklog-schema` — worklog v2.1 parser.
