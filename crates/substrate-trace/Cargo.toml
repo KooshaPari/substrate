@@ -13,6 +13,8 @@ tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros", "sync
 reqwest = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
+# OTLP export substrate (PhenoObservability pheno-otel v0.1.0)
+pheno-otel = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["rt", "rt-multi-thread", "macros"] }

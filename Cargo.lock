@@ -2649,6 +2649,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "pheno-otel"
+version = "0.1.0"
+source = "git+https://github.com/KooshaPari/PhenoObservability?tag=v0.1.0#96ea9b7d80ba2fba0a76c00a975694497463c413"
+dependencies = [
+ "serde",
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "phenotype-mcp"
 version = "0.3.10"
 dependencies = [
@@ -3818,6 +3828,7 @@ dependencies = [
 name = "substrate-trace"
 version = "0.3.10"
 dependencies = [
+ "pheno-otel",
  "reqwest",
  "serde",
  "serde_json",

@@ -1,0 +1,10 @@
+# Cargo configuration for offline, reproducible builds.
+# Vendoring enables `cargo build` to succeed without network access.
+# Run `cargo vendor vendor/` to populate the directory.
+# CI uses pre-populated vendor dir to avoid network dependence.
+
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "vendor"

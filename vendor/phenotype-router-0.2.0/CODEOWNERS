@@ -1,0 +1,41 @@
+# CODEOWNERS — `phenotype-router`
+#
+# Per the Phenotype governance model (AGENTS.md / ADR-023 / ADR-040),
+# all substrate crates are owned by the substrate lead. Code review
+# requests for paths below will be auto-routed to the listed owners.
+#
+# Order matters: later patterns override earlier ones.
+
+# Default owner for the entire repo.
+*                               @KooshaPari
+
+# Substrate-quality-bar docs (SPEC.md, README.md, CHANGELOG.md,
+# WORKLOG.md, llms.txt, AGENTS.md, CODEOWNERS) require substrate
+# governance review.
+/SPEC.md                        @KooshaPari
+/README.md                      @KooshaPari
+/CHANGELOG.md                   @KooshaPari
+/WORKLOG.md                     @KooshaPari
+/llms.txt                       @KooshaPari
+/AGENTS.md                      @KooshaPari
+/CODEOWNERS                     @KooshaPari
+
+# Core port contract (ADR-038) — owner is the port-adapter maintainer.
+/src/decision.rs                @KooshaPari
+/src/sdk.rs                     @KooshaPari
+
+# OTel bridge (ADR-012 / ADR-036B / ADR-052 §3) — owner is the
+# observability maintainer.
+/src/otel.rs                    @KooshaPari
+/src/tracing.rs                 @KooshaPari
+
+# Chaos matrix (ADR-052 §4) — owner is the chaos engineering lead.
+/src/chaos.rs                   @KooshaPari
+/tests/chaos_matrix.rs          @KooshaPari
+
+# v13 plugin port wave — owner is the plugin SDK maintainer.
+/src/plugins/                   @KooshaPari
+
+# CI + dev environment.
+/.github/                       @KooshaPari
+/flake.nix                      @KooshaPari
