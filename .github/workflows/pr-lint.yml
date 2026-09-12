@@ -16,7 +16,7 @@ jobs:
     name: Validate conventional commit title
     runs-on: ubuntu-latest
     steps:
-      - uses: wagoid/commitlint-github-action@v5
+      - uses: wagoid/commitlint-github-action@v6
         with:
           configFile: .commitlintrc.json
         env:
